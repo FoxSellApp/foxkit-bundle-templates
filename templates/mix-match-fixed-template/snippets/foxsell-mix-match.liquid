@@ -1,0 +1,62 @@
+{% doc %}
+  Renders the Foxsell Mix Match section.
+
+  @param {product} product - The product to render
+  @param {boolean} [show_category_title] - Whether to show the category title
+
+  @example
+  {% render 'foxsell-mix-match', product: product, show_category_title: true %}
+{% enddoc %}
+
+{% liquid
+  assign app_namespace = 'app--67872686081'
+  assign dynamic_add_ons_bundle_config = product.metafields[app_namespace].dynamic_add_ons_bundle.value
+  assign bundle_id = dynamic_add_ons_bundle_config.bundle_id
+  assign products = dynamic_add_ons_bundle_config.products.value
+  assign categories = dynamic_add_ons_bundle_config.categories.value
+  assign settings = dynamic_add_ons_bundle_config.settings.value
+  assign show_category_title = show_category_title | default: false
+%}
+
+<link rel="stylesheet" href="{{ 'foxsell.css' | asset_url }}">
+<link rel="stylesheet" href="{{ 'foxsell-product-card.css' | asset_url }}">
+
+<foxsell-mix-match class="foxsell-mix-match" data-bundle-id="{{ bundle_id }}" data-product-id="{{ product.selected_or_first_available_variant.id }}">
+  {% for category in categories %}
+    <foxsell-mix-match-category class="foxsell-mix-match-category">
+      {% if show_category_title %}
+        <div class="foxsell-mix-match-category__title">{{ category.title }}</div>
+      {% endif %}
+      <div class="foxsell-mix-match-category__products">
+        {% for p in category.products %}
+          {% liquid
+            assign int_product_id = p.id | times: 1
+            assign product_ref = null
+            paginate products by 128
+              for product in products
+                if product.id == int_product_id
+                    assign product_ref = product
+                  break
+                endif
+              endfor
+            endpaginate
+            assign product_variants = p.variants
+          %}
+          {% if product_ref %}
+            {% render 'foxsell-product-card', product: product_ref, variants: product_variants, category: category.title %}
+          {% endif %}
+        {% endfor %}
+      </div>
+    </foxsell-mix-match-category>
+  {% endfor %}
+  <div>
+    <button type="button" name="foxsell-mix-match-add-to-cart" class="foxsell-mix-match-add-to-cart">
+      Add to cart - 
+      <span class="foxsell-mix-match--total-price">
+        {{ settings.price.value | times: 100 | money_without_trailing_zeros }}
+      </span>
+    </button>
+  </div>
+</foxsell-mix-match>
+
+<script src="{{ 'foxsell.js' | asset_url }}" defer></script>

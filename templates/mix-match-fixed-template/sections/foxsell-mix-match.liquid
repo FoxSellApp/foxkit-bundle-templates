@@ -1,0 +1,58 @@
+<div class="foxsell-bundle-wrapper">
+  <div class="foxsell-bundle-images">
+    {% for image in product.images %}
+      {{ image | image_url: width: 800 | image_tag }}
+    {% endfor %}
+  </div>
+  <div class="foxsell-bundle-content">
+    <h1>{{ product.title }}</h1>
+    <div>
+      <span>{{ product.price | money_without_trailing_zeros }}</span>
+      {% if product.compare_at_price > product.price %}
+        <span class="foxsell-bundle-content__compare-at-price">{{ product.compare_at_price | money_without_trailing_zeros }}</span>
+      {% endif %}
+    </div>
+    <div>
+      {% render 'foxsell-mix-match', product: product, show_category_title: section.settings.show_category_title %}
+    </div>
+  </div>
+</div>
+
+{% stylesheet %}
+  .foxsell-bundle-wrapper {
+    display: flex;
+    gap: 2rem;
+  }
+  .foxsell-bundle-images {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    width: 60%;
+  }
+  .foxsell-bundle-content > *:not(:last-child) {
+    margin-bottom: 0.8rem;
+  }
+  .foxsell-bundle-content__compare-at-price {
+    text-decoration: line-through;
+    opacity: 0.5;
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Foxsell Mix Match",
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "show_category_title",
+      "label": "Show category title",
+      "default": false
+    }
+  ],
+  "presets": [
+    {
+      "name": "Foxsell Mix Match"
+    }
+  ]
+}
+{% endschema %}

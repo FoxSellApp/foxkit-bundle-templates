@@ -1,0 +1,26 @@
+{% doc %}
+  Renders a product card for the Foxsell Mix Match section.
+
+  @param {product} product - The product to render
+  @param {object} variants - The selectable variants of the product
+  @param {string} category - The category of the product
+
+  @example
+  {% render 'foxsell-product-card', product: product, variants: variants, category: category %}
+{% enddoc %}
+
+{% liquid
+  assign featured_image = product.selected_or_first_available_variant.featured_image | default: product.featured_image
+%}
+
+<foxsell-product-card class="foxsell-product-card">
+  <div class="foxsell-product-card__image">
+    {{ featured_image | image_url: width: 500 | image_tag }}
+  </div>
+  <div class="foxsell-product-card__info">
+    <div class="foxsell-product-card__title">{{ product.title }}</div> 
+    <div>
+      {% render 'foxsell-product-options', product: product, variants: variants, category: category %}
+    </div>
+  </div>
+</foxsell-product-card>

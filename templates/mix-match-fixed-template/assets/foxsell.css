@@ -1,0 +1,38 @@
+/* For visual testing purposes */
+.foxsell-mix-match {
+  display: block;
+  max-width: 500px;
+}
+
+.foxsell-mix-match-category__title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.foxsell-mix-match-category {
+  display: block;
+  margin-bottom: 1.5rem;
+}
+
+.foxsell-mix-match-category__products > .foxsell-product-card:not(:last-child) {
+  margin-bottom: 0.8rem;
+}
+
+.foxsell-mix-match-add-to-cart {
+  width: 100%;
+  display: inline-block;
+  max-width: 500px;
+  padding: 0.8rem 1rem;
+  background-color: black;
+  color: white;
+  border: none;
+  font-family: inherit;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.foxsell-mix-match-add-to-cart:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
