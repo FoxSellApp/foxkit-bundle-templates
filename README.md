@@ -1,6 +1,6 @@
 # 🦊 FoxKit Bundle Templates
 
-This repository contains ready-to-use templates for **Foxsell Bundles**. These templates are designed to help you quickly set up and customize bundle displays on your Shopify store.
+This repository contains ready-to-use templates for **FoxSell Bundles**. These templates are designed to help you quickly set up and customize bundle displays on your Shopify store.
 
 ## 🚀 How to Use
 

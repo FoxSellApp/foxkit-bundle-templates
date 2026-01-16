@@ -1,4 +1,4 @@
-class FoxsellMixMatch extends HTMLElement {
+class FoxSellMixMatch extends HTMLElement {
   constructor() {
     super();
     this.addToCartButton = this.querySelector('button[name="foxsell-mix-match-add-to-cart"]');
@@ -45,10 +45,10 @@ class FoxsellMixMatch extends HTMLElement {
   }
 }
 
-customElements.define('foxsell-mix-match', FoxsellMixMatch);
+customElements.define('foxsell-mix-match', FoxSellMixMatch);
 
 
-class FoxsellProductOptions extends HTMLElement {
+class FoxSellProductOptions extends HTMLElement {
   constructor() {
     super();
     this.init();
@@ -228,4 +228,4 @@ class FoxsellProductOptions extends HTMLElement {
     legend.textContent = `${optionName}: ${selectedValue}`;
   }
 }
-customElements.define('foxsell-product-options', FoxsellProductOptions);
+customElements.define('foxsell-product-options', FoxSellProductOptions);
