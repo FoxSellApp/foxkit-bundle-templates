@@ -2,6 +2,13 @@
 
 This repository contains ready-to-use templates for **FoxSell Bundles**. These templates are designed to help you quickly set up and customize bundle displays on your Shopify store.
 
+## 📦 Available Templates
+
+| Template | Description | Link |
+|----------|-------------|------|
+| Mix Match Fixed Template | Fixed bundle template with product cards and variant selection. Supports one product per category. | [View Template](./templates/mix-match-fixed-template/README.md) |
+| Mix Match Combined Listing Template | Combined listing template for products with variants as products. Supports multiple products per category. | [View Template](./templates/mix-match-combined-listing-template/README.md) |
+
 ## 🚀 How to Use
 
 All available templates can be used by downloading this repository and moving the files to their respective directories in your Shopify theme:
