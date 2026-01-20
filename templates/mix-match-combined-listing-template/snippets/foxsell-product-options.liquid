@@ -1,0 +1,69 @@
+{% doc %}
+  Renders the product options for the FoxSell Mix Match section.
+
+  @param {product} product - The product to render
+  @param {object} variants - The selectable variants of the product
+  @param {string} category - The category of the product
+
+  @example
+  {% render 'foxsell-product-options', product: product, variants: variants, category: category %}
+{% enddoc %}
+
+{% liquid
+  assign first_available_variant = null
+  for v in variants
+    assign v_id = v[0] | times: 1
+    assign first_available_variant = product.variants | where: 'available', true | where: 'id', v_id | first
+    if first_available_variant
+      break 
+    endif
+  endfor
+%}
+
+<foxsell-product-options data-product-id="{{ product.id }}" data-variant-id="{{ first_available_variant.id }}" data-category="{{ category }}">
+{% for option in product.options_with_values %}
+    <fieldset>
+      {% liquid
+        assign p_position = 'option' | append: option.position
+      %}
+      <legend>{{ option.name }}: {{ first_available_variant[p_position] }}</legend>
+      {% for value in option.values %}
+        {% liquid
+          assign is_selectable = false
+          assign swatch_count = option.values | map: 'swatch' | compact | size
+          assign option_color_array = 'color,Color,colour,Colour' | split: ','
+          if first_available_variant[p_position] == value.name
+            assign is_selectable = true
+          endif
+        %}
+        {% assign input_id = 'option-' | append: option.position | append: '-' | append: forloop.index | append: '-' | append: product.id %}
+        <label for="{{ input_id }}">
+          {% if option_color_array contains option.name and swatch_count > 1 %}
+            {% if value.swatch.image %}
+              <span data-variant-image-url="{{ value.variant.featured_image | image_url: width: 500 }}" class="product-swatch product-swatch--image">{{ value.swatch.image | image_url: width: 50 | image_tag }}</span>
+            {% else %}
+              <span data-variant-image-url="{{ value.variant.featured_image | image_url: width: 500 }}" class="product-swatch product-swatch--color" style="--swatch-color: {{ value.swatch.color }};"></span>
+            {% endif %}
+          {% else %}
+            {{ value.name }}
+          {% endif %}
+        </label>
+        <input
+          type="radio"
+          name="{{ option.name }}--{{ product.id }}" 
+          id="{{ input_id }}" 
+          value="{{ value.name }}"
+          {% if is_selectable %}
+            checked
+          {% endif %}
+        >
+      {% endfor %}
+    </fieldset>
+  {% endfor %}
+  <script type="application/json">
+    {
+      "available_variants": {{ variants | json }},
+      "product_variants": {{ product.variants | where: 'available', true | json }}
+    }
+  </script>
+</foxsell-product-options>

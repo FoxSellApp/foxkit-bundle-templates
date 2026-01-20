@@ -1,0 +1,33 @@
+{% liquid
+  assign app_namespace = 'app--67872686081'
+
+  assign dynamic_add_ons_bundle_config = product.metafields[app_namespace].dynamic_add_ons_bundle.value
+  assign products = dynamic_add_ons_bundle_config.products.value
+  assign categories = dynamic_add_ons_bundle_config.categories.value
+%}
+
+<foxsell-mix-match>
+  {% for category in categories %}
+    <foxsell-mix-match-category>
+      <h2>{{ category.title }}</h2>
+      {% for p in category.products %}
+        {% liquid
+          assign int_product_id = p.id | times: 1
+          assign product_ref = null
+          paginate products by 128
+            for ref in products
+              if ref.id == int_product_id
+                assign product_ref = ref
+                break
+              endif
+            endfor
+          endpaginate
+        %}
+        <label for="foxsell_m_m_combined_product_id--{{ product_ref.id }}">{{ product_ref.title }}</label>
+        <input type="radio" name="foxsell_m_m_combined_product_id" value="{{ product_ref.handle }}" id="foxsell_m_m_combined_product_id--{{ product_ref.id }}">
+        {% render 'foxsell-product-options', product: product_ref, variants: p.variants, category: category.title %}
+      {% endfor %}
+
+    </foxsell-mix-match-category>
+  {% endfor %}
+</foxsell-mix-match>

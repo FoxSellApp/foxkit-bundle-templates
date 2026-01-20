@@ -1,0 +1,85 @@
+{% doc %}
+  Renders a grid of products for the Foxsell M&M Combined section.
+
+  @param {product} product - The product to render
+  @param {string} form_id - The form id
+
+  @example 
+  {% render 'foxsell-mix-match-combined', product: product, form_id: form_id %}
+{% enddoc %}
+
+
+{% liquid
+  assign app_namespace = 'app--67872686081'
+  assign dynamic_add_ons_bundle_config = product.metafields[app_namespace].dynamic_add_ons_bundle.value
+  assign bundle_id = dynamic_add_ons_bundle_config.bundle_id
+  assign products = dynamic_add_ons_bundle_config.products.value
+  assign categories = dynamic_add_ons_bundle_config.categories.value
+%}
+
+<link rel="stylesheet" href="{{ 'foxsell.css' | asset_url }}">
+
+<foxsell-mix-match class="foxsell-mix-match" data-bundle-id="{{ bundle_id }}" data-product="{{ product.selected_or_first_available_variant.id }}">
+  {% for category in categories %}
+    {% liquid
+      assign product_options_html = ''
+      assign first_product_printed = true
+      assign product_swatch_html = ''
+    %}
+    <foxsell-mix-match-category data-product="{{ product.handle }}">
+      <div class="foxsell-product-card">
+        {% for p in category.products %}
+          {% liquid
+            assign int_product_id = p.id | times: 1
+            assign product_ref = null
+            paginate products by 128
+              for ref in products
+                if ref.id == int_product_id
+                  assign product_ref = ref
+                  break
+                endif
+              endfor
+            endpaginate
+          %}
+            {% capture product_swatch_html_holder %}
+              <label class="foxsell-product-swatch" for="foxsell_m_m_combined_product_id--{{ product_ref.id }}-{{ category.title | handleize }}">
+                <span class="foxsell-product-swatch-color" style="--swatch-color: {{ product_ref.metafields.custom.color.value }};"></span>
+              </label>
+              <input 
+                type="radio" 
+                class="foxsell-m-m-combined" 
+                name="foxsell_m_m_combined_product_id-{{ category.title | handleize }}" 
+                value="{{ product_ref.id }}" 
+                data-variant-image-url="{{ product_ref.featured_image | image_url: width: 200 }}"
+                id="foxsell_m_m_combined_product_id--{{ product_ref.id }}-{{ category.title | handleize }}"
+                {% if forloop.first %}
+                  checked
+                {% endif %}
+              >
+            {% endcapture %}
+            {% assign product_swatch_html = product_swatch_html | append: product_swatch_html_holder %}
+            {% if first_product_printed %}
+              {% capture product_featured_image_html %}
+                {{ product_ref.featured_image | image_url: width: 200 |  image_tag  }}
+              {% endcapture %}
+              {% capture product_options_html %}
+                {% render 'foxsell-product-options', product: product_ref, variants: p.variants, category: category.title %}
+              {% endcapture %}
+            {% endif %}
+            {% assign first_product_printed = false %}
+        {% endfor %}
+        <div class="foxsell-product-card__image"> {{ product_featured_image_html }}</div>
+        <div>
+          <div class="foxsell-product-swatches">{{ product_swatch_html }}</div>
+          {{ product_options_html }}
+        </div>
+      </div>
+
+    </foxsell-mix-match-category>
+  {% endfor %}
+
+  <input type="hidden" form="{{ form_id }}" name="properties[__foxsell:dynamic_add_on_bundle_id]" value="{{ bundle_id }}">
+  <input type="hidden" form="{{ form_id }}" name="properties[__foxsell:dynamic_add_on_bundle_items]" value="">
+</foxsell-mix-match>
+
+<script src="{{ 'foxsell.js' | asset_url }}" defer></script>
