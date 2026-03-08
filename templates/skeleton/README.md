@@ -24,8 +24,3 @@ Currently the template supports the following configuration:
 > **Note:** This template is intended as a starting point. Fork and customize it to build your own template.
 
 <br>
-
-## Future Scopes
-
-- Add support for combined listing products
-- Add support for native Shopify swatches
