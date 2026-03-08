@@ -19,7 +19,7 @@ Currently the template supports the following configuration:
 | ------- | --------- |
 | Quantity as option | ✅ |
 | Pricing type | Fixed & Dynamic Pricing |
-| Add-Ons | ✅ |
+| Add-Ons | ⚠️ Partial |
 
 > **Note:** This template is intended as a starting point. Fork and customize it to build your own template.
 
