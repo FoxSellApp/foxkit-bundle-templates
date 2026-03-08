@@ -5,20 +5,21 @@ A minimal, barebones Mix & Match bundle template designed as a starting point fo
 ## Features
 
 - Basic product card with variant selection
-- Product modal for detailed view
-- Bundle summary with pricing
+- Product modal for detailed view with add-on support
+- Bundle summary with pricing breakdown
+- Bundle progress bar with configurable messages
 - Configurable CSS variables for easy theming
 - Clean, minimal markup for easy customization
 
 ## Supported configuration
 
-Currently the template only supports the following configuration:
+Currently the template supports the following configuration:
 
 | Feature | Supported |
 | ------- | --------- |
-| Quantity as option | ❌ |
-| Pricing type | Fixed Pricing Only |
-| Add-Ons | ❌ |
+| Quantity as option | ✅ |
+| Pricing type | Fixed & Dynamic Pricing |
+| Add-Ons | ✅ |
 
 > **Note:** This template is intended as a starting point. Fork and customize it to build your own template.
 
@@ -26,6 +27,5 @@ Currently the template only supports the following configuration:
 
 ## Future Scopes
 
-- Add support for dynamic bundles
-- Add support for Add-Ons
-- Add support for quantity selection
+- Add support for combined listing products
+- Add support for native Shopify swatches
