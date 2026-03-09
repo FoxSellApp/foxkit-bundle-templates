@@ -16,6 +16,14 @@
   margin-bottom: 3rem;
 }
 
+.foxsell-category__item {
+  display: none;
+}
+
+.foxsell-category__item.active {
+  display: block;
+}
+
 .foxsell-category__product-grid {
   display: grid;
   grid-template-columns: repeat(var(--foxsell-product-grid-columns-mobile, 1), 1fr);
@@ -31,6 +39,47 @@
 @media screen and (min-width: 1024px) {
   .foxsell-category__product-grid {
     grid-template-columns: repeat(var(--foxsell-product-grid-columns-desktop, 3), 1fr);
+  }
+}
+
+
+.foxsell__continue-button > input {
+  display: none;
+}
+
+.foxsell__continue-button:has(input:checked) .go-back,
+.foxsell__continue-button:has(input:not(:checked)) .continue {
+  display: block;
+}
+
+.foxsell__continue-button:has(input:checked) .continue,
+.foxsell__continue-button:has(input:not(:checked)) .go-back {
+  display: none;
+}
+
+/* utility classes */
+.foxsell--hidden {
+  display: none;
+}
+
+/* Loading spinner */
+.foxsell__loading-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+}
+
+.foxsell__loading-spinner {
+  width: 24px;
+  height: 24px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 /* Category header */
@@ -55,6 +104,14 @@
 .foxsell-product-card > *:not(:last-child),
 .foxsell-product-card__info > *:not(:last-child) {
   margin-bottom: 0.5rem;
+}
+
+.foxsell-product-card[data-category="__add_ons__"] {
+  display: none;
+}
+
+.foxsell-product-card[data-category="__add_ons__"].active {
+  display: block;
 }
 
 /* Variant swatches */
@@ -84,6 +141,24 @@
 /* Variant controls spacing */
 .foxsell-variant-radio fieldset:not(:last-child) {
   margin-bottom: 0.5rem;
+}
+
+
+/* Product modal */
+.foxsell-product-card--modal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.foxsell-product-card--modal > * {
+  width: 100%;
+}
+
+@media screen and (min-width: 768px) {
+  .foxsell-product-card--modal > * {
+    width: calc(50% - 0.5rem);
+  }
 }
 /* Bundle summary */
 .foxsell-bundle-summary,
@@ -183,3 +258,23 @@
   }
 }
 
+/* Product modal */
+
+#foxsell-product-dialog {
+  width: 90vw;
+  height: 90vh;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.foxsell-product-modal__empty-state {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
