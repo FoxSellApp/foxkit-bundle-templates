@@ -1,0 +1,53 @@
+{% doc %}
+  Renders language-specific content with section/block settings override support.
+  Falls back to English defaults when no override value is provided.
+
+  @param {string} t - The locale key using dot notation (e.g., 'bundle_summary.show')
+  @param {section} [section] - Optional section to allow settings override
+
+  @example
+  {% render 'foxsell-glow-locale', t: 'bundle_summary.show' %}
+  {% render 'foxsell-glow-locale', t: 'bundle_summary.show', section: section %}
+{% enddoc %}
+
+{%- case t -%}
+
+  {%- comment -%} Bundle Summary {%- endcomment -%}
+  {%- when 'bundle_summary.title' -%}
+    {{- section.settings.summary_title | default: 'Bundle Summary' -}}
+  {%- when 'bundle_summary.price' -%}
+    {{- section.settings.summary_price_label | default: 'Price' -}}
+  {%- when 'bundle_summary.empty_state' -%}
+    {{- section.settings.summary_empty_state_text | default: 'Select _remainingQuantity product(s) to get _discount off' -}}
+  {%- when 'bundle_summary.progress_state' -%}
+    {{- section.settings.summary_progress_state_text | default: 'Select _remainingQuantity more product(s) to get _discount off' -}}
+  {%- when 'bundle_summary.end_state' -%}
+    {{- section.settings.summary_end_state_text | default: 'Yay! bundle complete' -}}
+  {%- when 'bundle_summary.empty_items_list' -%}
+    {{- section.settings.summary_items_list_empty_text | default: 'No items in bundle. Add items to your bundle to see the summary here.' -}}
+
+  {%- comment -%} Labels {%- endcomment -%}
+  {%- when 'label.add_ons' -%}
+    {{- section.settings.label_add_ons | default: 'Add-ons' -}}
+  {%- when 'label.close' -%}
+    {{- section.settings.label_close | default: 'close' -}}
+
+  {%- comment -%} Buttons {%- endcomment -%}
+  {%- when 'button.show' -%}
+    {{- section.settings.button_show | default: 'Show' -}}
+  {%- when 'button.hide' -%}
+    {{- section.settings.button_hide | default: 'Hide' -}}
+  {%- when 'button.continue' -%}
+    {{- section.settings.button_continue | default: 'Continue' -}}
+  {%- when 'button.go_back' -%}
+    {{- section.settings.button_go_back | default: 'Go Back' -}}
+  {%- when 'button.add' -%}
+    {{- section.settings.button_add | default: 'Add' -}}
+  {%- when 'button.add_to_cart' -%}
+    {{- section.settings.button_add_to_cart | default: 'Add to Cart' -}}
+
+  {%- comment -%} Default {%- endcomment -%}
+  {%- else -%}
+    {{- t -}}
+
+{%- endcase -%}

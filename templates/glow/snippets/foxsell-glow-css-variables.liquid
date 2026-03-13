@@ -1,0 +1,40 @@
+{% doc %}
+  Renders the Foxsell CSS Variables component.
+
+  @param {section} section - The section to be rendered
+    @example
+    {% render 'foxsell-glow-css-variables', section: section %}
+{% enddoc %}
+
+{% liquid
+  assign product_grid_columns_mobile = section.settings.product_grid_columns_mobile
+  assign product_grid_columns_desktop = section.settings.product_grid_columns_desktop
+%}
+
+{% style %}
+  :root {
+
+    /* Color Scheme */
+    --foxsell-color-background: {{ section.settings.background | default: '#FFFFFF' }};
+    --foxsell-color-foreground: {{ section.settings.text | default: '#000000' }};
+    --foxsell-color-accent-1: {{ section.settings.accent_1 | default: '#FFE000' }};
+    --foxsell-color-accent-text-1: {{ section.settings.accent_text_1 | default: '#000000' }};
+    --foxsell-color-accent-2: {{ section.settings.accent_2 | default: '#000000' }};
+    --foxsell-color-accent-text-2: {{ section.settings.accent_text_2 | default: '#FFFFFF' }};
+    --foxsell-color-border: {{ section.settings.border | default: '#E0E0E0' }};
+
+    /* Layout */
+    --foxsell-product-grid-columns-mobile: {{ product_grid_columns_mobile }};
+    --foxsell-product-grid-columns-desktop: {{ product_grid_columns_desktop }};
+
+
+    /* Typography */
+    --foxsell-base-font-size: {{ section.settings.base_font_size }}px;
+    --foxsell-base-font-weight: 400;
+    --foxsell-heading-font-weight: 700;
+
+    /* Shape */
+    --foxsell-border-radius: {{ section.settings.card_border_radius }}px;
+    --foxsell-button-border-radius: {{ section.settings.button_border_radius }}px;
+  }
+{% endstyle %}
