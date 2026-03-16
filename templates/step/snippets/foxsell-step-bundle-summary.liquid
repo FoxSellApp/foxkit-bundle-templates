@@ -1,0 +1,63 @@
+{% doc %}
+  Renders the Foxsell Bundle Summary component.
+  @param {section} section - The section that contains the settings for the bundle summary
+{% enddoc %}
+
+{% capture script_config %}
+  <script id="foxsell-bundle-progress-config" type="application/json">
+    {
+      "emptyStateText": {{ section.settings.summary_empty_state_text | default: 'Select _remainingQuantity product(s) to get _discount off' | json }},
+      "progressStateText": {{ section.settings.summary_progress_state_text | default: 'Select _remainingQuantity more product(s) to get _discount off' | json }},
+      "endStateText": {{ section.settings.summary_end_state_text | default: 'Yay! bundle complete' | json }}
+    }
+  </script>
+{% endcapture %}
+
+{% capture chevron_icon %}
+  <svg xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <path d="m6 9 6 6 6-6"/>
+  </svg>
+{% endcapture %}
+
+<foxsell-bundle-summary class="foxsell-bundle-summary">
+  <div class="foxsell-bundle-summary__header-wrapper">
+    <div class="foxsell-bundle-summary__header">
+      <div class="foxsell-bundle-summary__header-title">
+        <div>{% render 'foxsell-step-locale', t: 'bundle_summary.title', section: section %}</div>
+        <span class="js foxsell-bundle-summary__quantity">0</span>
+      </div>
+      <label class="foxsell-bundle-summary__toggle">
+        <input type="checkbox" name="foxsell-bundle-summary-toggle" id="foxsell-bundle-summary-toggle" aria-label="Toggle bundle summary visibility">
+        <span class="foxsell--show">{% render 'foxsell-step-locale', t: 'button.show', section: section %}</span>
+        <span class="foxsell--hide">{% render 'foxsell-step-locale', t: 'button.hide', section: section %}</span>
+        {{ chevron_icon }}
+      </label>
+    </div>
+
+    <div class="foxsell-bundle-summary__price-value foxsell--mobile-hide">{{ 0 | money }}</div>
+  </div>
+
+  <div class="foxsell-bundle-summary__progress-wrapper">
+    <foxsell-bundle-progress class="foxsell-bundle-progress foxsell-bundle-summary__progress-bar foxsell--desktop-hide">
+      <div class="foxsell-bundle-progress__label">{% render 'foxsell-step-locale', t: 'bundle_summary.empty_state', section: section %}</div>
+      <div class="foxsell-bundle-progress__bars">
+        {% comment %} Dynamically rendered by updateBundleProgress {% endcomment %}
+      </div>
+      {{ script_config }}
+    </foxsell-bundle-progress>
+    <div class="foxsell-bundle-summary__items-list">
+      <p class="foxsell-bundle-summary__items-list-empty">
+        {% render 'foxsell-step-locale', t: 'bundle_summary.empty_items_list', section: section %}
+      </p>
+    </div>
+  </div>
+</foxsell-bundle-summary>
