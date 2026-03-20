@@ -1,0 +1,433 @@
+{% style %}
+  .foxsell-mix-match-section {
+    background-color: {{ section.settings.section_background }};
+    padding-top: {{ section.settings.section_padding_top }}px;
+    padding-bottom: {{ section.settings.section_padding_bottom }}px;
+  }
+
+  .foxsell-mix-match-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .foxsell-mix-match-wrapper > * {
+    width: 100%;
+  }
+
+  /* Mobile: one row, horizontal scroll; slides snap to scrollport center */
+  .foxsell-mix-match__product-image-gallery {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .foxsell-mix-match__product-image-gallery::-webkit-scrollbar {
+    display: none;
+  }
+
+  .foxsell-mix-match__product-image-gallery__item {
+    flex: 0 0 75vw;
+    scroll-snap-align: center;
+    scroll-snap-stop: normal;
+    overflow: hidden;
+    border-radius: {{ section.settings.card_border_radius }}px;
+    aspect-ratio: 1;
+    min-width: 0;
+  }
+
+  .foxsell-mix-match__product-image-gallery__item img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+  }
+
+  .foxsell-mix-match__product-image-gallery--featured-first .foxsell-mix-match__product-image-gallery__item:first-child {
+    flex-basis: 100%;
+  }
+
+  .foxsell-mix-match__product-image-gallery__item:only-child {
+    flex-basis: 100%;
+  }
+
+  .foxsell-mix-match__product-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .foxsell-mix-match__product-title {
+    font-size: 1.5em;
+    font-weight: 600;
+  }
+
+  @media screen and (min-width: 768px) {
+    .foxsell-mix-match-section {
+      padding-top: calc({{ section.settings.section_padding_top }}px * 1.5);
+      padding-bottom: calc({{ section.settings.section_padding_bottom }}px * 1.5);
+    }
+
+    .foxsell-mix-match-wrapper {
+      flex-direction: row;
+    }
+
+    .foxsell-mix-match__product-image-gallery {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      align-content: start;
+      width: 60%;
+      overflow-x: visible;
+      overflow-y: visible;
+      scroll-snap-type: none;
+      overscroll-behavior-x: auto;
+    }
+
+    .foxsell-mix-match__product-image-gallery__item {
+      flex: unset;
+      scroll-snap-align: unset;
+      scroll-snap-stop: unset;
+      aspect-ratio: auto;
+    }
+
+    .foxsell-mix-match__product-image-gallery__item img {
+      width: 100%;
+      height: auto;
+    }
+
+    .foxsell-mix-match__product-image-gallery--featured-first .foxsell-mix-match__product-image-gallery__item:first-child {
+      flex-basis: unset;
+      grid-column: 1 / -1;
+    }
+
+    .foxsell-mix-match__product-image-gallery__item:only-child {
+      flex-basis: unset;
+      grid-column: 1 / -1;
+    }
+
+    .foxsell-mix-match__product-grid {
+      width: 40%;
+      position: sticky;
+      top: 20px;
+      height: fit-content;
+    }
+
+  }
+{% endstyle %}
+
+{% liquid
+  assign bundle_product = section.settings.bundle_product | default: product
+%}
+
+<div class="foxsell-mix-match-wrapper">
+  <div class="foxsell-mix-match__product-image-gallery{% if section.settings.gallery_feature_first_image %} foxsell-mix-match__product-image-gallery--featured-first{% endif %}">
+    {% if bundle_product != blank and bundle_product.images.size > 0 %}
+      {% for image in bundle_product.images %}
+        {% assign gallery_image_alt = image.alt | default: bundle_product.title %}
+        <div class="foxsell-mix-match__product-image-gallery__item">
+          {{
+            image
+            | image_url: width: 1500
+            | image_tag:
+              loading: 'lazy',
+              sizes: '(min-width: 768px) 30vw, 85vw',
+              widths: '375, 550, 750, 1100, 1500',
+              alt: gallery_image_alt
+          }}
+        </div>
+      {% endfor %}
+    {% elsif bundle_product != blank and bundle_product.featured_image %}
+      {% assign gallery_image_alt = bundle_product.featured_image.alt | default: bundle_product.title %}
+      <div class="foxsell-mix-match__product-image-gallery__item">
+        {{
+          bundle_product.featured_image
+          | image_url: width: 1500
+          | image_tag:
+            loading: 'lazy',
+            sizes: '(min-width: 768px) 30vw, 85vw',
+            widths: '375, 550, 750, 1100, 1500',
+            alt: gallery_image_alt
+        }}
+      </div>
+    {% endif %}
+  </div>
+  <div class="foxsell-mix-match__product-grid">
+    <div class="foxsell-mix-match__product-title">{{ bundle_product.title }}</div>
+    <div class="foxsell-mix-match__product-price">{{ bundle_product.price | money }}</div>
+    {% render 'foxsell-shade-mix-match', product: bundle_product, section: section %}
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Foxsell M&M Shade",
+  "class": "foxsell-mix-match-section",
+  "settings": [
+    {
+      "type": "product",
+      "id": "bundle_product",
+      "label": "Bundle product"
+    },
+    {
+      "type": "color",
+      "id": "section_background",
+      "label": "Section background",
+      "default": "#FFFFFF"
+    },
+    {
+      "type": "range",
+      "id": "section_padding_top",
+      "label": "Padding top",
+      "default": 48,
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "type": "range",
+      "id": "section_padding_bottom",
+      "label": "Padding bottom",
+      "default": 48,
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "type": "header",
+      "content": "Product image gallery"
+    },
+    {
+      "type": "checkbox",
+      "id": "gallery_feature_first_image",
+      "label": "Feature first image",
+      "default": false,
+      "info": "When enabled, the first gallery image spans the full width; additional images show in two columns."
+    },
+    {
+      "type": "header",
+      "content": "Color scheme"
+    },
+    {
+      "type": "color",
+      "id": "background",
+      "label": "Background",
+      "default": "#FFFFFF",
+      "info": "Product cards and bundle summary"
+    },
+    {
+      "type": "color",
+      "id": "text",
+      "label": "Text",
+      "default": "#000000"
+    },
+    {
+      "type": "color",
+      "id": "accent_1",
+      "label": "Accent 1",
+      "default": "#000000"
+    },
+    {
+      "type": "color",
+      "id": "accent_text_1",
+      "label": "Accent 1 text",
+      "default": "#FFFFFF"
+    },
+    {
+      "type": "color",
+      "id": "accent_2",
+      "label": "Accent 2",
+      "default": "#000000"
+    },
+    {
+      "type": "color",
+      "id": "accent_text_2",
+      "label": "Accent 2 text",
+      "default": "#FFFFFF"
+    },
+    {
+      "type": "color",
+      "id": "border",
+      "label": "Border",
+      "default": "#E0E0E0"
+    },
+    {
+      "type": "header",
+      "content": "Border radius"
+    },
+    {
+      "type": "range",
+      "id": "card_border_radius",
+      "label": "Card",
+      "default": 0,
+      "min": 0,
+      "max": 25,
+      "step": 1,
+      "unit": "px"
+    },
+    {
+      "type": "range",
+      "id": "button_border_radius",
+      "label": "Button",
+      "default": 0,
+      "min": 0,
+      "max": 50,
+      "step": 1,
+      "unit": "px"
+    },
+    {
+      "type": "header",
+      "content": "Typography"
+    },
+    {
+      "type": "number",
+      "id": "base_font_size",
+      "label": "Base font size",
+      "default": 14
+    },
+    {
+      "type": "header",
+      "content": "Product Grid"
+    },
+    {
+      "type": "range",
+      "id": "product_grid_columns_desktop",
+      "label": "Columns",
+      "default": 3,
+      "min": 1,
+      "max": 5,
+      "step": 1
+    },
+    {
+      "type": "select",
+      "id": "product_grid_columns_mobile",
+      "label": "Mobile columns",
+      "options": [
+        { "value": "1", "label": "1" },
+        { "value": "2", "label": "2" }
+      ],
+      "default": "1"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_category_title",
+      "label": "Show category title",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "Bundle Summary"
+    },
+    {
+      "type": "text",
+      "id": "summary_title",
+      "label": "Title",
+      "default": "Bundle Summary"
+    },
+    {
+      "type": "text",
+      "id": "summary_price_label",
+      "label": "Price label",
+      "default": "Price"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "summary_empty_state_text",
+      "label": "Empty state text",
+      "default": "Select _remainingQuantity product(s) to get _discount off",
+      "info": "Use _remainingQuantity for the remaining quantity and _discount for the discount [Learn More](https://shopify.dev/docs)"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "summary_progress_state_text",
+      "label": "Progress state text",
+      "default": "Select _remainingQuantity more product(s) to get _discount off",
+      "info": "Use _currentQuantity for the current quantity and _requiredQuantity for the required quantity [Learn More](https://shopify.dev/docs)"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "summary_end_state_text",
+      "label": "End state text",
+      "default": "Yay! bundle complete"
+    },
+    {
+      "type": "text",
+      "id": "summary_items_list_empty_text",
+      "label": "Items list empty text",
+      "default": "No items in bundle. Add items to your bundle to see the summary here."
+    },
+    {
+      "type": "header",
+      "content": "Labels"
+    },
+    {
+      "type": "text",
+      "id": "label_add_ons",
+      "label": "Add-ons",
+      "default": "Add-ons"
+    },
+    {
+      "type": "text",
+      "id": "label_close",
+      "label": "Close",
+      "default": "close"
+    },
+    {
+      "type": "header",
+      "content": "Buttons"
+    },
+    {
+      "type": "text",
+      "id": "button_show",
+      "label": "Show",
+      "default": "Show"
+    },
+    {
+      "type": "text",
+      "id": "button_hide",
+      "label": "Hide",
+      "default": "Hide"
+    },
+    {
+      "type": "text",
+      "id": "button_continue",
+      "label": "Continue",
+      "default": "Continue"
+    },
+    {
+      "type": "text",
+      "id": "button_go_back",
+      "label": "Go back",
+      "default": "Go Back"
+    },
+    {
+      "type": "text",
+      "id": "button_add",
+      "label": "Add",
+      "default": "Add"
+    },
+    {
+      "type": "text",
+      "id": "button_add_to_cart",
+      "label": "Add to cart",
+      "default": "Add to Cart"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Foxsell M&M Shade",
+      "settings": {
+        "bundle_product": "{{ product }}"
+      }
+    }
+  ]
+}
+{% endschema %}

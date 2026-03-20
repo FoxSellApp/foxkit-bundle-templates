@@ -937,15 +937,19 @@ class FoxSellProductCard extends HTMLElement {
       const atLimit = this.categoryId === '__add_ons__'
         ? this.isAddOnAtInventoryLimit()
         : this.isVariantAtInventoryLimit();
-      if (atLimit) this.toggleAddToBundleButton(true);
+      this.disableAddToBundle = atLimit;
+      this.toggleAddToBundleButton(atLimit);
     }
   }
 
   handleBundleUpdated(event) {
     if (event.detail.action === 'clear') {
-      this.disableAddToBundle = false;
-      this.toggleAddToBundleButton(false);
       this.updateQuantity(0);
+      const atInventoryLimit = this.categoryId === '__add_ons__'
+        ? this.isAddOnAtInventoryLimit()
+        : this.isVariantAtInventoryLimit();
+      this.disableAddToBundle = atInventoryLimit;
+      this.toggleAddToBundleButton(atInventoryLimit);
       return;
     }
 
@@ -972,7 +976,7 @@ class FoxSellProductCard extends HTMLElement {
     if (!qaoEnabled && this.categoryId !== category.id) return;
 
     this.disableAddToBundle = disableAddToBundle || this.isVariantAtInventoryLimit();
-    this.toggleAddToBundleButton(disableAddToBundle);
+    this.toggleAddToBundleButton(this.disableAddToBundle);
 
     if (qaoEnabled) this.updatePrice();
 
@@ -1047,7 +1051,8 @@ class FoxSellProductCard extends HTMLElement {
     const priceEl = this.querySelector('.foxsell-product-card__price');
     if (!priceEl) return;
 
-    let price = this.variantSelector?.currentVariant?.foxsell_price ?? this.variantSelector?.currentVariant?.product?.price ?? 0;
+    const { currentVariant, product } = this.variantSelector;
+    let price = currentVariant?.foxsell_price ?? currentVariant?.product?.price ?? product?.price ?? 0;
 
     let discountedPrice = 0;
     const priceStrategy = this.foxsell.bundle.priceStrategy;

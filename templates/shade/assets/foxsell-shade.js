@@ -552,417 +552,6 @@ class FoxSellMixMatch extends HTMLElement {
   }
 }
 
-class FoxSellCategoryHeader extends HTMLElement {
-  constructor() {
-    super();
-    this.categoryId = this.getAttribute('data-category-id');
-    this.quantityElement = this.querySelector('.foxsell-category__quantity');
-    this.foxsell = this.closest('foxsell-mix-match');
-  }
-
-  connectedCallback() {
-    if (!this.foxsell) return;
-    this._boundUpdateQuantity = this.updateQuantity.bind(this);
-    this.foxsell.addEventListener(FOXSELL_EVENTS.bundleUpdated, this._boundUpdateQuantity);
-  }
-
-  disconnectedCallback() {
-    if (!this.foxsell || !this._boundUpdateQuantity) return;
-    this.foxsell.removeEventListener(FOXSELL_EVENTS.bundleUpdated, this._boundUpdateQuantity);
-  }
-
-  updateQuantity(event) {
-    if (this.categoryId === '__add_ons__') {
-      this.updateAddOnQuantity(event);
-      return;
-    }
-    const { category } = event.detail;
-    if (!category) return;
-    if (category.id !== this.categoryId) return;
-    if (!this.quantityElement) return;
-    this.quantityElement.textContent = `${category.quantity}/${category.maxQuantity}`;
-  }
-
-  updateAddOnQuantity(event) {
-    const { bundle } = event.detail;
-    if (!bundle) return;
-    if (!this.quantityElement) return;
-    this.quantityElement.textContent = `${bundle.addOns.selectedQuantity}/${bundle.addOns.maximum}`;
-  }
-}
-
-class FoxSellProductCard extends HTMLElement {
-  constructor() {
-    super();
-
-    this.foxsell = this.closest('foxsell-mix-match');
-
-    this.variantSelector = this.querySelector('foxsell-variant-radio') || this.querySelector('foxsell-variant-select');
-    this.disableAddToBundle = false;
-    this.boundAddToBundle = this.addToBundle.bind(this);
-    this.boundRemoveFromBundle = this.removeFromBundle.bind(this);
-    this.boundHandleVariantChange = this.handleVariantChange.bind(this);
-    this.boundHandleBundleUpdated = this.handleBundleUpdated.bind(this);
-    this.categoryId = this.getAttribute('data-category') || null;
-    this.productId = parseInt(this.getAttribute('data-product-id') || '0');
-
-    if (this.categoryId === '__add_ons__') {
-      this.disableAddToBundle = true;
-      this.toggleAddToBundleButton(true);
-    }
-  }
-
-  connectedCallback() {
-    this.querySelectorAll('.add-to-bundle').forEach(btn => btn.addEventListener('click', this.boundAddToBundle));
-    this.querySelectorAll('.remove-from-bundle').forEach(btn => btn.addEventListener('click', this.boundRemoveFromBundle));
-    if (this.variantSelector) {
-      this.addEventListener('variant-change', this.boundHandleVariantChange);
-    }
-
-    if (this.foxsell) {
-      this.foxsell.addEventListener(FOXSELL_EVENTS.bundleUpdated, this.boundHandleBundleUpdated);
-    }
-  }
-
-  disconnectedCallback() {
-    this.querySelectorAll('.add-to-bundle').forEach(btn => btn.removeEventListener('click', this.boundAddToBundle));
-    this.querySelectorAll('.remove-from-bundle').forEach(btn => btn.removeEventListener('click', this.boundRemoveFromBundle));
-    if (this.variantSelector) {
-      this.removeEventListener('variant-change', this.boundHandleVariantChange);
-    }
-
-    if (this.foxsell) {
-      this.foxsell.removeEventListener(FOXSELL_EVENTS.bundleUpdated, this.boundHandleBundleUpdated);
-    }
-  }
-
-  handleVariantChange() {
-    this.updateFeaturedImage();
-    this.updatePrice();
-    if (this.categoryId === '__add_ons__') {
-      this.updateQuantity(this.getCurrentAddOnQuantity());
-    } else {
-      this.updateQuantity(this.getCurrentQuantity());
-    }
-    this.toggleAddToBundleButton(false);
-    if (!this.variantSelector?.currentVariant) {
-      this.toggleAddToBundleButton(true);
-    } else {
-      const atLimit = this.categoryId === '__add_ons__'
-        ? this.isAddOnAtInventoryLimit()
-        : this.isVariantAtInventoryLimit();
-      this.disableAddToBundle = atLimit;
-      this.toggleAddToBundleButton(atLimit);
-    }
-  }
-
-  handleBundleUpdated(event) {
-    if (event.detail.action === 'clear') {
-      this.updateQuantity(0);
-      const atInventoryLimit = this.categoryId === '__add_ons__'
-        ? this.isAddOnAtInventoryLimit()
-        : this.isVariantAtInventoryLimit();
-      this.disableAddToBundle = atInventoryLimit;
-      this.toggleAddToBundleButton(atInventoryLimit);
-      return;
-    }
-
-    if (this.categoryId === '__add_ons__') {
-      this.handleAddOnUpdated(event);
-      return;
-    }
-
-    if (!this.foxsell || !this.foxsell.config) return;
-
-    const qaoEnabled = this.foxsell.config.options.length > 0;
-
-    if (event.detail.action === 'refresh') {
-      this.updateQuantity(this.getCurrentQuantity());
-      if (qaoEnabled) this.updatePrice();
-      return;
-    }
-
-    if (event.detail.action !== 'add' && event.detail.action !== 'remove') return;
-
-    const { category, item } = event.detail;
-    const disableAddToBundle = category.isMaxQuantity;
-
-    if (!qaoEnabled && this.categoryId !== category.id) return;
-
-    this.disableAddToBundle = disableAddToBundle || this.isVariantAtInventoryLimit();
-    this.toggleAddToBundleButton(this.disableAddToBundle);
-
-    if (qaoEnabled) this.updatePrice();
-
-    if (this.productId === item.product.id) {
-      this.updateQuantity(this.getCurrentQuantity());
-    }
-  }
-
-  handleAddOnUpdated(event) {
-    const { action } = event.detail;
-
-    if (action === 'clear-addons') {
-      this.updateQuantity(0);
-      return;
-    }
-
-    if (action === 'refresh') {
-      this.updateQuantity(this.getCurrentAddOnQuantity());
-      return;
-    }
-
-    const { item, bundle } = event.detail;
-    if (!item || !bundle) return;
-
-    const { enabled, allowedIds, isMaxedOut } = bundle.addOns;
-
-    const isAllowed = allowedIds.includes(this.variantSelector?.product?.id ?? 0);
-
-    if (isAllowed) {
-      this.classList.add('active');
-    } else {
-      this.classList.remove('active');
-    }
-
-    const disableAddToBundle = !enabled || !isAllowed || isMaxedOut;
-
-    this.disableAddToBundle = disableAddToBundle || this.isAddOnAtInventoryLimit();
-    this.toggleAddToBundleButton(disableAddToBundle);
-
-    if (this.productId === item.product.id) {
-      this.updateQuantity(this.getCurrentAddOnQuantity());
-    }
-  }
-
-  getCurrentQuantity() {
-    const variantId = this.variantSelector?.currentVariant?.id;
-    if (variantId === undefined || variantId === null || !this.foxsell?.bundle || !this.categoryId) return 0;
-    const category = this.foxsell.bundle.items.find((c) => c.id === this.categoryId);
-    if (!category) return 0;
-    return category.items.find((item) => item.id === variantId)?.quantity ?? 0;
-  }
-
-  getCurrentAddOnQuantity() {
-    const variantId = this.variantSelector?.currentVariant?.id;
-    if (variantId === undefined || variantId === null || !this.foxsell?.bundle || !this.categoryId) return 0;
-    const addOns = this.foxsell.bundle.addOns;
-    if (!addOns || !addOns.items) return 0;
-    return addOns.items.find((item) => item.id === variantId)?.quantity ?? 0;
-  }
-
-  updateFeaturedImage() {
-    if (!this.variantSelector || !this.variantSelector.currentVariant) return;
-    const img = this.querySelector('.foxsell-product-card__image');
-    const image = this.variantSelector.currentVariant?.featured_image || this.variantSelector.currentVariant?.product?.featured_image;
-    if (!img || !image?.src) return;
-    img.setAttribute('src', image.src);
-    if (image.width != null) img.setAttribute('srcset', image.src + (image.src.includes('?') ? '&' : '?') + 'width=' + image.width);
-  }
-
-  updatePrice() {
-    if (!this.variantSelector || !this.foxsell || !this.foxsell.bundle) return;
-    const priceEl = this.querySelector('.foxsell-product-card__price');
-    if (!priceEl) return;
-
-    const { currentVariant, product } = this.variantSelector;
-    let price = currentVariant?.foxsell_price ?? currentVariant?.product?.price ?? product?.price ?? 0;
-
-    let discountedPrice = 0;
-    const priceStrategy = this.foxsell.bundle.priceStrategy;
-    if (priceStrategy && priceStrategy.strategy === 'dynamic_pricing') {
-      const discount = priceStrategy.value;
-      discountedPrice = price - (price * (discount / 100));
-    }
-
-    if (discountedPrice > 0) {
-      priceEl.innerHTML = `
-      <span class="foxsell-slashed-price">${window.foxsell?.formatMoney?.(price)}</span>
-      <span>${window.foxsell?.formatMoney?.(discountedPrice)}</span>`;
-    } else {
-      priceEl.innerHTML = `<span>${window.foxsell?.formatMoney?.(price)}</span>`;
-    }
-  }
-
-  updateQuantity(quantity) {
-    const el = this.querySelector('.quantity');
-    if (el) el.textContent = String(quantity);
-  }
-
-  isVariantAtInventoryLimit() {
-    const variant = this.variantSelector?.currentVariant;
-    if (!variant || !this.foxsell || !this.categoryId) return false;
-
-    if (!variant.inventory_management || variant.inventory_policy === 'continue') return false;
-    const currentQuantity = this.getCurrentQuantity();
-    return currentQuantity >= variant.inventory_quantity;
-  }
-
-  isAddOnAtInventoryLimit() {
-    const variant = this.variantSelector?.currentVariant;
-    if (!variant || !this.foxsell || !this.categoryId) return false;
-    if (!variant.inventory_management || variant.inventory_policy === 'continue') return false;
-    const currentQuantity = this.getCurrentAddOnQuantity() ?? 0;
-    return currentQuantity >= variant.inventory_quantity;
-  }
-
-  addToBundle() {
-    if (!this.variantSelector || !this.variantSelector.currentVariant || !this.foxsell || !this.categoryId) return;
-    if (this.categoryId === '__add_ons__') {
-
-      this.foxsell.addToAddOns(this.variantSelector.currentVariant, 1);
-      if (this.isAddOnAtInventoryLimit()) {
-        this.toggleAddToBundleButton(true);
-      }
-    } else {
-      this.foxsell.addToBundle(this.variantSelector.currentVariant, 1, this.categoryId);
-      if (this.isVariantAtInventoryLimit()) {
-        this.toggleAddToBundleButton(true);
-      }
-    }
-  }
-
-  removeFromBundle() {
-    if (!this.variantSelector || !this.variantSelector.currentVariant || !this.foxsell || !this.categoryId) return;
-    if (this.categoryId === '__add_ons__') {
-
-      this.foxsell.removeFromAddOns(this.variantSelector.currentVariant, 1);
-    } else {
-      this.foxsell.removeFromBundle(this.variantSelector.currentVariant, 1, this.categoryId);
-    }
-  }
-
-  toggleAddToBundleButton(disable) {
-    this.querySelectorAll('.add-to-bundle').forEach(btn => {
-      btn.toggleAttribute('disabled', disable || this.disableAddToBundle);
-    });
-  }
-}
-
-class FoxSellVariantRadio extends HTMLElement {
-  constructor() {
-    super();
-
-    this.productCard = null;
-    this.boundOnVariantChange = this.onVariantChange.bind(this);
-  }
-
-  connectedCallback() {
-    this.productCard = this.closest('foxsell-product-card');
-    this.onVariantChange();
-    this.addEventListener('change', this.boundOnVariantChange);
-  }
-
-  disconnectedCallback() {
-    this.removeEventListener('change', this.boundOnVariantChange);
-  }
-
-  onVariantChange() {
-    this.updateOptions();
-    this.updateMasterId();
-    this.updateOptionLabels();
-    this.updateVariantStatuses();
-
-    this.dispatchEvent(new CustomEvent('variant-change', { bubbles: true }));
-  }
-
-  updateOptions() {
-    this.options = [...this.querySelectorAll('fieldset')].map(fs =>
-      fs.querySelector('input:checked')?.getAttribute('value') ?? ''
-    );
-  }
-
-  getFoxSellPrice(allowedVariants, variantId) {
-    if (!allowedVariants || !variantId) return 0;
-    let foxsell_price = 0;
-
-    if (allowedVariants[variantId]) {
-      foxsell_price = allowedVariants[variantId] * 100;
-    } else if (allowedVariants[`gid://shopify/ProductVariant/${variantId}`]) {
-      foxsell_price = allowedVariants[`gid://shopify/ProductVariant/${variantId}`] * 100;
-    }
-
-    return foxsell_price;
-  }
-
-  getVariantData() {
-    if (this.variantData) return this.variantData;
-    try {
-      const parsed = JSON.parse(this.querySelector('[type="application/json"]')?.textContent || '{}');
-
-      const raw = Array.isArray(parsed.available_variants) ? parsed.available_variants : (Array.isArray(parsed) ? parsed : []);
-
-      this.variantData = raw.map(v => ({
-        ...v,
-        product: parsed.product ?? null,
-        foxsell_price: this.getFoxSellPrice(parsed.allowed_variants, v.id)
-      }));
-
-      this.product = parsed.product ?? null;
-    } catch (e) {
-      console.error('Failed to parse variant data:', e);
-
-      this.variantData = [];
-    }
-    return this.variantData ?? [];
-  }
-
-  updateMasterId() {
-    this.currentVariant = this.getVariantData().find(v =>
-      v.options?.every((opt, i) => opt === this.options?.[i])
-    );
-  }
-
-  updateOptionLabels() {
-    this.querySelectorAll('fieldset').forEach((fieldset, i) => {
-      const span = fieldset.querySelector('.foxsell-variant-radio__option-value, .foxsell-variant-select__option-value');
-      if (span) span.textContent = this.options?.[i] ?? '';
-    });
-  }
-
-  updateVariantStatuses() {
-    const firstChecked = this.querySelector(':checked');
-    if (!firstChecked) return;
-
-    if (!this.variantData) return;
-    const selectedOptionOneVariants = this.variantData.filter(variant => firstChecked.getAttribute('value') === variant.option1);
-    const inputWrappers = [...this.querySelectorAll('fieldset')];
-
-    inputWrappers.forEach((option, index) => {
-      if (index === 0) return;
-
-      const optionInputs = [...option.querySelectorAll('input[type="radio"], option')];
-      const previousFieldset = inputWrappers[index - 1];
-      const previousChecked = previousFieldset?.querySelector(':checked');
-
-      if (!previousChecked) return;
-
-      const availableOptionInputsValue = selectedOptionOneVariants
-        .filter(variant => variant.available && variant[`option${index}`] === previousChecked.getAttribute('value'))
-        .map(variantOption => variantOption[`option${index + 1}`] ?? '')
-        .filter(v => v !== '');
-
-      this.setInputAvailability(optionInputs, availableOptionInputsValue);
-    });
-  }
-
-  setInputAvailability(listOfOptions, listOfAvailableOptions) {
-    listOfOptions.forEach(input => {
-      input.toggleAttribute('disabled', !listOfAvailableOptions.includes(input.getAttribute('value') ?? ''));
-    });
-  }
-}
-
-class FoxSellVariantSelect extends FoxSellVariantRadio {
-  constructor() {
-    super();
-  }
-
-  updateOptions() {
-    this.options = Array.from(this.querySelectorAll('select'), (select) => select.value);
-  }
-}
-
 class FoxSellBundleSummary extends HTMLElement {
   constructor() {
     super();
@@ -1288,6 +877,417 @@ class FoxSellBundleProgress extends HTMLElement {
   }
 }
 
+class FoxSellCategoryHeader extends HTMLElement {
+  constructor() {
+    super();
+    this.categoryId = this.getAttribute('data-category-id');
+    this.quantityElement = this.querySelector('.foxsell-category__quantity');
+    this.foxsell = this.closest('foxsell-mix-match');
+  }
+
+  connectedCallback() {
+    if (!this.foxsell) return;
+    this._boundUpdateQuantity = this.updateQuantity.bind(this);
+    this.foxsell.addEventListener(FOXSELL_EVENTS.bundleUpdated, this._boundUpdateQuantity);
+  }
+
+  disconnectedCallback() {
+    if (!this.foxsell || !this._boundUpdateQuantity) return;
+    this.foxsell.removeEventListener(FOXSELL_EVENTS.bundleUpdated, this._boundUpdateQuantity);
+  }
+
+  updateQuantity(event) {
+    if (this.categoryId === '__add_ons__') {
+      this.updateAddOnQuantity(event);
+      return;
+    }
+    const { category } = event.detail;
+    if (!category) return;
+    if (category.id !== this.categoryId) return;
+    if (!this.quantityElement) return;
+    this.quantityElement.textContent = `${category.quantity}/${category.maxQuantity}`;
+  }
+
+  updateAddOnQuantity(event) {
+    const { bundle } = event.detail;
+    if (!bundle) return;
+    if (!this.quantityElement) return;
+    this.quantityElement.textContent = `${bundle.addOns.selectedQuantity}/${bundle.addOns.maximum}`;
+  }
+}
+
+class FoxSellProductCard extends HTMLElement {
+  constructor() {
+    super();
+
+    this.foxsell = this.closest('foxsell-mix-match');
+
+    this.variantSelector = this.querySelector('foxsell-variant-radio') || this.querySelector('foxsell-variant-select');
+    this.disableAddToBundle = false;
+    this.boundAddToBundle = this.addToBundle.bind(this);
+    this.boundRemoveFromBundle = this.removeFromBundle.bind(this);
+    this.boundHandleVariantChange = this.handleVariantChange.bind(this);
+    this.boundHandleBundleUpdated = this.handleBundleUpdated.bind(this);
+    this.categoryId = this.getAttribute('data-category') || null;
+    this.productId = parseInt(this.getAttribute('data-product-id') || '0');
+
+    if (this.categoryId === '__add_ons__') {
+      this.disableAddToBundle = true;
+      this.toggleAddToBundleButton(true);
+    }
+  }
+
+  connectedCallback() {
+    this.querySelectorAll('.add-to-bundle').forEach(btn => btn.addEventListener('click', this.boundAddToBundle));
+    this.querySelectorAll('.remove-from-bundle').forEach(btn => btn.addEventListener('click', this.boundRemoveFromBundle));
+    if (this.variantSelector) {
+      this.addEventListener('variant-change', this.boundHandleVariantChange);
+    }
+
+    if (this.foxsell) {
+      this.foxsell.addEventListener(FOXSELL_EVENTS.bundleUpdated, this.boundHandleBundleUpdated);
+    }
+  }
+
+  disconnectedCallback() {
+    this.querySelectorAll('.add-to-bundle').forEach(btn => btn.removeEventListener('click', this.boundAddToBundle));
+    this.querySelectorAll('.remove-from-bundle').forEach(btn => btn.removeEventListener('click', this.boundRemoveFromBundle));
+    if (this.variantSelector) {
+      this.removeEventListener('variant-change', this.boundHandleVariantChange);
+    }
+
+    if (this.foxsell) {
+      this.foxsell.removeEventListener(FOXSELL_EVENTS.bundleUpdated, this.boundHandleBundleUpdated);
+    }
+  }
+
+  handleVariantChange() {
+    this.updateFeaturedImage();
+    this.updatePrice();
+    if (this.categoryId === '__add_ons__') {
+      this.updateQuantity(this.getCurrentAddOnQuantity());
+    } else {
+      this.updateQuantity(this.getCurrentQuantity());
+    }
+    this.toggleAddToBundleButton(false);
+    if (!this.variantSelector?.currentVariant) {
+      this.toggleAddToBundleButton(true);
+    } else {
+      const atLimit = this.categoryId === '__add_ons__'
+        ? this.isAddOnAtInventoryLimit()
+        : this.isVariantAtInventoryLimit();
+      this.disableAddToBundle = atLimit;
+      this.toggleAddToBundleButton(atLimit);
+    }
+  }
+
+  handleBundleUpdated(event) {
+    if (event.detail.action === 'clear') {
+      this.updateQuantity(0);
+      const atInventoryLimit = this.categoryId === '__add_ons__'
+        ? this.isAddOnAtInventoryLimit()
+        : this.isVariantAtInventoryLimit();
+      this.disableAddToBundle = atInventoryLimit;
+      this.toggleAddToBundleButton(atInventoryLimit);
+      return;
+    }
+
+    if (this.categoryId === '__add_ons__') {
+      this.handleAddOnUpdated(event);
+      return;
+    }
+
+    if (!this.foxsell || !this.foxsell.config) return;
+
+    const qaoEnabled = this.foxsell.config.options.length > 0;
+
+    if (event.detail.action === 'refresh') {
+      this.updateQuantity(this.getCurrentQuantity());
+      if (qaoEnabled) this.updatePrice();
+      return;
+    }
+
+    if (event.detail.action !== 'add' && event.detail.action !== 'remove') return;
+
+    const { category, item } = event.detail;
+    const disableAddToBundle = category.isMaxQuantity;
+
+    if (!qaoEnabled && this.categoryId !== category.id) return;
+
+    this.disableAddToBundle = disableAddToBundle || this.isVariantAtInventoryLimit();
+    this.toggleAddToBundleButton(this.disableAddToBundle);
+
+    if (qaoEnabled) this.updatePrice();
+
+    if (this.productId === item.product.id) {
+      this.updateQuantity(this.getCurrentQuantity());
+    }
+  }
+
+  handleAddOnUpdated(event) {
+    const { action } = event.detail;
+
+    if (action === 'clear-addons') {
+      this.updateQuantity(0);
+      return;
+    }
+
+    if (action === 'refresh') {
+      this.updateQuantity(this.getCurrentAddOnQuantity());
+      return;
+    }
+
+    const { item, bundle } = event.detail;
+    if (!item || !bundle) return;
+
+    const { enabled, allowedIds, isMaxedOut } = bundle.addOns;
+
+    const isAllowed = allowedIds.includes(this.variantSelector?.product?.id ?? 0);
+
+    if (isAllowed) {
+      this.classList.add('active');
+    } else {
+      this.classList.remove('active');
+    }
+
+    const disableAddToBundle = !enabled || !isAllowed || isMaxedOut;
+
+    this.disableAddToBundle = disableAddToBundle || this.isAddOnAtInventoryLimit();
+    this.toggleAddToBundleButton(disableAddToBundle);
+
+    if (this.productId === item.product.id) {
+      this.updateQuantity(this.getCurrentAddOnQuantity());
+    }
+  }
+
+  getCurrentQuantity() {
+    const variantId = this.variantSelector?.currentVariant?.id;
+    if (variantId === undefined || variantId === null || !this.foxsell?.bundle || !this.categoryId) return 0;
+    const category = this.foxsell.bundle.items.find((c) => c.id === this.categoryId);
+    if (!category) return 0;
+    return category.items.find((item) => item.id === variantId)?.quantity ?? 0;
+  }
+
+  getCurrentAddOnQuantity() {
+    const variantId = this.variantSelector?.currentVariant?.id;
+    if (variantId === undefined || variantId === null || !this.foxsell?.bundle || !this.categoryId) return 0;
+    const addOns = this.foxsell.bundle.addOns;
+    if (!addOns || !addOns.items) return 0;
+    return addOns.items.find((item) => item.id === variantId)?.quantity ?? 0;
+  }
+
+  updateFeaturedImage() {
+    if (!this.variantSelector || !this.variantSelector.currentVariant) return;
+    const img = this.querySelector('.foxsell-product-card__image');
+    const image = this.variantSelector.currentVariant?.featured_image || this.variantSelector.currentVariant?.product?.featured_image;
+    if (!img || !image?.src) return;
+    img.setAttribute('src', image.src);
+    if (image.width != null) img.setAttribute('srcset', image.src + (image.src.includes('?') ? '&' : '?') + 'width=' + image.width);
+  }
+
+  updatePrice() {
+    if (!this.variantSelector || !this.foxsell || !this.foxsell.bundle) return;
+    const priceEl = this.querySelector('.foxsell-product-card__price');
+    if (!priceEl) return;
+
+    const { currentVariant, product } = this.variantSelector;
+    let price = currentVariant?.foxsell_price ?? currentVariant?.product?.price ?? product?.price ?? 0;
+
+    let discountedPrice = 0;
+    const priceStrategy = this.foxsell.bundle.priceStrategy;
+    if (priceStrategy && priceStrategy.strategy === 'dynamic_pricing') {
+      const discount = priceStrategy.value;
+      discountedPrice = price - (price * (discount / 100));
+    }
+
+    if (discountedPrice > 0) {
+      priceEl.innerHTML = `
+      <span class="foxsell-slashed-price">${window.foxsell?.formatMoney?.(price)}</span>
+      <span class="foxsell-price">${window.foxsell?.formatMoney?.(discountedPrice)}</span>`;
+    } else {
+      priceEl.innerHTML = `<span>${window.foxsell?.formatMoney?.(price)}</span>`;
+    }
+  }
+
+  updateQuantity(quantity) {
+    const el = this.querySelector('.quantity');
+    if (el) el.textContent = String(quantity);
+  }
+
+  isVariantAtInventoryLimit() {
+    const variant = this.variantSelector?.currentVariant;
+    if (!variant || !this.foxsell || !this.categoryId) return false;
+
+    if (!variant.inventory_management || variant.inventory_policy === 'continue') return false;
+    const currentQuantity = this.getCurrentQuantity();
+    return currentQuantity >= variant.inventory_quantity;
+  }
+
+  isAddOnAtInventoryLimit() {
+    const variant = this.variantSelector?.currentVariant;
+    if (!variant || !this.foxsell || !this.categoryId) return false;
+    if (!variant.inventory_management || variant.inventory_policy === 'continue') return false;
+    const currentQuantity = this.getCurrentAddOnQuantity() ?? 0;
+    return currentQuantity >= variant.inventory_quantity;
+  }
+
+  addToBundle() {
+    if (!this.variantSelector || !this.variantSelector.currentVariant || !this.foxsell || !this.categoryId) return;
+    if (this.categoryId === '__add_ons__') {
+
+      this.foxsell.addToAddOns(this.variantSelector.currentVariant, 1);
+      if (this.isAddOnAtInventoryLimit()) {
+        this.toggleAddToBundleButton(true);
+      }
+    } else {
+      this.foxsell.addToBundle(this.variantSelector.currentVariant, 1, this.categoryId);
+      if (this.isVariantAtInventoryLimit()) {
+        this.toggleAddToBundleButton(true);
+      }
+    }
+  }
+
+  removeFromBundle() {
+    if (!this.variantSelector || !this.variantSelector.currentVariant || !this.foxsell || !this.categoryId) return;
+    if (this.categoryId === '__add_ons__') {
+
+      this.foxsell.removeFromAddOns(this.variantSelector.currentVariant, 1);
+    } else {
+      this.foxsell.removeFromBundle(this.variantSelector.currentVariant, 1, this.categoryId);
+    }
+  }
+
+  toggleAddToBundleButton(disable) {
+    this.querySelectorAll('.add-to-bundle').forEach(btn => {
+      btn.toggleAttribute('disabled', disable || this.disableAddToBundle);
+    });
+  }
+}
+
+class FoxSellVariantRadio extends HTMLElement {
+  constructor() {
+    super();
+
+    this.productCard = null;
+    this.boundOnVariantChange = this.onVariantChange.bind(this);
+  }
+
+  connectedCallback() {
+    this.productCard = this.closest('foxsell-product-card');
+    this.onVariantChange();
+    this.addEventListener('change', this.boundOnVariantChange);
+  }
+
+  disconnectedCallback() {
+    this.removeEventListener('change', this.boundOnVariantChange);
+  }
+
+  onVariantChange() {
+    this.updateOptions();
+    this.updateMasterId();
+    this.updateOptionLabels();
+    this.updateVariantStatuses();
+
+    this.dispatchEvent(new CustomEvent('variant-change', { bubbles: true }));
+  }
+
+  updateOptions() {
+    this.options = [...this.querySelectorAll('fieldset')].map(fs =>
+      fs.querySelector('input:checked')?.getAttribute('value') ?? ''
+    );
+  }
+
+  getFoxSellPrice(allowedVariants, variantId) {
+    if (!allowedVariants || !variantId) return 0;
+    let foxsell_price = 0;
+
+    if (allowedVariants[variantId]) {
+      foxsell_price = allowedVariants[variantId] * 100;
+    } else if (allowedVariants[`gid://shopify/ProductVariant/${variantId}`]) {
+      foxsell_price = allowedVariants[`gid://shopify/ProductVariant/${variantId}`] * 100;
+    }
+
+    return foxsell_price;
+  }
+
+  getVariantData() {
+    if (this.variantData) return this.variantData;
+    try {
+      const parsed = JSON.parse(this.querySelector('[type="application/json"]')?.textContent || '{}');
+
+      const raw = Array.isArray(parsed.available_variants) ? parsed.available_variants : (Array.isArray(parsed) ? parsed : []);
+
+      this.variantData = raw.map(v => ({
+        ...v,
+        product: parsed.product ?? null,
+        foxsell_price: this.getFoxSellPrice(parsed.allowed_variants, v.id)
+      }));
+
+      this.product = parsed.product ?? null;
+    } catch (e) {
+      console.error('Failed to parse variant data:', e);
+
+      this.variantData = [];
+    }
+    return this.variantData ?? [];
+  }
+
+  updateMasterId() {
+    this.currentVariant = this.getVariantData().find(v =>
+      v.options?.every((opt, i) => opt === this.options?.[i])
+    );
+  }
+
+  updateOptionLabels() {
+    this.querySelectorAll('fieldset').forEach((fieldset, i) => {
+      const span = fieldset.querySelector('.foxsell-variant-radio__option-value, .foxsell-variant-select__option-value');
+      if (span) span.textContent = this.options?.[i] ?? '';
+    });
+  }
+
+  updateVariantStatuses() {
+    const firstChecked = this.querySelector(':checked');
+    if (!firstChecked) return;
+
+    if (!this.variantData) return;
+    const selectedOptionOneVariants = this.variantData.filter(variant => firstChecked.getAttribute('value') === variant.option1);
+    const inputWrappers = [...this.querySelectorAll('fieldset')];
+
+    inputWrappers.forEach((option, index) => {
+      if (index === 0) return;
+
+      const optionInputs = [...option.querySelectorAll('input[type="radio"], option')];
+      const previousFieldset = inputWrappers[index - 1];
+      const previousChecked = previousFieldset?.querySelector(':checked');
+
+      if (!previousChecked) return;
+
+      const availableOptionInputsValue = selectedOptionOneVariants
+        .filter(variant => variant.available && variant[`option${index}`] === previousChecked.getAttribute('value'))
+        .map(variantOption => variantOption[`option${index + 1}`] ?? '')
+        .filter(v => v !== '');
+
+      this.setInputAvailability(optionInputs, availableOptionInputsValue);
+    });
+  }
+
+  setInputAvailability(listOfOptions, listOfAvailableOptions) {
+    listOfOptions.forEach(input => {
+      input.toggleAttribute('disabled', !listOfAvailableOptions.includes(input.getAttribute('value') ?? ''));
+    });
+  }
+}
+
+class FoxSellVariantSelect extends FoxSellVariantRadio {
+  constructor() {
+    super();
+  }
+
+  updateOptions() {
+    this.options = Array.from(this.querySelectorAll('select'), (select) => select.value);
+  }
+}
+
 class FoxSellProductModal extends HTMLElement {
   constructor() {
     super();
@@ -1349,28 +1349,387 @@ class FoxSellProductModal extends HTMLElement {
 
   async renderProductModal(productId) {
     if(!this.foxsell || !this.foxsell.config) return;
-    const productHandle = this.foxsell.config.productHandle;
-    const response = await(await fetch(`/products/${productHandle}?sections=foxsell-skeleton-product-modal`)).json();
 
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(response['foxsell-skeleton-product-modal'], 'text/html');
+    try {
+      const productHandle = this.foxsell.config.productHandle;
+      const response = await(await fetch(`/products/${productHandle}?sections=foxsell-shade-product-modal`)).json();
 
-    const productModal = doc.querySelector('foxsell-product-card[data-product-id="' + productId + '"]');
-    if(!productModal || !this.content) return;
-    this.content.innerHTML = productModal.outerHTML;
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(response['foxsell-shade-product-modal'], 'text/html');
+
+      const productModal = doc.querySelector('foxsell-product-card[data-product-id="' + productId + '"]');
+      if(!productModal || !this.content) return;
+      this.content.innerHTML = productModal.outerHTML;
+    } catch(error) {
+      console.error('Failed to render product modal:', error);
+    }
+  }
+}
+
+class FoxSellProductGallery extends HTMLElement {
+  constructor() {
+    super();
+  }
+
+  connectedCallback() {
+
+    const firstImage = this.querySelector('.foxsell-product-gallery__image');
+    if (firstImage) {
+      this.setFeaturedImage(firstImage);
+      firstImage.classList.add('is-active');
+    }
+
+    const images = this.querySelectorAll('.foxsell-product-gallery__image');
+    images.forEach(image => {
+      image.addEventListener('click', (event) => {
+
+        this.updateFeaturedImage(image);
+      });
+    });
+  }
+
+  setFeaturedImage(image) {
+    const featuredImage = document.createElement('img');
+    featuredImage.classList.add('js', 'foxsell-product-card__image');
+    featuredImage.setAttribute('src', image.src);
+    featuredImage.setAttribute('srcset', image.src);
+    this.prepend(featuredImage);
+  }
+
+  updateFeaturedImage(image) {
+    this.querySelector('.foxsell-product-gallery__image.is-active')?.classList.remove('is-active');
+    image.classList.add('is-active');
+    const featuredImage = this.querySelector('.foxsell-product-card__image');
+    if(featuredImage) {
+      featuredImage.setAttribute('src', image.src);
+      featuredImage.setAttribute('srcset', image.src);
+    }
+  }
+}
+
+class ShadeProductCard extends FoxSellProductCard {
+  constructor() {
+    super();
+  }
+
+  syncShadeBundleSelectionForProduct() {
+    if (!this.variantSelector?.currentVariant || !this.foxsell || !this.categoryId) return;
+
+    if (this.categoryId === '__add_ons__') {
+      for (const item of this.foxsell.getSelectedAddOns()) {
+        if (item.product?.id === this.productId) {
+          this.foxsell.removeFromAddOns(item, item.quantity, false);
+        }
+      }
+    } else {
+      const category = this.foxsell.getCategory(this.categoryId);
+      if (category) {
+        for (const item of [...category.items.values()]) {
+          if (item.product?.id === this.productId) {
+            this.foxsell.removeFromBundle(item, item.quantity, this.categoryId, false);
+          }
+        }
+      }
+    }
+
+    this.addToBundle();
+  }
+
+  handleVariantChange() {
+    this.updateFeaturedImage();
+    this.updatePrice();
+    if (this.variantSelector?.currentVariant && this.foxsell && this.categoryId) {
+      this.syncShadeBundleSelectionForProduct();
+    }
+    if (this.categoryId === '__add_ons__') {
+      this.updateQuantity(this.getCurrentAddOnQuantity());
+    } else {
+      this.updateQuantity(this.getCurrentQuantity());
+    }
+    this.toggleAddToBundleButton(false);
+    if (!this.variantSelector?.currentVariant) {
+      this.toggleAddToBundleButton(true);
+    } else {
+      const atLimit = this.categoryId === '__add_ons__'
+        ? this.isAddOnAtInventoryLimit()
+        : this.isVariantAtInventoryLimit();
+      if (atLimit) this.toggleAddToBundleButton(true);
+    }
+  }
+
+  updateQuantity(quantity) {
+    const el = this.querySelector('.quantity');
+    if (el) el.textContent = String(quantity);
+    this.classList.toggle('is-in-bundle', quantity > 0);
+  }
+}
+
+class ShadeBundleSummary extends FoxSellBundleSummary {
+  constructor() {
+    super();
+  }
+
+  //! MODIFY THIS METHOD
+
+  renderLineItem(item) {
+    let itemImage = item.featured_image ? item.featured_image.src : item.product.featured_image?.src;
+    if (itemImage) {
+      itemImage = itemImage.replace('?', '?width=150&');
+    }
+    let itemPrice = item.foxsell_price;
+    let discountedPrice = 0;
+    let discount = 0;
+    if (!this.foxsell || !this.foxsell.bundle) return '';
+    const priceStrategy = this.foxsell.bundle.priceStrategy;
+
+    //! Only apply price strategy to items, not add-ons
+    if(item.category.id !== '__add_ons__'){
+      if (priceStrategy && priceStrategy.strategy === 'dynamic_pricing') {
+        discount = priceStrategy.value;
+        discountedPrice = item.foxsell_price - (item.foxsell_price * (discount / 100));
+      }
+    }
+
+    return (`
+      <foxsell-bundle-line-item data-item-id="${item.id}" data-category-id="${item.category.id}" data-category-title="${item.category.title}" data-quantity="${item.quantity}" class="foxsell-bundle-summary__item">
+        <div><img src="${itemImage}" class="foxsell-bundle-summary__item-image" /></div>
+        <div>
+          ${item.category.id === '__add_ons__' ? `<sub>Add-On</sub>` : ''}
+          <div class="foxsell-bundle-summary__item-title">${item.product.title}</div>
+          ${item.option1 !== 'Default Title' ? `<div>${item.options.join(", ")}</div>` : ''}
+          <div class="foxsell-bundle-summary__item-price">
+            ${discountedPrice > 0 ? `
+              <div>
+                <span class="foxsell-slashed-price">${window.foxsell.formatMoney(itemPrice)}</span>
+                <span>(${discount}% off)</span>
+              </div>
+              <span>${window.foxsell.formatMoney(discountedPrice)}</span>`
+              :
+              `<span>${window.foxsell.formatMoney(itemPrice)}</span>`
+            }
+          </div>
+        </div>
+        <div class="foxsell-bundle-summary__item-quantity">x ${item.quantity}</div>
+        <div>
+          <button class="foxsell-bundle-summary__item-delete" aria-label="Remove item from bundle">
+            <svg xmlns="http://www.w3.org/2000/svg" 
+              width="16" 
+              height="16" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              stroke-width="2" 
+              stroke-linecap="round" 
+              stroke-linejoin="round"
+            >
+              <path d="M10 11v6"/>
+              <path d="M14 11v6"/>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+              <path d="M3 6h18"/>
+              <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+          </button>
+        </div>
+      </foxsell-bundle-line-item>
+    `)
+  }
+}
+
+class ShadeBundleProgressBar extends FoxSellBundleProgress {
+  constructor() {
+    super();
+  }
+
+  updateBundleProgress() {
+    //! you also have access to the following properties:
+    //! currentStep, maxSteps, message, progress, qaoEnabled, isCompleted, currentQuantity, requiredQuantity, remainingQuantity
+    const progressData = this.getBundleProgress();
+    if (!progressData) return;
+    const { currentStep, maxSteps, message, progress, qaoEnabled } = progressData;
+
+    //! Update the total quantity in the bundle summary header
+    const quantityEl = this.foxsell?.querySelector('.foxsell-bundle-summary__quantity');
+    if (quantityEl && this.foxsell?.bundle) {
+      const total = this.foxsell.bundle.items.reduce((acc, category) => acc + category.quantity, 0)
+        + this.foxsell.bundle.addOns.items.reduce((acc, item) => acc + item.quantity, 0);
+      quantityEl.textContent = `(${total})`;
+    }
+
+    //! Update the bundle pack progress
+    const bundlePackProgress = this.querySelector('.foxsell-bundle-pack__progress');
+    if (bundlePackProgress) {
+      this.updateBundlePackProgress(progressData);
+    }
+
+    //! Update the progress label
+    const progressLabel = this.querySelector('.foxsell-bundle-progress__label');
+    if (progressLabel) {
+      progressLabel.innerHTML = message;
+    }
+
+    //! Update the progress bars
+    const progressBarsWrapper = this.querySelector('.foxsell-bundle-progress__bars');
+    if (!progressBarsWrapper) return;
+
+    progressBarsWrapper.innerHTML = '';
+
+    for (let i = 1; i <= maxSteps; i++) {
+      const progressBar = document.createElement('div');
+      const progressTrack = document.createElement('div');
+
+      progressTrack.classList.add('foxsell-bundle-progress__track');
+      progressBar.classList.add('foxsell-bundle-progress__bar');
+
+      if (i < currentStep) {
+        progressBar.style.width = '100%';
+      } else if (i === currentStep && qaoEnabled) {
+        progressBar.style.width = `${progress}%`;
+      } else if (i === currentStep && !qaoEnabled) {
+        progressBar.style.width = '100%';
+      }
+
+      progressTrack.appendChild(progressBar);
+      progressBarsWrapper.appendChild(progressTrack);
+    }
+  }
+
+  updateBundlePackProgress(progressData) {
+    const { currentStep, maxSteps, message, progress, qaoEnabled } = progressData;
+    if (!this.foxsell) return;
+    const { originalTotalPrice, totalPrice } = this.foxsell.getTotalPrice();
+    const priceWrapper = this.querySelector('.foxsell-bundle-summary__price-value');
+
+    if(priceWrapper){
+      if (originalTotalPrice > 0 && totalPrice > 0 && (totalPrice !== originalTotalPrice)) {
+        priceWrapper.innerHTML = `<span class="foxsell-slashed-price">${window.foxsell?.formatMoney?.(originalTotalPrice)}</span>
+        <span>${window.foxsell?.formatMoney?.(totalPrice)}</span>`;
+      } else {
+        priceWrapper.innerHTML = `${window.foxsell?.formatMoney?.(originalTotalPrice)}`;
+      }
+    }
+
+    const bundlePackProgressItems = this.querySelectorAll('.foxsell-bundle-pack__progress-item');
+    const currentValidOption = this.foxsell.getCurrentValidOption()?.title ?? '';
+    if (bundlePackProgressItems.length > 0 && currentValidOption !== '') {
+      bundlePackProgressItems.forEach(item => {
+        if (item.dataset.id === currentValidOption) {
+          item.classList.add('active');
+        } else {
+          item.classList.remove('active');
+        }
+      });
+    } else {
+      bundlePackProgressItems[0]?.classList.add('active');
+    }
+  }
+}
+
+class ShadeMixMatch extends FoxSellMixMatch {
+  constructor() {
+    super();
+    this.currentStep = 'items';
+    this.continueButton = null;
+    this.goBackButton = null;
+    this.addToCartButton = null;
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+
+    this.continueButton = this.querySelector('.foxsell__continue-button');
+    this.goBackButton = this.querySelector('.foxsell__go-back-button');
+    this.addToCartButton = this.querySelector('.foxsell-add-to-cart-button');
+
+    this.continueButton?.addEventListener('click', () => {
+      this.currentStep = 'addons';
+      this.toggleAddOnsCategory();
+    });
+
+    this.goBackButton?.addEventListener('click', () => {
+      this.currentStep = 'items';
+      this.toggleAddOnsCategory();
+    });
+
+    this.validateBundle();
+  }
+
+  toggleContinueButton() {
+    if (!this.continueButton || !this.goBackButton) return;
+
+    const isAddOnEnabled = this.bundle.addOns.enabled;
+    const isItemsValid = this.bundle.isItemsValid;
+
+    if (!isAddOnEnabled) {
+
+      this.continueButton.classList.add('foxsell--hidden');
+      this.goBackButton.classList.add('foxsell--hidden');
+      this.addToCartButton?.classList.remove('foxsell--hidden');
+    } else if (this.currentStep === 'items') {
+
+      this.continueButton.classList.remove('foxsell--hidden');
+      this.continueButton.toggleAttribute('disabled', !isItemsValid);
+      this.goBackButton.classList.add('foxsell--hidden');
+      this.addToCartButton?.classList.add('foxsell--hidden');
+    } else {
+
+      this.continueButton.classList.add('foxsell--hidden');
+      this.goBackButton.classList.remove('foxsell--hidden');
+      this.addToCartButton?.classList.remove('foxsell--hidden');
+    }
+  }
+
+  toggleAddOnsCategory() {
+    const showAddOns = this.currentStep === 'addons';
+    const categories = this.querySelectorAll('.foxsell-category__item');
+
+    categories.forEach(category => {
+      const isAddOn = category.getAttribute('data-category') === '__add_ons__';
+      category.classList.toggle('active', showAddOns === isAddOn);
+    });
+
+    this.toggleContinueButton();
+  }
+
+  validateAddOns() {
+    return true;
+  }
+
+  renderPrice() {
+    const addToCartButton = this.querySelector('button[type="submit"]');
+    const productPrice = document.querySelector('.foxsell-mix-match__product-price');
+    if (!addToCartButton) return;
+
+    if (!this.initialAddToCartButtonHTML) {
+      this.initialAddToCartButtonHTML = addToCartButton.innerHTML;
+    }
+
+    const { originalTotalPrice, totalPrice } = this.bundle;
+    if (originalTotalPrice > 0 && totalPrice > 0 && (totalPrice !== originalTotalPrice)) {
+      const newProductPriceHTML = `
+      <span class="foxsell-slashed-price">${window.foxsell?.formatMoney?.(originalTotalPrice)}</span>
+      <span>${window.foxsell?.formatMoney?.(totalPrice)}</span>`;
+
+      addToCartButton.innerHTML = `${this.initialAddToCartButtonHTML} - ${newProductPriceHTML}`;
+      if(productPrice) {
+        productPrice.innerHTML = newProductPriceHTML;
+      }
+    } else {
+      addToCartButton.innerHTML = this.initialAddToCartButtonHTML;
+    }
   }
 }
 
 const elements = [
-  ['foxsell-mix-match', FoxSellMixMatch],
+  ['foxsell-mix-match', ShadeMixMatch],
   ['foxsell-category-header', FoxSellCategoryHeader],
-  ['foxsell-product-card', FoxSellProductCard],
-  ['foxsell-bundle-summary', FoxSellBundleSummary],
+  ['foxsell-product-card', ShadeProductCard],
+  ['foxsell-bundle-summary', ShadeBundleSummary],
   ['foxsell-bundle-line-item', FoxSellBundleLineItem],
-  ['foxsell-bundle-progress', FoxSellBundleProgress],
+  ['foxsell-bundle-progress', ShadeBundleProgressBar],
   ['foxsell-variant-radio', FoxSellVariantRadio],
   ['foxsell-variant-select', FoxSellVariantSelect],
   ['foxsell-product-modal', FoxSellProductModal],
+  ['foxsell-product-gallery', FoxSellProductGallery]
 ];
 
 for (const [name, constructor] of elements) {

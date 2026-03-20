@@ -29,7 +29,7 @@
 {% # theme-check-enable %}
  
 <foxsell-mix-match data-bundle-id="{{ bundle_id }}">
-  <div class="foxsell-mix-match__steps">
+  <div class="foxsell-mix-match__steps foxsell--mobile-hide">
     {% for step in step_by_step_config.categories_metadata %}
       <div class="foxsell-mix-match__step" data-step="{{ step.title | sha1 }}">
         <div class="foxsell-mix-match__step-title">{{ step.title }}</div>
@@ -80,7 +80,7 @@
         </div>
       {% endfor %}
 
-      <div class="foxsell-category__item" data-category="__add_ons__">
+      <div class="foxsell-category__item" data-category-id="__add_ons__">
         <foxsell-category-header data-category-id="__add_ons__" class="foxsell-category__header">
           {% capture quantity_html %}
             <span class='foxsell-category__quantity'>0/{{ settings.addOn.maximum }}</span>
