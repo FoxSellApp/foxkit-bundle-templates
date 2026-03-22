@@ -498,8 +498,8 @@ class FoxSellMixMatch extends HTMLElement {
     const { originalTotalPrice, totalPrice } = this.bundle;
     if (originalTotalPrice > 0 && totalPrice > 0 && (totalPrice !== originalTotalPrice)) {
       addToCartButton.innerHTML = `${this.initialAddToCartButtonHTML} -
-      <span class="foxsell-slashed-price">${window.foxsell?.formatMoney?.(originalTotalPrice)}</span>
-      <span>${window.foxsell?.formatMoney?.(totalPrice)}</span>`;
+      <span>${window.foxsell?.formatMoney?.(totalPrice)}</span>
+      <span class="foxsell-slashed-price">${window.foxsell?.formatMoney?.(originalTotalPrice)}</span>`;
     } else {
       addToCartButton.innerHTML = this.initialAddToCartButtonHTML;
     }
@@ -646,11 +646,11 @@ class FoxSellBundleSummary extends HTMLElement {
           ${item.option1 != 'Default Title' ? `<div>${item.options.join(", ")}</div>` : ''}
           <div>
             ${discountedPrice > 0 ? `
+              <span>${window.foxsell?.formatMoney?.(discountedPrice)} x ${item.quantity}</span>
               <div>
                 <span class="foxsell-slashed-price">${window.foxsell?.formatMoney?.(itemPrice)}</span>
                 <span>(${discount}% off)</span>
-              </div>
-              <span>${window.foxsell?.formatMoney?.(discountedPrice)} x ${item.quantity}</span>`
+              </div>`
               :
               `<span>${window.foxsell?.formatMoney?.(itemPrice)} x ${item.quantity}</span>`
             }
@@ -1063,8 +1063,8 @@ class FoxSellProductCard extends HTMLElement {
 
     if (discountedPrice > 0) {
       priceEl.innerHTML = `
-      <span class="foxsell-slashed-price">${window.foxsell?.formatMoney?.(price)}</span>
-      <span class="foxsell-price">${window.foxsell?.formatMoney?.(discountedPrice)}</span>`;
+      <span class="foxsell-price">${window.foxsell?.formatMoney?.(discountedPrice)}</span>
+      <span class="foxsell-slashed-price">${window.foxsell?.formatMoney?.(price)}</span>`;
     } else {
       priceEl.innerHTML = `<span>${window.foxsell?.formatMoney?.(price)}</span>`;
     }
