@@ -253,7 +253,7 @@
 }
 
 .foxsell-product-card[data-category="__add_ons__"].active {
-  display: block;
+  display: flex;
 }
 
 /* Variant radio — shared
@@ -662,7 +662,7 @@
   }
 
   .foxsell-bundle-summary__toggle {
-    display: none;
+    display: none !important;
   }
 
   .foxsell-bundle-summary__progress-wrapper {

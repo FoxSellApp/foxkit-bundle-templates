@@ -1462,8 +1462,8 @@ class StepBundleSummary extends FoxSellBundleSummary {
       category: {
         id: '__add_ons__',
         title: 'AddOns',
-        quantity: item.quantity,
-        maxQuantity: 1,
+        quantity: bundle.addOns.selectedQuantity,
+        maxQuantity: bundle.addOns.maximum,
         metadata: this.foxsell?.config?.stepByStepConfig?.add_on_settings ?? {}
       }
     }));

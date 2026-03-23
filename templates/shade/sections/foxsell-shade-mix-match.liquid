@@ -128,6 +128,7 @@
   assign bundle_product = section.settings.bundle_product | default: product
 %}
 
+<div class="{% if section.settings.wrapper_custom_classes != blank %} {{ section.settings.wrapper_custom_classes | strip }}{% endif %}">
 <div class="foxsell-mix-match-wrapper">
   <div class="foxsell-mix-match__product-image-gallery{% if section.settings.gallery_feature_first_image %} foxsell-mix-match__product-image-gallery--featured-first{% endif %}">
     {% if bundle_product != blank and bundle_product.images.size > 0 %}
@@ -166,6 +167,7 @@
     {% render 'foxsell-shade-mix-match', product: bundle_product, section: section %}
   </div>
 </div>
+</div>
 
 {% schema %}
 {
@@ -176,6 +178,13 @@
       "type": "product",
       "id": "bundle_product",
       "label": "Bundle product"
+    },
+    {
+      "type": "text",
+      "id": "wrapper_custom_classes",
+      "label": "Wrapper CSS classes",
+      "info": "Add custom classes to the wrapper",
+      "default": "section section--page-width"
     },
     {
       "type": "color",

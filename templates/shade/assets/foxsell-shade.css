@@ -604,7 +604,7 @@
   }
 
   .foxsell-bundle-summary__toggle {
-    display: none;
+    display: none !important;
   }
 
   .foxsell-bundle-summary__progress-wrapper {

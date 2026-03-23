@@ -17,7 +17,7 @@
   assign bundle_product = section.settings.bundle_product | default: product
 %}
 
-<div class="foxsell-mix-match-wrapper">
+<div class="foxsell-mix-match-wrapper{% if section.settings.wrapper_custom_classes != blank %} {{ section.settings.wrapper_custom_classes | strip }}{% endif %}">
   {% render 'foxsell-step-mix-match', product: bundle_product, section: section %}
 </div>
 
@@ -30,6 +30,13 @@
       "type": "product",
       "id": "bundle_product",
       "label": "Bundle product"
+    },
+    {
+      "type": "text",
+      "id": "wrapper_custom_classes",
+      "label": "Wrapper CSS classes",
+      "info": "Add custom classes to the wrapper",
+      "default": "section section--page-width"
     },
     {
       "type": "color",

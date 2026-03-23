@@ -29,7 +29,7 @@
 {% # theme-check-enable %}
  
 <foxsell-mix-match data-bundle-id="{{ bundle_id }}">
-  <div class="foxsell-mix-match__steps foxsell--mobile-hide">
+  <div class="foxsell-mix-match__steps">
     {% for step in step_by_step_config.categories_metadata %}
       <div class="foxsell-mix-match__step" data-step="{{ step.title | sha1 }}">
         <div class="foxsell-mix-match__step-title">{{ step.title }}</div>
