@@ -372,6 +372,9 @@ class FoxSellMixMatch extends HTMLElement {
     }
 
     const isValid = this.config.categories.reduce((allValid, category) => {
+      const isOptional = category.quantity === 0;
+
+      if (isOptional) return allValid;
       const selectedCategory = this.getCategory(category.id);
       if (!selectedCategory) return false;
       const atMax = selectedCategory.quantity >= selectedCategory.maxQuantity;
@@ -644,16 +647,30 @@ class FoxSellProductCard extends HTMLElement {
     } else {
       this.updateQuantity(this.getCurrentQuantity());
     }
-    this.toggleAddToBundleButton(false);
+
     if (!this.variantSelector?.currentVariant) {
+      this.disableAddToBundle = true;
       this.toggleAddToBundleButton(true);
-    } else {
-      const atLimit = this.categoryId === '__add_ons__'
-        ? this.isAddOnAtInventoryLimit()
-        : this.isVariantAtInventoryLimit();
-      this.disableAddToBundle = atLimit;
-      this.toggleAddToBundleButton(atLimit);
+      return;
     }
+
+    let disable;
+    if (this.categoryId === '__add_ons__') {
+      const bundle = this.foxsell?.bundle;
+      if (!bundle) {
+        disable = true;
+      } else {
+        const { enabled, allowedIds, isMaxedOut } = bundle.addOns;
+        const isAllowed = allowedIds.includes(this.variantSelector.product?.id ?? 0);
+        disable = !enabled || !isAllowed || isMaxedOut || this.isAddOnAtInventoryLimit();
+      }
+    } else {
+      const category = this.foxsell?.getCategory(this.categoryId);
+      disable = (category?.isMaxQuantity ?? false) || this.isVariantAtInventoryLimit();
+    }
+
+    this.disableAddToBundle = disable;
+    this.toggleAddToBundleButton(disable);
   }
 
   handleBundleUpdated(event) {
@@ -791,7 +808,7 @@ class FoxSellProductCard extends HTMLElement {
 
   isVariantAtInventoryLimit() {
     const variant = this.variantSelector?.currentVariant;
-    if (!variant || !this.foxsell || !this.categoryId) return false;
+    if (!variant || !this.foxsell || !this.categoryId) return true;
 
     if (!variant.inventory_management || variant.inventory_policy === 'continue') return false;
     const currentQuantity = this.getCurrentQuantity();
@@ -800,7 +817,7 @@ class FoxSellProductCard extends HTMLElement {
 
   isAddOnAtInventoryLimit() {
     const variant = this.variantSelector?.currentVariant;
-    if (!variant || !this.foxsell || !this.categoryId) return false;
+    if (!variant || !this.foxsell || !this.categoryId) return true;
     if (!variant.inventory_management || variant.inventory_policy === 'continue') return false;
     const currentQuantity = this.getCurrentAddOnQuantity() ?? 0;
     return currentQuantity >= variant.inventory_quantity;
