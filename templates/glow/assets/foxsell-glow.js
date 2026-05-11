@@ -1,8 +1,109 @@
 'use strict';
 
 const FOXSELL_EVENTS = {
-  bundleUpdated: 'foxsell:bundle-updated',
+  bundleUpdated: 'foxsell:bundle-updated'};
+
+const emptyBundleState = {
+  items: [],
+  addOns: {
+    addOnStrategy: '',
+    enabled: false,
+    minimum: 0,
+    maximum: 0,
+    selectedQuantity: 0,
+    isMaximumQuantity: false,
+    allowedIds: [],
+    items: [],
+  },
+  isValid: false,
+  isAddOnsValid: false,
+  isItemsValid: false,
+  originalTotalPrice: 0,
+  totalPrice: 0,
+  totalDiscount: 0,
+  id: '',
+  qaoEnabled: false,
+  priceStrategy: null,
 };
+
+const emptyTotalPrice = {
+  originalTotalPrice: 0,
+  totalPrice: 0,
+  totalDiscount: 0,
+  discountValue: 0,
+  priceStrategy: 'dynamic_pricing',
+  itemsTotalPrice: 0,
+  addOnsTotalPrice: 0,
+};
+
+const emptyAddOnsConfig = {
+  addOnStrategy: 'add_on_step',
+  allowedIds: [],
+  enabled: false,
+  minimum: 0,
+  maximum: 0,
+  selectedQuantity: 0,
+  isMaximumQuantity: false,
+};
+
+const DELETE_ICON_SVG = `
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+`;
+
+let bodyScrollLockDepth = 0;
+
+let bodyScrollLockY = 0;
+
+function lockBodyScroll() {
+  if (bodyScrollLockDepth === 0) {
+    bodyScrollLockY = window.scrollY;
+    const body = document.body;
+    body.style.position = 'fixed';
+    body.style.top = `-${bodyScrollLockY}px`;
+    body.style.left = '0';
+    body.style.right = '0';
+    body.style.overflow = 'hidden';
+  }
+  bodyScrollLockDepth += 1;
+}
+
+function unlockBodyScroll() {
+  if (bodyScrollLockDepth === 0) return;
+  bodyScrollLockDepth -= 1;
+  if (bodyScrollLockDepth > 0) return;
+  const body = document.body;
+  body.style.position = '';
+  body.style.top = '';
+  body.style.left = '';
+  body.style.right = '';
+  body.style.overflow = '';
+  window.scrollTo(0, bodyScrollLockY);
+}
+
+function getItemIdFromGid(gid) {
+  return parseInt(gid.split('/').pop() ?? '0');
+}
+
+function getAddOnPrice(productId, variantId, addOnProductProperties) {
+  let pid = `gid://shopify/Product/${productId}`;
+  let vid = `gid://shopify/ProductVariant/${variantId}`;
+  let addOnProperty = addOnProductProperties[pid]?.variants[vid];
+  if(!addOnProperty) return 0;
+  return addOnProperty * 100;
+}
+
+function getVariantPrice(variants, option) {
+  if (!option?.variant_id || !option?.price) {
+    return { price: 0, compareAtPrice: 0 };
+  }
+  const variant = variants.find((v) => v.id === parseInt(option.variant_id));
+  if (!variant) {
+    return { price: 0, compareAtPrice: 0 };
+  }
+  const price = (option.price.value ?? 0) * 100;
+  const compareAtPrice = variant.compare_at_price ?? 0;
+  return { price, compareAtPrice };
+}
 
 class FoxSellMixMatch extends HTMLElement {
   constructor() {
@@ -13,69 +114,67 @@ class FoxSellMixMatch extends HTMLElement {
 
     this.config = null;
 
-    this.bundle = this.getEmptyBundle();
-    this.continueButton = this.querySelector('input[type="checkbox"].toggle-add-ons-checkbox');
-    this._handleContinueButtonClick = this.toggleAddOnsCategory.bind(this);
+    this.bundle = emptyBundleState;
 
-    try {
-      const configElement = this.querySelector('#foxsell-config[type="application/json"]');
-      this.config = configElement ? JSON.parse(configElement.textContent || '{}') : null;
-    } catch (error) {
-      console.error('Failed to parse foxsell config:', error);
-      this.config = null;
-    }
+    const config = window.foxsell.config[this.dataset.bundleId ?? ''];
+    this.config = config ?? null;
+    this.boundHandleOverlayClick = this.handleOverlayClick.bind(this);
   }
 
-  getEmptyBundle() {
-    return {
-      items: [],
-      addOns: {
-        addOnStrategy: '',
-        enabled: false,
-        minimum: 0,
-        maximum: 0,
-        selectedQuantity: 0,
-        isMaxedOut: false,
-        allowedIds: [],
-        items: []
-      },
-      isValid: false,
-      isAddOnsValid: false,
-      isItemsValid: false,
-      originalTotalPrice: 0,
-      totalPrice: 0,
-      totalDiscount: 0,
-      id: '',
-      qaoEnabled: false,
-      priceStrategy: null,
-    };
+  connectedCallback() {
+    this.validateBundle();
+
+    this.querySelector('.foxsell-add-to-cart-button')?.classList.remove('foxsell--hidden');
+    this.querySelector('.foxsell-mix-match__overlay')?.addEventListener('click', this.boundHandleOverlayClick);
+  }
+
+  disconnectedCallback() {
+    this.querySelector('.foxsell-mix-match__overlay')?.removeEventListener('click', this.boundHandleOverlayClick);
+  }
+
+  handleOverlayClick() {
+
+    const modal = this.querySelector('#foxsell-product-dialog[data-modal]');
+    if (modal?.hasAttribute('open')) {
+       (this.querySelector('foxsell-product-modal'))?.closeModal();
+      return;
+    }
+
+    const summaryToggle =  (this.querySelector('#foxsell-bundle-summary-toggle'));
+    if (summaryToggle?.getAttribute('aria-expanded') === 'true') {
+      summaryToggle.click();
+    }
   }
 
   getCurrentPriceStrategy() {
     if (!this.config) return null;
+    const settingsPrice = this.config.settings.price;
     const qaoEnabled = (this.config.options?.length ?? 0) > 0;
-    if (!qaoEnabled) return this.config.settings.price;
+    if (!qaoEnabled) return settingsPrice;
 
-    const items = this.getSelectedItems().flatMap(category =>
-      Array.isArray(category.items) ? category.items : []
-    );
-    const itemsCount = items.reduce((sum, item) => sum + item.quantity, 0);
-    const currentValidOption = this.config.options.findLast(opt => Number(opt.quantity ?? opt) <= itemsCount);
-    return currentValidOption?.price ?? null;
+    let value = 0;
+    const currentValidOption = this.getCurrentValidOption();
+
+    if(currentValidOption) {
+      value = currentValidOption.price.value;
+    }
+
+    return {
+      strategy: settingsPrice.strategy,
+      value: value,
+    };
   }
 
   getCurrentValidOption() {
     if (!this.config || !this.config.options?.length) return null;
 
-    const items = this.getSelectedItems().flatMap(category =>
-      Array.isArray(category.items) ? category.items : []
-    );
+    const items = this.getSelectedItems();
     const itemsCount = items.reduce((sum, item) => sum + item.quantity, 0);
     return this.config.options.findLast(opt => Number(opt.quantity ?? opt) <= itemsCount) ?? null;
   }
 
   buildBundle(isValid, isAddOnsValid, isItemsValid) {
-    if (!this.config) return this.getEmptyBundle();
+    if (!this.config) return { ...emptyBundleState };
 
     const qaoEnabled = (this.config.options?.length ?? 0) > 0;
     const items = this.getSelectedItems();
@@ -84,22 +183,12 @@ class FoxSellMixMatch extends HTMLElement {
     const id = this.config.bundleId ? `${this.config.bundleId}_${Date.now()}` : '';
     const priceStrategy = this.getCurrentPriceStrategy();
 
-    const { allowedIds, minimum, maximum, isMaxedOut, addOnStrategy, selectedQuantity } = this.getAddOnsConfig();
-
-    const addOns = {
-      addOnStrategy,
-      enabled: allowedIds.length > 0,
-      minimum,
-      maximum,
-      selectedQuantity,
-      isMaxedOut,
-      allowedIds,
-      items: addOnItems
-    };
-
     return {
       items,
-      addOns,
+      addOns: {
+        ...this.getAddOnsConfig(),
+        items: addOnItems,
+      },
       isValid,
       isAddOnsValid,
       isItemsValid,
@@ -110,13 +199,6 @@ class FoxSellMixMatch extends HTMLElement {
       qaoEnabled,
       priceStrategy,
     };
-  }
-
-  connectedCallback() {
-    this.validateBundle();
-    if (this.continueButton) {
-      this.continueButton.addEventListener('change', this._handleContinueButtonClick);
-    }
   }
 
   getCategoryConfig(categoryId) {
@@ -151,15 +233,13 @@ class FoxSellMixMatch extends HTMLElement {
   }
 
   getSelectedItems() {
-    return Array.from(this.selectedItems.values()).map(category => ({
-      id: category.id,
-      title: category.title,
-      quantity: category.quantity,
-      maxQuantity: category.maxQuantity,
-      isMaxQuantity: category.isMaxQuantity,
-      price: category.price,
-      items: Array.from(category.items.values())
-    }));
+    return Array.from(this.selectedItems.values()).flatMap(category => {
+      const { items, ...categoryData } = category;
+      return Array.from(items.values()).map(item => ({
+        ...item,
+        category: categoryData,
+      }));
+    });
   }
 
   getSelectedAddOns() {
@@ -197,7 +277,7 @@ class FoxSellMixMatch extends HTMLElement {
         bundle: this.bundle,
         action: 'add',
         item: this.getItem(item.id, categoryId),
-        category: this.bundle.items.find((c) => c.id === categoryId),
+        category: this.selectedItems.get(categoryId),
       }
     }));
   }
@@ -218,7 +298,7 @@ class FoxSellMixMatch extends HTMLElement {
 
     selectedCategory.quantity = Math.max(selectedCategory.quantity - quantity, 0);
     const categoryForEvent = selectedCategory.quantity <= 0
-      ? { ...selectedCategory, isMaxQuantity: false, items: Array.from(selectedCategory.items.values()) }
+      ? { ...selectedCategory, isMaxQuantity: false }
       : null;
 
     if (selectedCategory.quantity <= 0) {
@@ -228,7 +308,7 @@ class FoxSellMixMatch extends HTMLElement {
     this.validateBundle();
 
     if (!dispatchEvent) return;
-    const category = categoryForEvent ?? this.bundle.items.find((c) => c.id === categoryId);
+    const category = categoryForEvent ?? this.selectedItems.get(categoryId);
     this.dispatchEvent(new CustomEvent(FOXSELL_EVENTS.bundleUpdated, {
       detail: {
         bundle: this.bundle,
@@ -239,9 +319,10 @@ class FoxSellMixMatch extends HTMLElement {
     }));
   }
 
-  clearBundle() {
+  clearBundle(dispatchEvent = true) {
     this.selectedItems.clear();
     this.validateBundle();
+    if (!dispatchEvent) return;
     this.dispatchEvent(new CustomEvent(FOXSELL_EVENTS.bundleUpdated, {
       detail: {
         bundle: this.bundle,
@@ -303,8 +384,10 @@ class FoxSellMixMatch extends HTMLElement {
     }));
   }
 
-  clearAddOns() {
+  clearAddOns(dispatchEvent = true) {
     this.selectedAddOns.clear();
+    if (!dispatchEvent) return;
+    this.validateBundle();
     this.dispatchEvent(new CustomEvent(FOXSELL_EVENTS.bundleUpdated, {
       detail: {
         bundle: this.bundle,
@@ -317,19 +400,89 @@ class FoxSellMixMatch extends HTMLElement {
     if (!this.config) return;
     const qaoEnabled = this.config.options?.length > 0;
     const isItemsValid = qaoEnabled ? this.validateBundleWithQAO() : this.validateBundleWithoutQAO();
-    const isAddOnsValid = this.validateAddOns();
+    const isAddOnsValid = this.validateAddOns(isItemsValid);
 
     const isValid = isItemsValid && isAddOnsValid;
     this.bundle = this.buildBundle(isValid, isAddOnsValid, isItemsValid);
 
     this.updateLineItemProperties();
-    this.toggleContinueButton();
     this.renderPrice();
     this.toggleAddToCartButton(!isValid);
   }
 
-  validateAddOns() {
-    return true;
+  validateAddOns(isItemsValid) {
+    if (!this.config) return false;
+    const { allowedIds, maximum, addOnStrategy } = this.getAddOnsConfig();
+
+    if(addOnStrategy === 'automatic_add') {
+      if(isItemsValid) {
+        this.autoAddAddOns();
+      } else {
+        this.clearAddOns(false);
+      }
+      return true;
+    }
+
+    let selectedQuantity = 0;
+    let refreshBundleState = false;
+
+    for (const selectedAddOn of this.getSelectedAddOns()) {
+      if (!allowedIds.includes(selectedAddOn.product.id)) {
+        this.removeFromAddOns(selectedAddOn, selectedAddOn.quantity, false);
+        refreshBundleState = true;
+      } else {
+        if((selectedQuantity + selectedAddOn.quantity) > maximum) {
+          this.removeFromAddOns(selectedAddOn, selectedAddOn.quantity, false);
+          refreshBundleState = true;
+        } else {
+          selectedQuantity = selectedQuantity + selectedAddOn.quantity;
+        }
+      }
+    }
+
+    if (refreshBundleState) {
+      this.dispatchEvent(new CustomEvent(FOXSELL_EVENTS.bundleUpdated, {
+        detail: {
+          bundle: this.bundle,
+          action: 'refresh',
+        }
+      }));
+    }
+
+    const selectedAddOns = this.getSelectedAddOns();
+    let { minimum: minimumAddOns, maximum: maximumAddOns } = this.getAddOnsConfig();
+    const selectedAddOnsQuantity = selectedAddOns.reduce((sum, item) => sum + item.quantity, 0);
+    let isValid = selectedAddOnsQuantity >= minimumAddOns && selectedAddOnsQuantity <= maximumAddOns;
+
+    return isValid;
+  }
+
+  autoAddAddOns() {
+    if(!this.config) return;
+    const { allowedIds, maximum } = this.getAddOnsConfig();
+
+    this.clearAddOns(false);
+
+    let selectedQuantity = 0;
+    for (const allowedId of allowedIds) {
+      const item = this.config.addOnProducts.find(item => item.id === allowedId);
+      if(item && item.variants[0]) {
+        this.selectedAddOns.set(item.variants[0].id, {
+          ...item.variants[0],
+          foxsell_price: getAddOnPrice(item.id, item.variants[0].id, this.config.addOnProductProperties),
+          product: {
+            ...item,
+            featured_image: {
+              src: item.featured_image,
+              alt: item.title
+            },
+          },
+          quantity: 1,
+        });
+        selectedQuantity = selectedQuantity + 1;
+        if(selectedQuantity >= maximum) break;
+      }
+    }
   }
 
   validateBundleWithQAO() {
@@ -343,19 +496,16 @@ class FoxSellMixMatch extends HTMLElement {
       .filter(n => !Number.isNaN(n));
 
     const maxQuantity = optionLimits.length ? Math.max(...optionLimits) : 0;
-    optionLimits.length ? Math.min(...optionLimits) : 0;
+    const minQuantity = optionLimits.length ? Math.min(...optionLimits) : 0;
 
-    const items = this.getSelectedItems().flatMap(category =>
-      Array.isArray(category.items) ? category.items : []
-    );
+    const items = this.getSelectedItems();
 
     const itemsCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
     let isValid = false;
 
     {
-      isValid = Array.isArray(this.config.options)
-        && this.config.options.some(opt => Number(opt.quantity ?? opt) === itemsCount);
+      isValid = itemsCount >= minQuantity;
     }
 
     this.selectedItems.forEach(category => {
@@ -386,14 +536,35 @@ class FoxSellMixMatch extends HTMLElement {
   }
 
   getAddOnsConfig() {
+    if(!this.config) return { ...emptyAddOnsConfig };
+    //! support add-on strategy: add_on_step, automatic_add
+    const addOnStrategy = this.config.additionalSettings['add_on_settings'].strategy ?? 'add_on_step';
+
+    const allowedIds = Object.keys(this.config.addOnProductProperties).map(key => getItemIdFromGid(key));
+
+    let minimum = 0;
+    let maximum = 0;
+
+    if(this.config.options.length > 0) {
+      const currentValidOption = this.getCurrentValidOption();
+      if(!currentValidOption) return { ...emptyAddOnsConfig };
+      minimum = currentValidOption.add_on.minimum ?? 0;
+      maximum = currentValidOption.add_on.maximum ?? 0;
+    } else {
+      minimum = this.config.settings.addOn.minimum ?? 0;
+      maximum = this.config.settings.addOn.maximum ?? 0;
+    }
+
+    const isMaximumQuantity = this.getSelectedAddOns().reduce((sum, item) => sum + item.quantity, 0) >= maximum;
+    const selectedQuantity = this.getSelectedAddOns().reduce((sum, item) => sum + item.quantity, 0);
     return {
-      addOnStrategy: '',
-      allowedIds: [],
-      enabled: false,
-      minimum: 0,
-      maximum: 0,
-      selectedQuantity: 0,
-      isMaxedOut: false
+      addOnStrategy: addOnStrategy,
+      allowedIds: allowedIds,
+      enabled: allowedIds.length > 0,
+      minimum,
+      maximum,
+      selectedQuantity,
+      isMaximumQuantity
     };
   }
 
@@ -414,15 +585,13 @@ class FoxSellMixMatch extends HTMLElement {
       }
     }
 
-    const lineItems = this.bundle.items.flatMap(category =>
-      (category.items || []).map(item => ({
-        variantId: Number(item.id) || item.id,
-        quantity: item.quantity || 1,
-        category: category.title,
-        type: 'product',
-        properties: item.properties || {}
-      }))
-    );
+    const lineItems = this.bundle.items.map(item => ({
+      variantId: Number(item.id) || item.id,
+      quantity: item.quantity || 1,
+      category: item.category.title,
+      type: 'product',
+      properties: item.properties || {}
+    }));
 
     const addOnLineItems = this.bundle.addOns.items.map(item => ({
       variantId: Number(item.id) || item.id,
@@ -447,47 +616,61 @@ class FoxSellMixMatch extends HTMLElement {
   }
 
   getTotalPrice() {
-    if (!this.config) return { originalTotalPrice: 0, totalPrice: 0, totalDiscount: 0 };
+    if (!this.config) return { ...emptyTotalPrice };
 
-    const items = this.getSelectedItems().flatMap((category) =>
-      (Array.isArray(category.items) ? category.items : []).map(item => ({
-        ...item,
-        category: {
-          id: category.id,
-          title: category.title,
-          quantity: category.quantity,
-          maxQuantity: category.maxQuantity
-        }
-      }))
-    );
+    const itemsTotalPrice = this.getSelectedItems().reduce((sum, item) => {
+      return sum + (item.foxsell_price ?? item.price) * item.quantity;
+    }, 0);
 
-    const addOnItems = this.getSelectedAddOns().map(item => ({
-      ...item,
-      category: {
-        id: '__add_ons__',
-        title: 'AddOns',
-        quantity: item.quantity,
-        maxQuantity: 1
-      }
-    }));
+    const addOnsTotalPrice = this.getSelectedAddOns().reduce((sum, item) => {
+      return sum + (item.foxsell_price ?? item.price) * item.quantity;
+    }, 0);
 
-    const addOnsTotalPrice = addOnItems.reduce((sum, item) => sum + item.foxsell_price * item.quantity, 0);
-
-    const priceStrategy = this.getCurrentPriceStrategy();
-    let originalTotalPrice = items.reduce((sum, item) => sum + item.foxsell_price * item.quantity, 0);
+    let discountValue = 0;
+    let totalDiscount = 0;
+    let originalTotalPrice = 0;
     let totalPrice = 0;
-    if (priceStrategy && priceStrategy.strategy === 'dynamic_pricing') {
-      const discount = priceStrategy.value;
-      totalPrice = originalTotalPrice - (originalTotalPrice * (discount / 100));
-    } else if (priceStrategy) {
-      totalPrice = priceStrategy.value * 100;
+
+    const priceStrategy = this.config.settings.price.strategy;
+    const qaoEnabled = this.config.options.length > 0;
+
+    if(priceStrategy === 'dynamic_pricing') {
+      originalTotalPrice = itemsTotalPrice + addOnsTotalPrice;
+      if(qaoEnabled) {
+        const validOption = this.getCurrentValidOption();
+        if(validOption) {
+          discountValue = validOption.price.value;
+        }
+      } else {
+        discountValue = this.config.settings.price.value;
+      }
+      totalDiscount = (discountValue / 100) * itemsTotalPrice;
+      totalPrice = (itemsTotalPrice - totalDiscount) + addOnsTotalPrice;
+    } else {
+      if(qaoEnabled) {
+        const validOption = this.getCurrentValidOption();
+        if(validOption) {
+          const { price, compareAtPrice } = getVariantPrice(this.config.variants, validOption);
+          totalPrice = price + addOnsTotalPrice;
+          originalTotalPrice = compareAtPrice + addOnsTotalPrice;
+          totalDiscount = Math.max(originalTotalPrice - totalPrice, 0);
+        }
+      } else {
+        totalPrice = (this.config.settings.price.value * 100) + addOnsTotalPrice;
+        originalTotalPrice = (this.config.variants[0]?.compare_at_price ?? 0) + addOnsTotalPrice;
+        totalDiscount = Math.max(originalTotalPrice - totalPrice, 0);
+      }
     }
 
-    totalPrice += addOnsTotalPrice;
-    originalTotalPrice += addOnsTotalPrice;
-
-    const totalDiscount = originalTotalPrice - totalPrice;
-    return { originalTotalPrice, totalPrice, totalDiscount };
+    return {
+      originalTotalPrice,
+      totalPrice,
+      totalDiscount,
+      discountValue,
+      priceStrategy,
+      itemsTotalPrice,
+      addOnsTotalPrice
+    };
   }
 
   renderPrice() {
@@ -499,12 +682,13 @@ class FoxSellMixMatch extends HTMLElement {
     }
 
     const { originalTotalPrice, totalPrice } = this.bundle;
-    if (originalTotalPrice > 0 && totalPrice > 0 && (totalPrice !== originalTotalPrice)) {
+    if (originalTotalPrice > totalPrice) {
       addToCartButton.innerHTML = `${this.initialAddToCartButtonHTML} -
-      <span>${window.foxsell?.formatMoney?.(totalPrice)}</span>
-      <span class="foxsell-slashed-price">${window.foxsell?.formatMoney?.(originalTotalPrice)}</span>`;
+      <span class="foxsell-compare-at-price">${window.foxsell?.formatMoney?.(originalTotalPrice)}</span>
+      <span class="foxsell-sale-price">${window.foxsell?.formatMoney?.(totalPrice)}</span>`;
     } else {
-      addToCartButton.innerHTML = this.initialAddToCartButtonHTML;
+      addToCartButton.innerHTML = `${this.initialAddToCartButtonHTML} -
+      <span class="foxsell-sale-price">${window.foxsell?.formatMoney?.(totalPrice)}</span>`;
     }
   }
 
@@ -512,371 +696,6 @@ class FoxSellMixMatch extends HTMLElement {
     const addToCartButton = this.querySelector('button[type="submit"]');
     if (!addToCartButton) return;
     addToCartButton.toggleAttribute('disabled', disable);
-  }
-
-  toggleContinueButton() {
-    if (!this.continueButton) return;
-    const isAddOnEnabled = this.bundle.addOns.enabled;
-    const isItemsValid = this.bundle.isItemsValid;
-
-    const canContinue = isItemsValid && isAddOnEnabled;
-    this.continueButton.toggleAttribute('disabled', !canContinue);
-    this.continueButton.closest('label')?.classList.toggle('foxsell--hidden', !isAddOnEnabled);
-
-    const addToCartButton = this.querySelector('.foxsell-add-to-cart-button');
-
-    if (!isAddOnEnabled) {
-
-      addToCartButton?.classList.remove('foxsell--hidden');
-      addToCartButton?.toggleAttribute('disabled', !isItemsValid);
-    } else {
-
-      const hasContinued = this.continueButton?.checked;
-      if (hasContinued) {
-        addToCartButton?.classList.remove('foxsell--hidden');
-      } else {
-        addToCartButton?.classList.add('foxsell--hidden');
-      }
-    }
-  }
-
-  toggleAddOnsCategory(event) {
-
-    const showAddOns = event?.target.checked;
-    const categories = this.querySelectorAll('.foxsell-category__item');
-    const addToCartButton = this.querySelector('.foxsell-add-to-cart-button');
-
-    categories.forEach(category => {
-      const isAddOn = category.getAttribute('data-category') === '__add_ons__';
-      category.classList.toggle('active', showAddOns === isAddOn);
-    });
-
-    addToCartButton?.classList.toggle('foxsell--hidden', !showAddOns);
-  }
-}
-
-class FoxSellBundleSummary extends HTMLElement {
-  constructor() {
-    super();
-
-    this.foxsell = this.closest('foxsell-mix-match');
-    this.boundUpdateBundleSummary = this.updateBundleSummary.bind(this);
-  }
-
-  connectedCallback() {
-    if (this.foxsell) {
-      this.foxsell.addEventListener(FOXSELL_EVENTS.bundleUpdated, this.boundUpdateBundleSummary);
-    }
-  }
-
-  disconnectedCallback() {
-    if (this.foxsell) {
-      this.foxsell.removeEventListener(FOXSELL_EVENTS.bundleUpdated, this.boundUpdateBundleSummary);
-    }
-  }
-
-  updateBundleSummary(event) {
-    const { bundle } = event.detail;
-    const bundleItemsContainer = this.querySelector('.foxsell-bundle-summary__items-list');
-    if (!bundle || !bundleItemsContainer) return
-
-    if (!this.emptyStateHTML) {
-      this.emptyStateHTML = bundleItemsContainer.innerHTML;
-    }
-
-    const items = bundle.items.flatMap((category) =>
-      (Array.isArray(category.items) ? category.items : []).map(item => ({
-        ...item,
-        category: {
-          id: category.id,
-          title: category.title,
-          quantity: category.quantity,
-          maxQuantity: category.maxQuantity
-        }
-      }))
-    );
-
-    const addOnItems = bundle.addOns.items.map(item => ({
-      ...item,
-      category: {
-        id: '__add_ons__',
-        title: 'AddOns',
-        quantity: item.quantity,
-        maxQuantity: 1
-      }
-    }));
-
-    const allItems = [...items, ...addOnItems];
-
-    if (!allItems || allItems.length === 0) {
-      bundleItemsContainer.innerHTML = this.emptyStateHTML;
-      return;
-    }
-
-    bundleItemsContainer.innerHTML = allItems.map(item => {
-      return this.renderLineItem(item);
-    }).join('');
-  }
-
-  //! DO NOT MODIFY THIS METHOD, extend the class to override this method
-
-  renderLineItem(item) {
-    let itemImage = item.featured_image ? item.featured_image.src : item.product.featured_image?.src;
-    if (itemImage) {
-      const separator = itemImage.includes('?') ? '&' : '?';
-      itemImage = itemImage + separator + 'width=150';
-    }
-    let itemPrice = item.foxsell_price;
-    let discountedPrice = 0;
-    let discount = 0;
-    if (!this.foxsell || !this.foxsell.bundle) return '';
-    const priceStrategy = this.foxsell.bundle.priceStrategy;
-
-    //! Only apply price strategy to items, not add-ons
-    if (item.category.id !== '__add_ons__') {
-      if (priceStrategy && priceStrategy.strategy === 'dynamic_pricing') {
-        discount = priceStrategy.value;
-        discountedPrice = item.foxsell_price - (item.foxsell_price * (discount / 100));
-      }
-    }
-
-    return (`
-      <foxsell-bundle-line-item data-item-id="${item.id}" data-category-id="${item.category.id}" data-category-title="${item.category.title}" data-quantity="${item.quantity}" class="foxsell-bundle-summary__item">
-        <div><img src="${itemImage}"/></div>
-        <div>
-          ${item.category.id == '__add_ons__' ? `<sub>Add-On</sub>` : ''}
-          <div>${item.product.title}</div>
-          ${item.option1 != 'Default Title' ? `<div>${item.options.join(", ")}</div>` : ''}
-          <div>
-            ${discountedPrice > 0 ? `
-              <span>${window.foxsell?.formatMoney?.(discountedPrice)} x ${item.quantity}</span>
-              <div>
-                <span class="foxsell-slashed-price">${window.foxsell?.formatMoney?.(itemPrice)}</span>
-                <span>(${discount}% off)</span>
-              </div>`
-              :
-              `<span>${window.foxsell?.formatMoney?.(itemPrice)} x ${item.quantity}</span>`
-            }
-          </div>
-        </div>
-        <div>
-          <button class="foxsell-bundle-summary__item-delete" aria-label="Remove item from bundle">Delete</button>
-        </div>
-      </foxsell-bundle-line-item>
-    `)
-  }
-}
-
-class FoxSellBundleLineItem extends HTMLElement {
-  constructor() {
-    super();
-
-    this.foxsell = this.closest('foxsell-mix-match');
-    this.boundHandleItemDelete = this.handleItemDelete.bind(this);
-  }
-
-  connectedCallback() {
-    this.deleteButton = this.querySelector('button.foxsell-bundle-summary__item-delete');
-    if (this.deleteButton) {
-      this.deleteButton.addEventListener('click', this.boundHandleItemDelete);
-    }
-  }
-
-  disconnectedCallback() {
-    if (this.deleteButton) {
-      this.deleteButton.removeEventListener('click', this.boundHandleItemDelete);
-    }
-  }
-
-  handleItemDelete() {
-    if (!this.foxsell) return;
-
-    if (this.dataset.categoryId === '__add_ons__') {
-
-      this.foxsell.removeFromAddOns({ id: parseInt(this.dataset.itemId) }, parseInt(this.dataset.quantity || '1'));
-    } else {
-
-      this.foxsell.removeFromBundle({ id: parseInt(this.dataset.itemId) }, parseInt(this.dataset.quantity || '1'), this.dataset.categoryId);
-    }
-  }
-}
-
-class FoxSellBundleProgress extends HTMLElement {
-  constructor() {
-    super();
-
-    this.foxsell = this.closest('foxsell-mix-match');
-    this.boundUpdateBundleProgress = this.updateBundleProgress.bind(this);
-    this.config = this.querySelector('#foxsell-bundle-progress-config');
-
-    try {
-      this.config = JSON.parse(this.config?.textContent || '{}');
-    } catch (error) {
-      console.error('Failed to parse foxsell bundle progress config:', error);
-    }
-  }
-
-  connectedCallback() {
-    this.updateBundleProgress();
-
-    if (this.foxsell) {
-      this.foxsell.addEventListener(FOXSELL_EVENTS.bundleUpdated, this.boundUpdateBundleProgress);
-    }
-  }
-
-  disconnectedCallback() {
-    if (this.foxsell) {
-      this.foxsell.removeEventListener(FOXSELL_EVENTS.bundleUpdated, this.boundUpdateBundleProgress);
-    }
-  }
-
-  formatMessage(messageConfig) {
-    const { currentStep, maxSteps, currentQuantity, requiredQuantity, remainingQuantity, discount, isCompleted } = messageConfig;
-
-    let message = '';
-
-    if (currentStep === 0) {
-      message = this.config.emptyStateText;
-    } else if (isCompleted) {
-      message = this.config.endStateText;
-    } else {
-      message = this.config.progressStateText;
-    }
-
-    message = message
-    .replaceAll('_currentStep', String(currentStep))
-    .replaceAll('_maxSteps', String(maxSteps))
-    .replaceAll('_remainingQuantity', String(remainingQuantity))
-    .replaceAll('_currentQuantity', String(currentQuantity))
-    .replaceAll('_requiredQuantity', String(requiredQuantity))
-    .replaceAll('_discount', String(discount));
-
-    return message
-  }
-
-  getBundleProgressWithoutQAO() {
-    if (!this.foxsell || !this.foxsell.config || !this.foxsell.bundle) return undefined;
-    const bundle = this.foxsell.bundle.items;
-    const maxSteps = this.foxsell.config.categories.reduce((acc, category) => acc + category.quantity, 0);
-    const currentStep = bundle.reduce((acc, category) => acc + category.quantity, 0);
-    const priceStrategy = this.foxsell.bundle.priceStrategy;
-    let discount;
-    if (priceStrategy?.strategy === 'dynamic_pricing') {
-      discount = (priceStrategy.value ?? 0) + '%';
-    } else {
-      discount = window.foxsell?.formatMoney?.(parseFloat(String(priceStrategy?.value ?? 0)) * 100);
-    }
-
-    return {
-      currentStep,
-      maxSteps,
-      discount,
-      currentQuantity: currentStep,
-      requiredQuantity: maxSteps,
-      remainingQuantity: maxSteps - currentStep,
-      isCompleted: currentStep === maxSteps,
-      progress: Math.min(Math.round((currentStep / maxSteps) * 100), 100)
-    };
-  }
-
-  getBundleProgressWithQAO() {
-    if (!this.foxsell || !this.foxsell.config || !this.foxsell.bundle) return;
-    const bundle = this.foxsell.bundle.items;
-    const maxSteps = this.foxsell.config.options.length;
-    const bundleQuantity = bundle.reduce((acc, category) => acc + category.quantity, 0);
-
-    let eligibleOptionIndex = this.foxsell.config.options.findIndex(option => option.quantity > bundleQuantity);
-
-    let optionIndex = eligibleOptionIndex === -1 ? maxSteps - 1 : eligibleOptionIndex;
-
-    const option = this.foxsell.config.options[optionIndex];
-    const price = option?.price;
-
-    let discount;
-    if (price?.strategy === 'dynamic_pricing') {
-      discount = (price.value ?? 0) + '%';
-    } else {
-      discount = window.foxsell?.formatMoney?.(parseFloat(String(price?.value ?? 0)) * 100);
-    }
-
-    eligibleOptionIndex = optionIndex + 1;
-
-    const currentOption = this.foxsell.config.options[optionIndex];
-    const prevOption = optionIndex > 0 ? this.foxsell.config.options[optionIndex - 1] : undefined;
-
-    let isCompleted = (eligibleOptionIndex === maxSteps) && (bundleQuantity >= (currentOption?.quantity ?? 0));
-
-    let currentQuantity = bundleQuantity;
-    let requiredQuantity = currentOption?.quantity ?? 0;
-    if (prevOption) {
-      currentQuantity = bundleQuantity - prevOption.quantity;
-      requiredQuantity = (currentOption?.quantity ?? 0) - prevOption.quantity;
-    }
-
-    let progress = Math.min(Math.round((currentQuantity / requiredQuantity) * 100), 100);
-
-    return {
-      currentStep: bundleQuantity > 0 ? eligibleOptionIndex : 0,
-      maxSteps,
-      progress,
-      isCompleted,
-      discount,
-      currentQuantity,
-      requiredQuantity,
-      remainingQuantity: requiredQuantity - currentQuantity
-    }
-  }
-
-  getBundleProgress() {
-    if (!this.foxsell || !this.foxsell.config || !this.foxsell.bundle) return;
-    const qaoEnabled = this.foxsell.bundle.qaoEnabled;
-    const progressConfig = qaoEnabled ? this.getBundleProgressWithQAO() : this.getBundleProgressWithoutQAO();
-    if (!progressConfig) return;
-    const message = this.formatMessage(progressConfig);
-
-    return {
-      ...progressConfig,
-      qaoEnabled,
-      message
-    };
-  }
-
-  //! DO NOT MODIFY THIS METHOD, extend the class to override this method
-
-  updateBundleProgress() {
-    //! you also have access to the following properties:
-    //! currentStep, maxSteps, message, progress, qaoEnabled, isCompleted, currentQuantity, requiredQuantity, remainingQuantity
-    const progressData = this.getBundleProgress();
-    if (!progressData) return;
-    const { currentStep, maxSteps, message, progress, qaoEnabled } = progressData;
-    const progressLabel = this.querySelector('.foxsell-bundle-progress__label');
-    if (progressLabel) {
-      progressLabel.innerHTML = message;
-    }
-
-    const progressBarsWrapper = this.querySelector('.foxsell-bundle-progress__bars');
-    if (!progressBarsWrapper) return;
-
-    progressBarsWrapper.innerHTML = '';
-
-    for (let i = 1; i <= maxSteps; i++) {
-      const progressBar = document.createElement('div');
-      const progressTrack = document.createElement('div');
-
-      progressTrack.classList.add('foxsell-bundle-progress__track');
-      progressBar.classList.add('foxsell-bundle-progress__bar');
-
-      if (i < currentStep) {
-        progressBar.style.width = '100%';
-      } else if (i == currentStep && qaoEnabled) {
-        progressBar.style.width = `${progress}%`;
-      } else if (i == currentStep && !qaoEnabled) {
-        progressBar.style.width = '100%';
-      }
-
-      progressTrack.appendChild(progressBar);
-      progressBarsWrapper.appendChild(progressTrack);
-    }
   }
 }
 
@@ -886,11 +705,11 @@ class FoxSellCategoryHeader extends HTMLElement {
     this.categoryId = this.getAttribute('data-category-id');
     this.quantityElement = this.querySelector('.foxsell-category__quantity');
     this.foxsell = this.closest('foxsell-mix-match');
+    this._boundUpdateQuantity = this.updateQuantity.bind(this);
   }
 
   connectedCallback() {
     if (!this.foxsell) return;
-    this._boundUpdateQuantity = this.updateQuantity.bind(this);
     this.foxsell.addEventListener(FOXSELL_EVENTS.bundleUpdated, this._boundUpdateQuantity);
   }
 
@@ -908,14 +727,14 @@ class FoxSellCategoryHeader extends HTMLElement {
     if (!category) return;
     if (category.id !== this.categoryId) return;
     if (!this.quantityElement) return;
-    this.quantityElement.textContent = `${category.quantity}/${category.maxQuantity}`;
+    this.quantityElement.textContent = `(${category.quantity}/${category.maxQuantity})`;
   }
 
   updateAddOnQuantity(event) {
     const { bundle } = event.detail;
     if (!bundle) return;
     if (!this.quantityElement) return;
-    this.quantityElement.textContent = `${bundle.addOns.selectedQuantity}/${bundle.addOns.maximum}`;
+    this.quantityElement.textContent = `(${bundle.addOns.selectedQuantity}/${bundle.addOns.maximum})`;
   }
 }
 
@@ -933,8 +752,9 @@ class FoxSellProductCard extends HTMLElement {
     this.boundHandleBundleUpdated = this.handleBundleUpdated.bind(this);
     this.categoryId = this.getAttribute('data-category') || null;
     this.productId = parseInt(this.getAttribute('data-product-id') || '0');
+    this.isAddOnCard = this.categoryId === '__add_ons__';
 
-    if (this.categoryId === '__add_ons__') {
+    if (this.isAddOnCard) {
       this.disableAddToBundle = true;
       this.toggleAddToBundleButton(true);
     }
@@ -967,11 +787,7 @@ class FoxSellProductCard extends HTMLElement {
   handleVariantChange() {
     this.updateFeaturedImage();
     this.updatePrice();
-    if (this.categoryId === '__add_ons__') {
-      this.updateQuantity(this.getCurrentAddOnQuantity());
-    } else {
-      this.updateQuantity(this.getCurrentQuantity());
-    }
+    this.updateQuantity(this.getCurrentQuantity());
 
     if (!this.variantSelector?.currentVariant) {
       this.disableAddToBundle = true;
@@ -985,12 +801,12 @@ class FoxSellProductCard extends HTMLElement {
       if (!bundle) {
         disable = true;
       } else {
-        const { enabled, allowedIds, isMaxedOut } = bundle.addOns;
+        const { enabled, allowedIds, isMaximumQuantity } = bundle.addOns;
         const isAllowed = allowedIds.includes(this.variantSelector.product?.id ?? 0);
-        disable = !enabled || !isAllowed || isMaxedOut || this.isAddOnAtInventoryLimit();
+        disable = !enabled || !isAllowed || isMaximumQuantity || this.isAddOnAtInventoryLimit();
       }
     } else {
-      const category = this.foxsell?.getCategory(this.categoryId);
+      const category = this.foxsell?.getCategory(this.categoryId ?? '');
       disable = (category?.isMaxQuantity ?? false) || this.isVariantAtInventoryLimit();
     }
 
@@ -1050,14 +866,14 @@ class FoxSellProductCard extends HTMLElement {
     }
 
     if (action === 'refresh') {
-      this.updateQuantity(this.getCurrentAddOnQuantity());
+      this.updateQuantity(this.getCurrentQuantity());
       return;
     }
 
     const { item, bundle } = event.detail;
     if (!item || !bundle) return;
 
-    const { enabled, allowedIds, isMaxedOut } = bundle.addOns;
+    const { enabled, allowedIds, isMaximumQuantity } = bundle.addOns;
 
     const isAllowed = allowedIds.includes(this.variantSelector?.product?.id ?? 0);
 
@@ -1067,30 +883,29 @@ class FoxSellProductCard extends HTMLElement {
       this.classList.remove('active');
     }
 
-    const disableAddToBundle = !enabled || !isAllowed || isMaxedOut;
+    const disableAddToBundle = !enabled || !isAllowed || isMaximumQuantity;
 
     this.disableAddToBundle = disableAddToBundle || this.isAddOnAtInventoryLimit();
     this.toggleAddToBundleButton(disableAddToBundle);
 
     if (this.productId === item.product.id) {
-      this.updateQuantity(this.getCurrentAddOnQuantity());
+      this.updateQuantity(this.getCurrentQuantity());
     }
   }
 
   getCurrentQuantity() {
     const variantId = this.variantSelector?.currentVariant?.id;
     if (variantId === undefined || variantId === null || !this.foxsell?.bundle || !this.categoryId) return 0;
-    const category = this.foxsell.bundle.items.find((c) => c.id === this.categoryId);
-    if (!category) return 0;
-    return category.items.find((item) => item.id === variantId)?.quantity ?? 0;
-  }
 
-  getCurrentAddOnQuantity() {
-    const variantId = this.variantSelector?.currentVariant?.id;
-    if (variantId === undefined || variantId === null || !this.foxsell?.bundle || !this.categoryId) return 0;
-    const addOns = this.foxsell.bundle.addOns;
-    if (!addOns || !addOns.items) return 0;
-    return addOns.items.find((item) => item.id === variantId)?.quantity ?? 0;
+    if (this.categoryId === '__add_ons__') {
+      const addOns = this.foxsell.bundle.addOns;
+      if (!addOns || !addOns.items) return 0;
+      return addOns.items.find((item) => item.id === variantId)?.quantity ?? 0;
+    }
+
+    return this.foxsell.bundle.items
+      .find(item => item.category.id === this.categoryId && item.id === variantId)
+      ?.quantity ?? 0;
   }
 
   updateFeaturedImage() {
@@ -1110,19 +925,19 @@ class FoxSellProductCard extends HTMLElement {
     const { currentVariant, product } = this.variantSelector;
     let price = currentVariant?.foxsell_price ?? currentVariant?.product?.price ?? product?.price ?? 0;
 
-    let discountedPrice = 0;
+    let discountedPrice = price;
     const priceStrategy = this.foxsell.bundle.priceStrategy;
-    if (priceStrategy && priceStrategy.strategy === 'dynamic_pricing') {
+    if (!this.isAddOnCard && priceStrategy && priceStrategy.strategy === 'dynamic_pricing') {
       const discount = priceStrategy.value;
       discountedPrice = price - (price * (discount / 100));
     }
 
-    if (discountedPrice > 0) {
+    if (price > discountedPrice) {
       priceEl.innerHTML = `
-      <span>${window.foxsell?.formatMoney?.(discountedPrice)}</span>
-      <span class="foxsell-slashed-price">${window.foxsell?.formatMoney?.(price)}</span>`;
+      <span class="foxsell-sale-price">${window.foxsell?.formatMoney?.(discountedPrice)}</span>
+      <span class="foxsell-compare-at-price">${window.foxsell?.formatMoney?.(price)}</span>`;
     } else {
-      priceEl.innerHTML = `<span>${window.foxsell?.formatMoney?.(price)}</span>`;
+      priceEl.innerHTML = `<span class="foxsell-sale-price">${window.foxsell?.formatMoney?.(price)}</span>`;
     }
   }
 
@@ -1144,7 +959,7 @@ class FoxSellProductCard extends HTMLElement {
     const variant = this.variantSelector?.currentVariant;
     if (!variant || !this.foxsell || !this.categoryId) return true;
     if (!variant.inventory_management || variant.inventory_policy === 'continue') return false;
-    const currentQuantity = this.getCurrentAddOnQuantity() ?? 0;
+    const currentQuantity = this.getCurrentQuantity() ?? 0;
     return currentQuantity >= variant.inventory_quantity;
   }
 
@@ -1296,274 +1111,399 @@ class FoxSellVariantRadio extends HTMLElement {
 }
 
 class FoxSellVariantSelect extends FoxSellVariantRadio {
-  constructor() {
-    super();
-  }
-
   updateOptions() {
-    this.options = Array.from(this.querySelectorAll('select'), (select) => select.value);
+    this.options = [...this.querySelectorAll('fieldset')].map(fs => {
+      const select = fs.querySelector('select');
+      if (select) return select.value;
+      return fs.querySelector('input:checked')?.getAttribute('value') ?? '';
+    });
   }
 }
 
-class FoxSellProductModal extends HTMLElement {
+class BaseFoxSellProductCard extends FoxSellProductCard {
+
+  updateQuantity(quantity) {
+    super.updateQuantity(quantity);
+    this.classList.toggle('item-in-bundle', quantity > 0);
+  }
+}
+
+class FoxSellBundleSummary extends HTMLElement {
   constructor() {
     super();
 
     this.foxsell = this.closest('foxsell-mix-match');
-
-    this.modal = this.querySelector('dialog[data-modal]');
-    this.content = this.querySelector('.foxsell-product-modal__content');
-    this.closeButton = this.querySelector('#foxsell-product-modal-close-button');
-    this.boundCloseModal = this.closeModal.bind(this);
-    this.boundOpenModal = this.openModal.bind(this);
-    this.emptyState = this.querySelector('.foxsell-product-modal__empty-state');
+    this.boundUpdateBundleSummary = this.updateBundleSummary.bind(this);
+    this.boundTogglePanel = this.handleTogglePanel.bind(this);
   }
 
   connectedCallback() {
-    const productCards = this.closest('foxsell-mix-match')?.querySelectorAll('foxsell-product-card');
-    if(productCards && productCards.length > 0) {
-      productCards.forEach(card => {
-        card.querySelector('[data-open-modal]')?.addEventListener('click', this.boundOpenModal);
-      });
+    if (this.foxsell) {
+      this.foxsell.addEventListener(FOXSELL_EVENTS.bundleUpdated, this.boundUpdateBundleSummary);
     }
 
-    if(this.closeButton) {
-      this.closeButton.addEventListener('click', this.boundCloseModal);
+    this.toggleButton = this.querySelector('#foxsell-bundle-summary-toggle');
+    if (this.toggleButton) {
+      this.toggleButton.addEventListener('click', this.boundTogglePanel);
     }
   }
 
   disconnectedCallback() {
-    const productCards = this.closest('foxsell-mix-match')?.querySelectorAll('foxsell-product-card');
-    if(productCards && productCards.length > 0) {
-      productCards.forEach(card => {
-        card.querySelector('[data-open-modal]')?.removeEventListener('click', this.boundOpenModal);
-      });
+    if (this.foxsell) {
+      this.foxsell.removeEventListener(FOXSELL_EVENTS.bundleUpdated, this.boundUpdateBundleSummary);
     }
-
-    if(this.closeButton) {
-      this.closeButton.removeEventListener('click', this.boundCloseModal);
+    if (this.toggleButton) {
+      this.toggleButton.removeEventListener('click', this.boundTogglePanel);
     }
-  }
-
-  openModal(event) {
-    if(!this.modal) return;
-    this.modal.showModal();
-
-    if(this.content) this.content.innerHTML = this.emptyState?.outerHTML || '';
-
-    if(!event.target) return;
-
-    const productId = event.target?.closest('foxsell-product-card')?.dataset.productId;
-    if(!productId) return;
-    this.renderProductModal(productId);
-  }
-
-  closeModal() {
-    if(!this.modal || !this.content) return;
-    this.content.innerHTML = '';
-    this.modal.close();
-  }
-
-  async renderProductModal(productId) {
-    if(!this.foxsell || !this.foxsell.config) return;
-
-    try {
-      const productHandle = this.foxsell.config.productHandle;
-      const response = await(await fetch(`/products/${productHandle}?sections=foxsell-glow-product-modal`)).json();
-
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(response['foxsell-glow-product-modal'], 'text/html');
-
-      const productModal = doc.querySelector('foxsell-product-card[data-product-id="' + productId + '"]');
-      if(!productModal || !this.content) return;
-      this.content.innerHTML = productModal.outerHTML;
-    } catch(error) {
-      console.error('Failed to render product modal:', error);
+    if (this.toggleButton?.getAttribute('aria-expanded') === 'true') {
+      unlockBodyScroll();
     }
   }
-}
 
-class FoxSellProductGallery extends HTMLElement {
-  constructor() {
-    super();
-  }
-
-  connectedCallback() {
-
-    const firstImage = this.querySelector('.foxsell-product-gallery__image');
-    if (firstImage) {
-      this.setFeaturedImage(firstImage);
-      firstImage.classList.add('is-active');
-    }
-
-    const images = this.querySelectorAll('.foxsell-product-gallery__image');
-    images.forEach(image => {
-      image.addEventListener('click', (event) => {
-
-        this.updateFeaturedImage(image);
-      });
-    });
-  }
-
-  setFeaturedImage(image) {
-    const featuredImage = document.createElement('img');
-    featuredImage.classList.add('js', 'foxsell-product-card__image');
-    featuredImage.setAttribute('src', image.src);
-    featuredImage.setAttribute('srcset', image.src);
-    this.prepend(featuredImage);
-  }
-
-  updateFeaturedImage(image) {
-    this.querySelector('.foxsell-product-gallery__image.is-active')?.classList.remove('is-active');
-    image.classList.add('is-active');
-    const featuredImage = this.querySelector('.foxsell-product-card__image');
-    if(featuredImage) {
-      featuredImage.setAttribute('src', image.src);
-      featuredImage.setAttribute('srcset', image.src);
-    }
-  }
-}
-
-class GlowProductCard extends FoxSellProductCard {
-  constructor() {
-    super();
-  }
-
-  updatePrice() {
-    if (!this.variantSelector || !this.foxsell || !this.foxsell.bundle) return;
-    const priceEl = this.querySelector('.foxsell-product-card__price');
-    if (!priceEl) return;
-
-    const { currentVariant, product } = this.variantSelector;
-    let price = currentVariant?.foxsell_price ?? currentVariant?.product?.price ?? product?.price ?? 0;
-
-    let discountedPrice = 0;
-    const priceStrategy = this.foxsell.bundle.priceStrategy;
-    if (priceStrategy && priceStrategy.strategy === 'dynamic_pricing') {
-      const discount = priceStrategy.value;
-      discountedPrice = price - (price * (discount / 100));
-    }
-
-    if (discountedPrice > 0) {
-      priceEl.innerHTML = `
-      <span class="foxsell-price">${window.foxsell?.formatMoney?.(discountedPrice)}</span>
-      <span class="foxsell-slashed-price">${window.foxsell?.formatMoney?.(price)}</span>`;
+  handleTogglePanel() {
+    const btn = this.toggleButton;
+    if (!btn) return;
+    const expanded = btn.getAttribute('aria-expanded') === 'true';
+    btn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+    if (expanded) {
+      unlockBodyScroll();
     } else {
-      priceEl.innerHTML = `<span>${window.foxsell?.formatMoney?.(price)}</span>`;
+      lockBodyScroll();
     }
   }
 
-    updateQuantity(quantity) {
-      const el = this.querySelector('.quantity');
-      if (el) el.textContent = String(quantity);
-      this.classList.toggle('is-in-bundle', quantity > 0);
-    }
-}
+  updateBundleSummary(event) {
+    const { bundle } = event.detail;
 
-class GlowBundleSummary extends FoxSellBundleSummary {
-  constructor() {
-    super();
+    this.updateHeaderTotalQuantity(bundle);
+    const bundleItemsContainer = this.querySelector('.foxsell-bundle-summary__items-list');
+    if (!bundle || !bundleItemsContainer) return
+
+    if (!this.emptyStateHTML) {
+      this.emptyStateHTML = bundleItemsContainer.innerHTML;
+    }
+
+    const items = bundle.items;
+
+    const addOnItems = bundle.addOns.items.map(item => ({
+      ...item,
+      category: {
+        id: '__add_ons__',
+        title: 'AddOns',
+        quantity: bundle.addOns.selectedQuantity,
+        maxQuantity: bundle.addOns.maximum,
+        isMaxQuantity: bundle.addOns.isMaximumQuantity
+      }
+    }));
+
+    const allItems = [...items, ...addOnItems];
+
+    if (!allItems || allItems.length === 0) {
+      bundleItemsContainer.innerHTML = this.emptyStateHTML;
+      return;
+    }
+
+    bundleItemsContainer.innerHTML = allItems.map(item => {
+      return this.renderLineItem(item);
+    }).join('');
   }
 
-  //! MODIFY THIS METHOD
+  updateHeaderTotalQuantity(bundle) {
+    const el = this.querySelector('[data-foxsell-total-quantity]');
+    if (!el) return;
+    if (!bundle) {
+      el.textContent = '';
+      return;
+    }
+    const { items, addOns } = bundle;
+    let total = 0;
+    for (let i = 0; i < items.length; i++) total += items[i].quantity;
+    for (let i = 0; i < addOns.items.length; i++) total += addOns.items[i].quantity;
+    el.textContent = `(${total})`;
+  }
+
+  //! DO NOT MODIFY THIS METHOD, extend the class to override this method
 
   renderLineItem(item) {
     let itemImage = item.featured_image ? item.featured_image.src : item.product.featured_image?.src;
     if (itemImage) {
-      itemImage = itemImage.replace('?', '?width=150&');
+      const separator = itemImage.includes('?') ? '&' : '?';
+      itemImage = itemImage + separator + 'width=150';
     }
     let itemPrice = item.foxsell_price;
-    let discountedPrice = 0;
+    let discountedPrice = item.foxsell_price;
     let discount = 0;
-    if (!this.foxsell || !this.foxsell.bundle) return '';
+    if (!this.foxsell || !this.foxsell.config || !this.foxsell.bundle) return '';
     const priceStrategy = this.foxsell.bundle.priceStrategy;
 
     //! Only apply price strategy to items, not add-ons
-    if(item.category.id !== '__add_ons__'){
+    if (item.category.id !== '__add_ons__') {
       if (priceStrategy && priceStrategy.strategy === 'dynamic_pricing') {
         discount = priceStrategy.value;
         discountedPrice = item.foxsell_price - (item.foxsell_price * (discount / 100));
       }
     }
 
+    const addOnStrategy = this.foxsell.config.additionalSettings.add_on_settings.strategy;
+
     return (`
       <foxsell-bundle-line-item data-item-id="${item.id}" data-category-id="${item.category.id}" data-category-title="${item.category.title}" data-quantity="${item.quantity}" class="foxsell-bundle-summary__item">
-        <div><img src="${itemImage}" class="foxsell-bundle-summary__item-image" /></div>
-        <div>
-          ${item.category.id === '__add_ons__' ? `<sub>Add-On</sub>` : ''}
+        <div><img src="${itemImage}"/></div>
+        <div class="foxsell-bundle-summary__item-info">
+          ${item.category.id === '__add_ons__' ? `<span class="foxsell-bundle-summary__item-add-on-tag">Add-On</span>` : ''}
           <div class="foxsell-bundle-summary__item-title">${item.product.title}</div>
           ${item.option1 !== 'Default Title' ? `<div>${item.options.join(", ")}</div>` : ''}
-          <div class="foxsell-bundle-summary__item-price">
-            ${discountedPrice > 0 ? `
+          <div>
+            ${itemPrice > discountedPrice ? `
               <div>
-                <span class="foxsell-slashed-price">${window.foxsell.formatMoney(itemPrice)}</span>
+                <span class="foxsell-sale-price">${window.foxsell?.formatMoney?.(discountedPrice)}</span>
+                <span class="foxsell-compare-at-price">${window.foxsell?.formatMoney?.(itemPrice)}</span>
                 <span>(${discount}% off)</span>
-              </div>
-              <span>${window.foxsell.formatMoney(discountedPrice)}</span>`
+              </div>`
               :
-              `<span>${window.foxsell.formatMoney(itemPrice)}</span>`
+              `<div>
+                <span class="foxsell-sale-price">${window.foxsell?.formatMoney?.(itemPrice)}</span>
+              </div>`
             }
           </div>
         </div>
-        <div class="foxsell-bundle-summary__item-quantity">x ${item.quantity}</div>
-        <div>
-          <button class="foxsell-bundle-summary__item-delete" aria-label="Remove item from bundle">
-            <svg xmlns="http://www.w3.org/2000/svg" 
-              width="16" 
-              height="16" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              stroke-width="2" 
-              stroke-linecap="round" 
-              stroke-linejoin="round"
-            >
-              <path d="M10 11v6"/>
-              <path d="M14 11v6"/>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
-              <path d="M3 6h18"/>
-              <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-            </svg>
-          </button>
-        </div>
+        <div class="foxsell-bundle-summary__quantity">x ${item.quantity}</div>
+        ${item.category.id === '__add_ons__' && addOnStrategy === 'automatic_add' ? ""
+          : `
+          <div>
+            <button class="foxsell--button foxsell--button-ghost foxsell-bundle-summary__item-delete" aria-label="Remove item from bundle">
+              ${DELETE_ICON_SVG}
+            </button>
+          </div>`
+        }
       </foxsell-bundle-line-item>
     `)
   }
 }
 
-class GlowBundleProgressBar extends FoxSellBundleProgress {
+class FoxSellBundleLineItem extends HTMLElement {
   constructor() {
     super();
+
+    this.foxsell = this.closest('foxsell-mix-match');
+    this.boundHandleItemDelete = this.handleItemDelete.bind(this);
   }
 
-  updateBundleProgress() {
+  connectedCallback() {
+    this.deleteButton = this.querySelector('button.foxsell-bundle-summary__item-delete');
+    if (this.deleteButton) {
+      this.deleteButton.addEventListener('click', this.boundHandleItemDelete);
+    }
+  }
+
+  disconnectedCallback() {
+    if (this.deleteButton) {
+      this.deleteButton.removeEventListener('click', this.boundHandleItemDelete);
+    }
+  }
+
+  handleItemDelete() {
+    if (!this.foxsell) return;
+
+    if (this.dataset.categoryId === '__add_ons__') {
+
+      this.foxsell.removeFromAddOns({ id: parseInt(this.dataset.itemId) }, parseInt(this.dataset.quantity || '1'));
+    } else {
+
+      this.foxsell.removeFromBundle({ id: parseInt(this.dataset.itemId) }, parseInt(this.dataset.quantity || '1'), this.dataset.categoryId);
+    }
+  }
+}
+
+class FoxSellBundleProgress extends HTMLElement {
+  constructor() {
+    super();
+
+    this.foxsell = this.closest('foxsell-mix-match');
+    this.boundHandleBundleUpdate = this.handleBundleUpdate.bind(this);
+    const configEl = this.querySelector('#foxsell-bundle-progress-config');
+
+    try {
+      this.config = JSON.parse(configEl?.textContent || '{}');
+    } catch (error) {
+      console.error('Failed to parse foxsell bundle progress config:', error);
+      this.config = {};
+    }
+  }
+
+  connectedCallback() {
+    this.handleBundleUpdate();
+
+    if (this.foxsell) {
+      this.foxsell.addEventListener(FOXSELL_EVENTS.bundleUpdated, this.boundHandleBundleUpdate);
+    }
+  }
+
+  disconnectedCallback() {
+    if (this.foxsell) {
+      this.foxsell.removeEventListener(FOXSELL_EVENTS.bundleUpdated, this.boundHandleBundleUpdate);
+    }
+  }
+
+  handleBundleUpdate() {
+    if (this.dataset.type === 'summary-header') {
+      this.updateSummaryHeader();
+    } else if (this.dataset.type === 'progress-bar') {
+      this.updateProgressBar();
+    }
+  }
+
+  updateSummaryHeader() {
+    if (!this.foxsell?.config?.options?.length) return;
+
+    const options = this.foxsell.config.options;
+    const currentValidOption = this.foxsell.getCurrentValidOption() ?? options[0];
+    const selectedId = String(currentValidOption?.variant_id ?? '');
+
+    this.querySelectorAll('.foxsell-bundle-progress__item').forEach((el) => {
+      el.classList.toggle('active', String(el.getAttribute('data-id') ?? '') === selectedId);
+    });
+
+    const priceValueEl = this.querySelector('.foxsell-bundle-progress__price-value');
+    if (!priceValueEl) return;
+
+    const { originalTotalPrice, totalPrice } = this.foxsell.bundle ?? {};
+    const formatMoney = window.foxsell.formatMoney;
+
+    if (originalTotalPrice > totalPrice) {
+      priceValueEl.innerHTML = `
+        <span class="foxsell-compare-at-price">${formatMoney(originalTotalPrice)}</span>
+        <span class="foxsell-sale-price">${formatMoney(totalPrice)}</span>
+      `;
+    } else {
+      priceValueEl.innerHTML = `<span class="foxsell-sale-price">${formatMoney(totalPrice)}</span>`;
+    }
+  }
+
+  formatMessage(messageConfig) {
+    const { currentStep, maxSteps, currentQuantity, requiredQuantity, remainingQuantity, discount, isCompleted } = messageConfig;
+
+    let message = '';
+
+    if (currentStep === 0) {
+      message = this.config.emptyStateText;
+    } else if (isCompleted) {
+      message = this.config.endStateText;
+    } else {
+      message = this.config.progressStateText;
+    }
+
+    message = message
+    .replaceAll('_currentStep', String(currentStep))
+    .replaceAll('_maxSteps', String(maxSteps))
+    .replaceAll('_remainingQuantity', String(remainingQuantity))
+    .replaceAll('_currentQuantity', String(currentQuantity))
+    .replaceAll('_requiredQuantity', String(requiredQuantity))
+    .replaceAll('_discount', String(discount));
+
+    return message
+  }
+
+  getBundleProgressWithoutQAO() {
+    if (!this.foxsell || !this.foxsell.config || !this.foxsell.bundle) return undefined;
+    const bundle = this.foxsell.bundle.items;
+    const maxSteps = this.foxsell.config.categories.reduce((acc, category) => acc + category.quantity, 0);
+    const currentStep = bundle.reduce((acc, item) => acc + item.quantity, 0);
+    const priceStrategy = this.foxsell.bundle.priceStrategy;
+    let discount;
+    if (priceStrategy?.strategy === 'dynamic_pricing') {
+      discount = (priceStrategy.value ?? 0) + '%';
+    } else {
+      discount = window.foxsell?.formatMoney?.(parseFloat(String(priceStrategy?.value ?? 0)) * 100);
+    }
+
+    return {
+      currentStep,
+      maxSteps,
+      discount,
+      currentQuantity: currentStep,
+      requiredQuantity: maxSteps,
+      remainingQuantity: maxSteps - currentStep,
+      isCompleted: currentStep === maxSteps,
+      progress: Math.min(Math.round((currentStep / maxSteps) * 100), 100)
+    };
+  }
+
+  getBundleProgressWithQAO() {
+    if (!this.foxsell || !this.foxsell.config || !this.foxsell.bundle) return;
+    const bundle = this.foxsell.bundle.items;
+    const maxSteps = this.foxsell.config.options.length;
+    const bundleQuantity = bundle.reduce((acc, item) => acc + item.quantity, 0);
+
+    let eligibleOptionIndex = this.foxsell.config.options.findIndex(option => option.quantity > bundleQuantity);
+
+    let optionIndex = eligibleOptionIndex === -1 ? maxSteps - 1 : eligibleOptionIndex;
+
+    const option = this.foxsell.config.options[optionIndex];
+    const price = option?.price;
+
+    let discount;
+    if (price?.strategy === 'dynamic_pricing') {
+      discount = (price.value ?? 0) + '%';
+    } else {
+      discount = window.foxsell?.formatMoney?.(parseFloat(String(price?.value ?? 0)) * 100);
+    }
+
+    const currentStep = optionIndex + 1;
+
+    const currentOption = this.foxsell.config.options[optionIndex];
+    const prevOption = optionIndex > 0 ? this.foxsell.config.options[optionIndex - 1] : undefined;
+
+    let isCompleted = (currentStep === maxSteps) && (bundleQuantity >= (currentOption?.quantity ?? 0));
+
+    let currentQuantity = bundleQuantity;
+    let requiredQuantity = currentOption?.quantity ?? 0;
+    if (prevOption) {
+      currentQuantity = bundleQuantity - prevOption.quantity;
+      requiredQuantity = (currentOption?.quantity ?? 0) - prevOption.quantity;
+    }
+
+    let progress = Math.min(Math.round((currentQuantity / requiredQuantity) * 100), 100);
+
+    return {
+      currentStep: bundleQuantity > 0 ? currentStep : 0,
+      maxSteps,
+      progress,
+      isCompleted,
+      discount,
+      currentQuantity,
+      requiredQuantity,
+      remainingQuantity: requiredQuantity - currentQuantity
+    }
+  }
+
+  getBundleProgress() {
+    if (!this.foxsell || !this.foxsell.config || !this.foxsell.bundle) return;
+    const qaoEnabled = this.foxsell.bundle.qaoEnabled;
+    const progressConfig = qaoEnabled ? this.getBundleProgressWithQAO() : this.getBundleProgressWithoutQAO();
+    if (!progressConfig) return;
+    const message = this.formatMessage(progressConfig);
+
+    return {
+      ...progressConfig,
+      qaoEnabled,
+      message
+    };
+  }
+
+  //! DO NOT MODIFY THIS METHOD, extend the class to override this method
+
+  updateProgressBar() {
     //! you also have access to the following properties:
     //! currentStep, maxSteps, message, progress, qaoEnabled, isCompleted, currentQuantity, requiredQuantity, remainingQuantity
     const progressData = this.getBundleProgress();
     if (!progressData) return;
     const { currentStep, maxSteps, message, progress, qaoEnabled } = progressData;
-
-    //! Update the total quantity in the bundle summary header
-    const quantityEl = this.foxsell?.querySelector('.foxsell-bundle-summary__quantity');
-    if (quantityEl && this.foxsell?.bundle) {
-      const total = this.foxsell.bundle.items.reduce((acc, category) => acc + category.quantity, 0)
-        + this.foxsell.bundle.addOns.items.reduce((acc, item) => acc + item.quantity, 0);
-      quantityEl.textContent = `(${total})`;
-    }
-
-    //! Update the bundle pack progress
-    const bundlePackProgress = this.querySelector('.foxsell-bundle-pack__progress');
-    if (bundlePackProgress) {
-      this.updateBundlePackProgress(progressData);
-    }
-
-    //! Update the progress label
     const progressLabel = this.querySelector('.foxsell-bundle-progress__label');
     if (progressLabel) {
       progressLabel.innerHTML = message;
     }
 
-    //! Update the progress bars
     const progressBarsWrapper = this.querySelector('.foxsell-bundle-progress__bars');
     if (!progressBarsWrapper) return;
 
@@ -1578,9 +1518,9 @@ class GlowBundleProgressBar extends FoxSellBundleProgress {
 
       if (i < currentStep) {
         progressBar.style.width = '100%';
-      } else if (i === currentStep && qaoEnabled) {
+      } else if (i == currentStep && qaoEnabled) {
         progressBar.style.width = `${progress}%`;
-      } else if (i === currentStep && !qaoEnabled) {
+      } else if (i == currentStep && !qaoEnabled) {
         progressBar.style.width = '100%';
       }
 
@@ -1588,267 +1528,118 @@ class GlowBundleProgressBar extends FoxSellBundleProgress {
       progressBarsWrapper.appendChild(progressTrack);
     }
   }
-
-  updateBundlePackProgress(progressData) {
-    const { currentStep, maxSteps, message, progress, qaoEnabled } = progressData;
-    if (!this.foxsell) return;
-    const { originalTotalPrice, totalPrice } = this.foxsell.getTotalPrice();
-    const priceWrapper = this.querySelector('.foxsell-bundle-summary__price-value');
-
-    if(priceWrapper){
-      if (originalTotalPrice > 0 && totalPrice > 0 && (totalPrice !== originalTotalPrice)) {
-        priceWrapper.innerHTML = `<span class="foxsell-slashed-price">${window.foxsell?.formatMoney?.(originalTotalPrice)}</span>
-        <span>${window.foxsell?.formatMoney?.(totalPrice)}</span>`;
-      } else {
-        priceWrapper.innerHTML = `${window.foxsell?.formatMoney?.(originalTotalPrice)}`;
-      }
-    }
-
-    const bundlePackProgressItems = this.querySelectorAll('.foxsell-bundle-pack__progress-item');
-    const currentValidOption = this.foxsell.getCurrentValidOption()?.title ?? '';
-    if (bundlePackProgressItems.length > 0 && currentValidOption !== '') {
-      bundlePackProgressItems.forEach(item => {
-        if (item.dataset.id === currentValidOption) {
-          item.classList.add('active');
-        } else {
-          item.classList.remove('active');
-        }
-      });
-    } else {
-      bundlePackProgressItems[0]?.classList.add('active');
-    }
-  }
 }
 
-class GlowMixMatch extends FoxSellMixMatch {
+class FoxSellProductModal extends HTMLElement {
   constructor() {
     super();
-    this.currentStep = 'items';
-    this.continueButton = null;
-    this.goBackButton = null;
-    this.addToCartButton = null;
+
+    this.foxsell = this.closest('foxsell-mix-match');
+
+    this.modal = this.querySelector('#foxsell-product-dialog[data-modal]');
+    this.content = this.querySelector('.foxsell-product-modal__content');
+    this.closeButton = this.querySelector('#foxsell-product-modal-close-button');
+    this.boundCloseModal = this.closeModal.bind(this);
+    this.boundOpenModal = this.openModal.bind(this);
+    this.emptyState = this.querySelector('.foxsell-product-modal__empty-state');
   }
 
   connectedCallback() {
-    super.connectedCallback();
-
-    this.continueButton = this.querySelector('.foxsell__continue-button');
-    this.goBackButton = this.querySelector('.foxsell__go-back-button');
-    this.addToCartButton = this.querySelector('.foxsell-add-to-cart-button');
-
-    this.continueButton?.addEventListener('click', () => {
-      this.currentStep = 'addons';
-      this.toggleAddOnsCategory();
-    });
-
-    this.goBackButton?.addEventListener('click', () => {
-      this.currentStep = 'items';
-      this.toggleAddOnsCategory();
-    });
-
-    this.validateBundle();
-  }
-
-  toggleContinueButton() {
-    if (!this.continueButton || !this.goBackButton) return;
-
-    const isAddOnEnabled = this.bundle.addOns.enabled;
-    const isItemsValid = this.bundle.isItemsValid;
-
-    if (!isAddOnEnabled) {
-
-      this.continueButton.classList.add('foxsell--hidden');
-      this.goBackButton.classList.add('foxsell--hidden');
-      this.addToCartButton?.classList.remove('foxsell--hidden');
-    } else if (this.currentStep === 'items') {
-
-      this.continueButton.classList.remove('foxsell--hidden');
-      this.continueButton.toggleAttribute('disabled', !isItemsValid);
-      this.goBackButton.classList.add('foxsell--hidden');
-      this.addToCartButton?.classList.add('foxsell--hidden');
-    } else {
-
-      this.continueButton.classList.add('foxsell--hidden');
-      this.goBackButton.classList.remove('foxsell--hidden');
-      this.addToCartButton?.classList.remove('foxsell--hidden');
-    }
-  }
-
-  toggleAddOnsCategory() {
-    const showAddOns = this.currentStep === 'addons';
-    const categories = this.querySelectorAll('.foxsell-category__item');
-
-    categories.forEach(category => {
-      const isAddOn = category.getAttribute('data-category') === '__add_ons__';
-      category.classList.toggle('active', showAddOns === isAddOn);
-    });
-
-    this.toggleContinueButton();
-  }
-
-  getAddOnsConfig() {
-    const defaultConfig = {
-      addOnStrategy: '',
-      allowedIds: [],
-      enabled: false,
-      minimum: 0,
-      maximum: 0,
-      selectedQuantity: 0,
-      isMaxedOut: false
-    };
-
-    if (!this.config || !this.config.addOnProducts || !this.config.tiredDiscountConfig) {
-      return defaultConfig;
-    }
-
-    const currentValidOption = this.getCurrentValidOption();
-    if (!currentValidOption) {
-      return defaultConfig;
-    }
-
-    const addOnStrategy = this.config.tiredDiscountConfig?.add_on_settings.strategy ?? '';
-
-    const allowedIds = this.config.tiredDiscountConfig?.add_on_settings.product_tiers.find(
-      tier => tier.title === currentValidOption.title
-    )?.variants.map(variant => variant.id) ?? [];
-
-    const minimum = currentValidOption?.add_on?.minimum ?? 0;
-    const maximum = currentValidOption?.add_on?.maximum ?? 0;
-
-    const isMaxedOut = this.getSelectedAddOns().reduce((sum, item) => sum + item.quantity, 0) >= maximum;
-    const selectedQuantity = this.getSelectedAddOns().reduce((sum, item) => sum + item.quantity, 0);
-
-    const enabled = allowedIds.length > 0;
-
-    return { addOnStrategy, allowedIds, enabled, minimum, maximum, isMaxedOut, selectedQuantity };
-  }
-
-  validateAddOns() {
-    if (!this.config) return false;
-    if (this.config.addOnProducts?.length === 0) return true;
-
-    const { addOnStrategy, allowedIds, maximum, enabled } = this.getAddOnsConfig();
-
-    if(!enabled) {
-      this.clearAddOns();
-      return true;
-    }
-    //! If the add-on strategy is automatic add, add the add-ons that are allowed
-    if(addOnStrategy === 'automatic_add') {
-      this.autoAddAddOns();
-      return true;
-    }
-
-    for(const addOn of this.getSelectedAddOns()) {
-      if(!allowedIds.includes(addOn.product.id)) {
-        this.removeFromAddOns(addOn, addOn.quantity, false);
-      }
-    }
-
-    let totalQuantity = 0;
-    for(const addOn of this.getSelectedAddOns()) {
-      let _tempQuantity = totalQuantity + addOn.quantity;
-      if(_tempQuantity > maximum) {
-        this.removeFromAddOns(addOn, addOn.quantity, false);
-      } else {
-        totalQuantity += addOn.quantity;
-      }
-    }
-
-    //! Send a refresh event to the bundle, to update the quantity and price
-    //! - just in case the quantity is changed
-    this.dispatchEvent(new CustomEvent(FOXSELL_EVENTS.bundleUpdated, {
-      detail: {
-        bundle: this.bundle,
-        action: 'refresh',
-      }
-    }));
-
-    const selectedAddOns = this.getSelectedAddOns();
-    let { minimum: minimumAddOns, maximum: maximumAddOns } = this.getAddOnsConfig();
-    let isValid = selectedAddOns.length >= minimumAddOns && selectedAddOns.length <= maximumAddOns;
-
-    return isValid;
-  }
-
-  autoAddAddOns() {
-    this.clearAddOns();
-
-    this.config?.tiredDiscountConfig?.add_on_settings.product_tiers.forEach(tier=> {
-      tier.variants.forEach(variant=> {
-        const productId = variant.id;
-        const product = this.querySelector(`foxsell-product-card[data-product-id="${productId}"][data-category="__add_ons__"]`);
-        const currentVariant = product.variantSelector?.currentVariant;
-        if(currentVariant) {
-          this.selectedAddOns.set(currentVariant.id, {
-            ...currentVariant,
-            quantity: 1,
-          });
-        }
+    const productCards = this.foxsell?.querySelectorAll('foxsell-product-card');
+    if(productCards && productCards.length > 0) {
+      productCards.forEach(card => {
+        card.querySelector('[data-open-modal]')?.addEventListener('click', this.boundOpenModal);
       });
-    });
+    }
 
-    this.dispatchEvent(new CustomEvent(FOXSELL_EVENTS.bundleUpdated, {
-      detail: {
-        bundle: this.bundle,
-        action: 'refresh',
-      }
-    }));
+    if(this.closeButton) {
+      this.closeButton.addEventListener('click', this.boundCloseModal);
+    }
   }
 
-  validateBundleWithQAO() {
-    if (!this.config || !this.config.options || !this.config.tiredDiscountConfig) {
-      this.toggleAddToCartButton(true);
-      return false;
+  disconnectedCallback() {
+    const productCards = this.foxsell?.querySelectorAll('foxsell-product-card');
+    if(productCards && productCards.length > 0) {
+      productCards.forEach(card => {
+        card.querySelector('[data-open-modal]')?.removeEventListener('click', this.boundOpenModal);
+      });
     }
 
-    //! [BUNDLE_CONFIG]
-    //! Allow users to add more items than the max quantity
-    const tiredDiscountConfig = this.config.tiredDiscountConfig;
-    const allowIntermediateQuantity = tiredDiscountConfig.quantity_rules.strategy === 'any';
-    const allowOverflow = tiredDiscountConfig.quantity_rules.max === 'no_cap';
-
-    const optionLimits = (this.config.options || [])
-      .map(opt => Number(opt.quantity ?? opt))
-      .filter(n => !Number.isNaN(n));
-
-    const maxQuantity = optionLimits.length ? Math.max(...optionLimits) : 0;
-    const minQuantity = optionLimits.length ? Math.min(...optionLimits) : 0;
-
-    const items = this.getSelectedItems().flatMap(category =>
-      Array.isArray(category.items) ? category.items : []
-    );
-
-    const itemsCount = items.reduce((sum, item) => sum + item.quantity, 0);
-
-    let isValid = false;
-
-    if (allowIntermediateQuantity) {
-      isValid = itemsCount >= minQuantity;
-    } else {
-      isValid = Array.isArray(this.config.options)
-        && this.config.options.some(opt => Number(opt.quantity ?? opt) === itemsCount);
+    if(this.closeButton) {
+      this.closeButton.removeEventListener('click', this.boundCloseModal);
     }
 
-    this.selectedItems.forEach(category => {
-      category.isMaxQuantity = allowOverflow ? !allowOverflow : (itemsCount >= maxQuantity);
-    });
+    unlockBodyScroll();
+  }
 
-    return isValid;
+  openModal(event) {
+    if(!this.modal) return;
+    this.modal.setAttribute('open', '');
+    lockBodyScroll();
+
+    if(this.content) this.content.innerHTML = this.emptyState?.outerHTML || '';
+
+    if(!event.target) return;
+
+    const productId = event.target?.closest('foxsell-product-card')?.dataset.productId;
+    if(!productId) return;
+    this.renderProductModal(productId);
+  }
+
+  closeModal() {
+    if(!this.modal || !this.content) return;
+    this.content.innerHTML = '';
+    this.modal.removeAttribute('open');
+    unlockBodyScroll();
+  }
+
+  async renderProductModal(productId) {
+    if(!this.foxsell || !this.foxsell.config) return;
+    const productHandle = this.foxsell.config.productHandle;
+    const sectionName = 'foxsell-glow-product-modal';
+    const response = await(await fetch(`/products/${productHandle}?sections=${sectionName}`)).json();
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(response[sectionName], 'text/html');
+
+    const productModal = doc.querySelector('foxsell-product-card[data-product-id="' + productId + '"]');
+    if(!productModal || !this.content) return;
+    this.content.innerHTML = productModal.outerHTML;
+  }
+}
+
+class BaseFoxSellProductModal extends FoxSellProductModal {
+
+  async renderProductModal(productId) {
+    if(!this.foxsell || !this.foxsell.config) return;
+    const productHandle = this.foxsell.config.productHandle;
+    const sectionName = 'foxsell-glow-product-modal';
+    const response = await(await fetch(`/products/${productHandle}?sections=${sectionName}`)).json();
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(response[sectionName], 'text/html');
+
+    const productModal = doc.querySelector('foxsell-product-card[data-product-id="' + productId + '"]');
+    if(!productModal || !this.content) return;
+    const addToBundleButton = productModal.querySelector('.foxsell--button-full-width.add-to-bundle');
+    if(addToBundleButton) {
+      addToBundleButton.textContent = this.foxsell.config.locale.addToBundleButtonText;
+      addToBundleButton.setAttribute('aria-label', this.foxsell.config.locale.addToBundleButtonText);
+    }
+    this.content.innerHTML = productModal.outerHTML;
   }
 }
 
 const elements = [
-  ['foxsell-mix-match', GlowMixMatch],
+  ['foxsell-mix-match', FoxSellMixMatch],
   ['foxsell-category-header', FoxSellCategoryHeader],
-  ['foxsell-product-card', GlowProductCard],
-  ['foxsell-bundle-summary', GlowBundleSummary],
+  ['foxsell-product-card', BaseFoxSellProductCard],
+  ['foxsell-bundle-summary', FoxSellBundleSummary],
   ['foxsell-bundle-line-item', FoxSellBundleLineItem],
-  ['foxsell-bundle-progress', GlowBundleProgressBar],
+  ['foxsell-bundle-progress', FoxSellBundleProgress],
   ['foxsell-variant-radio', FoxSellVariantRadio],
   ['foxsell-variant-select', FoxSellVariantSelect],
-  ['foxsell-product-modal', FoxSellProductModal],
-  ['foxsell-product-gallery', FoxSellProductGallery]
+  ['foxsell-product-modal', BaseFoxSellProductModal],
 ];
 
 for (const [name, constructor] of elements) {

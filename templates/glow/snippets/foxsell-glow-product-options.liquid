@@ -4,6 +4,7 @@
   @param {product} product - The product to be rendered
   @param {object} allowed_variants - The allowed variants for the product
   @param {string} [type] - The type of options to render, either 'radio' or 'select'
+  @param {boolean} [show_color_swatches] - Whether to render color swatches for options that support them
 
   @example
   {% render 'foxsell-glow-product-options', allowed_variants: allowed_variants, type: 'radio' %}
@@ -107,14 +108,25 @@
     {% liquid
       assign swatch_count = option.values | map: 'swatch' | compact | size
       assign option_position = 'option' | append: option.position
+      assign show_color_swatch = false
+      if swatch_count > 0 and show_color_swatches
+        assign show_color_swatch = true
+      endif
     %}
-    <fieldset{% if product.has_only_default_variant %} hidden{% endif %}>
+    <fieldset class="{% if show_color_swatch %}fieldset--color-swatch{% else %}fieldset--radio{% endif %}">
       <legend>{{ option.name }}: <span class="js foxsell-variant-radio__option-value">{{ first_available_variant[option_position] }}</span></legend>
       {% for value in option.values %}
         {% liquid
           assign name = option.name | handleize | append: '-' | append: option.position | append: '-' | append: product.id
           assign is_available = false
           assign is_checked = false
+
+          assign swatch_color_brightness = value.swatch.color | color_brightness
+          if swatch_color_brightness > 105
+            assign swatch_strikethrough_color_mix = '#000'
+          else
+            assign swatch_strikethrough_color_mix = '#fff'
+          endif
           
           if first_available_variant
             case option.position
@@ -142,8 +154,8 @@
             endcase
           endif
         %}
-        <label>
-          {% if swatch_count > 0 %}
+        <label style="--swatch-strikethrough-color-mix: {{ swatch_strikethrough_color_mix }};">
+          {% if swatch_count > 0 and show_color_swatches %}
             {% if value.swatch.image %}
               <span class="swatch image" style="--swatch-image: url({{ value.swatch.image | image_url: width: 100 }});"></span>
             {% elsif value.swatch.color %}
@@ -161,6 +173,10 @@
             {% if is_checked %}checked{% endif %}
             {% unless is_available %}disabled{% endunless %}
           >
+          <svg class="variant-strikethrough" width="100%" height="100%" viewBox="0 0 100 46" preserveAspectRatio="xMidYMid slice" aria-hidden="true">        
+            <line x1="100" y1="0" x2="0" y2="46" vector-effect="non-scaling-stroke"></line>
+            <line x1="100" y1="0" x2="0" y2="46" vector-effect="non-scaling-stroke"></line>
+          </svg>
         </label>
       {% endfor %}
     </fieldset>
@@ -171,20 +187,32 @@
 {% endif %}
 
 {% if type == 'select' %}
-<foxsell-variant-select data-product-id="{{ product.id }}" data-first-variant-id="{{ first_available_variant.id }}">
+<foxsell-variant-select class="foxsell-variant-select" data-product-id="{{ product.id }}" data-first-variant-id="{{ first_available_variant.id }}">
   {% for option in product.options_with_values %}
     {% liquid
+      assign swatch_count = option.values | map: 'swatch' | compact | size
       assign option_position = 'option' | append: option.position
+      assign show_color_swatch = false
+      if swatch_count > 0 and show_color_swatches
+        assign show_color_swatch = true
+      endif
     %}
-    <fieldset{% if product.has_only_default_variant %} hidden{% endif %}>
+    <fieldset class="{% if show_color_swatch %}fieldset--color-swatch{% else %}fieldset--select{% endif %}">
       <legend>{{ option.name }}: <span class="js foxsell-variant-select__option-value">{{ first_available_variant[option_position] }}</span></legend>
-      <select name="{{ option.name | handleize | append: '-' | append: option.position | append: '-' | append: product.id }}" id="{{ option.name | handleize | append: '-' | append: option.position | append: '-' | append: product.id }}">
+      {% if swatch_count > 0 and show_color_swatches %}
         {% for value in option.values %}
           {% liquid
             assign name = option.name | handleize | append: '-' | append: option.position | append: '-' | append: product.id
             assign is_available = false
             assign is_checked = false
-            
+
+            assign swatch_color_brightness = value.swatch.color | color_brightness
+            if swatch_color_brightness > 105
+              assign swatch_strikethrough_color_mix = '#000'
+            else
+              assign swatch_strikethrough_color_mix = '#fff'
+            endif
+
             if first_available_variant
               case option.position
                 when 1
@@ -211,11 +239,67 @@
               endcase
             endif
           %}
-          <option value="{{ value }}" {% if is_checked %}selected{% endif %}>
-            {{ value }} {% unless is_available %}- unavailable{% endunless %}
-          </option>
+          <label style="--swatch-strikethrough-color-mix: {{ swatch_strikethrough_color_mix }};">
+            {% if value.swatch.image %}
+              <span class="swatch image" style="--swatch-image: url({{ value.swatch.image | image_url: width: 100 }});"></span>
+            {% elsif value.swatch.color %}
+              <span class="swatch color" style="--swatch-color: {{ value.swatch.color }};"></span>
+            {% else %}
+              <span>{{ value }}</span>
+            {% endif %}
+            <input
+              type="radio"
+              name="{{ section.id }}-{{ name }}"
+              value="{{ value }}"
+              {% if is_checked %}checked{% endif %}
+              {% unless is_available %}disabled{% endunless %}
+            >
+            <svg class="variant-strikethrough" width="100%" height="100%" viewBox="0 0 100 46" preserveAspectRatio="xMidYMid slice" aria-hidden="true">        
+              <line x1="100" y1="0" x2="0" y2="46" vector-effect="non-scaling-stroke"></line>
+              <line x1="100" y1="0" x2="0" y2="46" vector-effect="non-scaling-stroke"></line>
+            </svg>
+          </label>
         {% endfor %}
-      </select>
+      {% else %}
+        <select name="{{ option.name | handleize | append: '-' | append: option.position | append: '-' | append: product.id }}" id="{{ option.name | handleize | append: '-' | append: option.position | append: '-' | append: product.id }}">
+          {% for value in option.values %}
+            {% liquid
+              assign name = option.name | handleize | append: '-' | append: option.position | append: '-' | append: product.id
+              assign is_available = false
+              assign is_checked = false
+
+              if first_available_variant
+                case option.position
+                  when 1
+                    if value == first_available_variant.option1
+                      assign is_checked = true
+                      assign is_available = true
+                    elsif option1_array contains value
+                      assign is_available = true
+                    endif
+                  when 2
+                    if value == first_available_variant.option2
+                      assign is_checked = true
+                      assign is_available = true
+                    elsif option2_array contains value
+                      assign is_available = true
+                    endif
+                  when 3
+                    if value == first_available_variant.option3
+                      assign is_checked = true
+                      assign is_available = true
+                    elsif option3_array contains value
+                      assign is_available = true
+                    endif
+                endcase
+              endif
+            %}
+            <option value="{{ value }}" {% if is_checked %}selected{% endif %}>
+              {{ value }} {% unless is_available %}- unavailable{% endunless %}
+            </option>
+          {% endfor %}
+        </select>
+      {% endif %}
     </fieldset>
   {% endfor %}
 
