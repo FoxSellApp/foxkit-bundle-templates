@@ -103,8 +103,8 @@ foxsell-mix-match img {
 
 
 foxsell-mix-match {
-  color: var(--foxsell-color-text, var(--foxsell-color-foreground, #333));
-  background-color: var(--foxsell-color-background, transparent);
+  color: var(--foxsell-color-foreground, #333);
+  font-size: var(--foxsell-text-md, 14px);
 }
 
 .foxsell-mix-match__container {
@@ -583,7 +583,7 @@ fieldset.fieldset--color-swatch > legend {
   align-items: center;
   justify-content: space-between;
   gap: var(--foxsell-space-3);
-  font-size: var(--foxsell-text-lg);
+  font-size: var(--foxsell-text-base);
   padding-inline: var(--foxsell-space-3);
   padding-block: var(--foxsell-space-3) var(--foxsell-space-2);
   border-bottom: 1px solid var(--foxsell-color-border);
