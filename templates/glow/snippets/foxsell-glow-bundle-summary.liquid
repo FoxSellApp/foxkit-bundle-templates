@@ -15,6 +15,14 @@
   assign end_state_text = section.settings.summary_end_state_text | default: 'Bundle complete'
 %}
 
+{% capture chevron_down_svg %}
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+{% endcapture %}
+
+{% capture chevron_up_svg %}
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>
+{% endcapture %}
+
 {% capture script_config %}
   <script id="foxsell-bundle-progress-config" type="application/json">
     {
@@ -56,9 +64,9 @@
           <span>{{ title }}</span>
           <span data-foxsell-total-quantity>(0)</span>
         </div>
-        <button type="button" class="foxsell-bundle-summary__toggle" id="foxsell-bundle-summary-toggle" aria-expanded="false" aria-controls="foxsell-bundle-summary-panel">
-          <span class="foxsell--show">Show</span>
-          <span class="foxsell--hide">Hide</span>
+        <button type="button" class="foxsell-bundle-summary__toggle foxsell--button foxsell--button-ghost" id="foxsell-bundle-summary-toggle" aria-expanded="false" aria-controls="foxsell-bundle-summary-panel">
+          <span class="foxsell--show">{{ chevron_up_svg }}</span>
+          <span class="foxsell--hide">{{ chevron_down_svg }}</span>
         </button>
       </div>
       {% render 'foxsell-glow-bundle-summary', section: section, view: 'header', options: options, header_class: 'foxsell-desktop-header' %}
