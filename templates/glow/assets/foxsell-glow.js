@@ -1307,7 +1307,7 @@ class FoxSellBundleSummary extends HTMLElement {
       <foxsell-bundle-line-item data-item-id="${item.id}" data-category-id="${item.category.id}" data-category-title="${item.category.title}" data-quantity="${item.quantity}" class="foxsell-bundle-summary__item">
         <div><img src="${itemImage}"/></div>
         <div class="foxsell-bundle-summary__item-info">
-          ${item.category.id === '__add_ons__' ? `<span class="foxsell-bundle-summary__item-add-on-tag">Add-On</span>` : ''}
+          ${item.category.id === '__add_ons__' ? `<span class="foxsell-bundle-summary__item-add-on-tag">${this.foxsell.config.locale.addOnsLineItemLabel}</span>` : ''}
           <div class="foxsell-bundle-summary__item-title">${item.product.title}</div>
           ${item.option1 !== 'Default Title' ? `<div>${item.options.join(", ")}</div>` : ''}
           <div>
