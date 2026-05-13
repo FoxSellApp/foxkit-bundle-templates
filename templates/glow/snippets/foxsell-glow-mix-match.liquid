@@ -51,7 +51,7 @@
 <link rel="stylesheet" href="{{ 'foxsell-glow.css' | asset_url }}">
 {% # theme-check-enable %}
 
-<foxsell-mix-match class="foxsell-mix-match" data-bundle-id="{{ bundle_id }}">
+<foxsell-mix-match class="foxsell-mix-match" data-bundle-id="{{ bundle_id }}" data-scroll-offset="{{ section.settings.scroll_offset | default: 0 }}">
   <div class="foxsell-mix-match__container">
     {% comment %} Bundle summary header {% endcomment %}
     {% render 'foxsell-glow-bundle-summary', section: section, options: options, view: 'header', header_class: 'foxsell-mobile-header' %}

@@ -713,8 +713,8 @@ class GlowMixMatch extends FoxSellMixMatch {
     super();
     this.currentView = 'items';
 
-    this.boundToggleToItems = this.toggleView.bind(this, 'items');
-    this.boundToggleToAddOns = this.toggleView.bind(this, 'add_ons');
+    this.boundToggleToItems = this.toggleToItems.bind(this);
+    this.boundToggleToAddOns = this.toggleToAddOns.bind(this);
 
     this.addToCartButton = this.querySelector('.foxsell-add-to-cart-button');
 
@@ -757,6 +757,24 @@ class GlowMixMatch extends FoxSellMixMatch {
     if(!this.bundle.isItemsValid) {
       this.toggleView('items');
     }
+  }
+
+  toggleToItems() {
+    this.toggleView('items');
+    this.scrollToMixMatchBlock();
+  }
+
+  toggleToAddOns() {
+    this.toggleView('add_ons');
+    this.scrollToMixMatchBlock();
+  }
+
+  scrollToMixMatchBlock() {
+    const offset = Number(this.dataset.scrollOffset) || 85;
+    const rect = this.getBoundingClientRect();
+    if (rect.top >= offset && rect.top <= window.innerHeight) return;
+    const top = rect.top + window.scrollY - offset;
+    window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
   }
 
   toggleView(view) {
