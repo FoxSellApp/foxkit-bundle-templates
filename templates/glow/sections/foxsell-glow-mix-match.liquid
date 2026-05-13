@@ -29,7 +29,7 @@
 
 {% schema %}
 {
-  "name": "Foxsell Glow",
+  "name": "FoxSell Glow",
   "class": "foxsell-mix-match-section",
   "settings": [
     {
@@ -41,8 +41,7 @@
       "type": "text",
       "id": "wrapper_custom_classes",
       "label": "Wrapper CSS classes",
-      "info": "Add custom classes to the wrapper",
-      "default": "section section--page-width"
+      "info": "Add custom classes to the wrapper"
     },
     {
       "type": "color",
@@ -261,7 +260,7 @@
       "type": "inline_richtext",
       "id": "summary_progress_state_text",
       "label": "Progress state text",
-      "default": "You have selected <strong>_currentQuantity</strong> of <strong>_requiredQuantity</strong> items",
+      "default": "Select <strong>_remainingQuantity</strong> more item(s) to get <strong>_discount</strong> off.",
       "info": "Use _currentQuantity for the current quantity and _requiredQuantity for the required quantity [Learn more](https://foxsell.notion.site/progress-message-formatting-options)"
     },
     {
@@ -309,7 +308,7 @@
   ],
   "presets": [
     {
-      "name": "Foxsell Glow",
+      "name": "FoxSell Glow",
       "settings": {
         "bundle_product": "{{ product }}"
       }

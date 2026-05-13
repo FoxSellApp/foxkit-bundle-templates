@@ -87,6 +87,13 @@ foxsell-mix-match img {
   cursor: pointer;
 }
 
+.foxsell--button-secondary {
+  --foxsell-color-background: var(--foxsell-color-accent-2);
+  --foxsell-color-foreground: var(--foxsell-color-accent-text-2);
+  background-color: var(--foxsell-color-background);
+  color: var(--foxsell-color-foreground);
+}
+
 .foxsell--button:disabled {
   cursor: not-allowed;
   opacity: 0.5;
@@ -105,6 +112,7 @@ foxsell-mix-match img {
 foxsell-mix-match {
   color: var(--foxsell-color-foreground, #333);
   font-size: var(--foxsell-text-md, 14px);
+  line-height: normal;
 }
 
 .foxsell-mix-match__container {

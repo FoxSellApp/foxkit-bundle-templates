@@ -187,6 +187,7 @@ class FoxSellMixMatch extends HTMLElement {
       items,
       addOns: {
         ...this.getAddOnsConfig(),
+        enabled: qaoEnabled ? this.getAddOnsConfig().enabled : isItemsValid,
         items: addOnItems,
       },
       isValid,
@@ -423,30 +424,22 @@ class FoxSellMixMatch extends HTMLElement {
       return true;
     }
 
-    let selectedQuantity = 0;
-    let refreshBundleState = false;
-
-    for (const selectedAddOn of this.getSelectedAddOns()) {
-      if (!allowedIds.includes(selectedAddOn.product.id)) {
-        this.removeFromAddOns(selectedAddOn, selectedAddOn.quantity, false);
-        refreshBundleState = true;
-      } else {
-        if((selectedQuantity + selectedAddOn.quantity) > maximum) {
-          this.removeFromAddOns(selectedAddOn, selectedAddOn.quantity, false);
-          refreshBundleState = true;
-        } else {
-          selectedQuantity = selectedQuantity + selectedAddOn.quantity;
-        }
-      }
+    const qaoEnabled = this.config.options?.length > 0;
+    if(!qaoEnabled && !isItemsValid) {
+      this.clearAddOns(false);
     }
 
-    if (refreshBundleState) {
-      this.dispatchEvent(new CustomEvent(FOXSELL_EVENTS.bundleUpdated, {
-        detail: {
-          bundle: this.bundle,
-          action: 'refresh',
-        }
-      }));
+    let selectedQuantity = 0;
+
+    for (const selectedAddOn of this.getSelectedAddOns()) {
+      const overMax = (selectedQuantity + selectedAddOn.quantity) > maximum;
+      const notAllowed = !allowedIds.includes(selectedAddOn.product.id);
+
+      if (notAllowed || overMax) {
+        this.selectedAddOns.delete(selectedAddOn.id);
+      } else {
+        selectedQuantity += selectedAddOn.quantity;
+      }
     }
 
     const selectedAddOns = this.getSelectedAddOns();
@@ -491,6 +484,10 @@ class FoxSellMixMatch extends HTMLElement {
       return false;
     }
 
+    const quantityRules = this.config.additionalSettings.quantity_rules;
+    const allowIntermediateQuantity = (quantityRules.strategy ?? 'any') === 'any';
+    const allowOverflow = (quantityRules.max ?? 'no_cap') === 'no_cap';
+
     const optionLimits = (this.config.options || [])
       .map(opt => Number(opt.quantity ?? opt))
       .filter(n => !Number.isNaN(n));
@@ -504,12 +501,15 @@ class FoxSellMixMatch extends HTMLElement {
 
     let isValid = false;
 
-    {
+    if (allowIntermediateQuantity) {
       isValid = itemsCount >= minQuantity;
+    } else {
+      isValid = Array.isArray(this.config.options)
+        && this.config.options.some(opt => Number(opt.quantity ?? opt) === itemsCount);
     }
 
     this.selectedItems.forEach(category => {
-      category.isMaxQuantity = (itemsCount >= maxQuantity);
+      category.isMaxQuantity = !allowOverflow && (itemsCount >= maxQuantity);
     });
 
     return isValid;
@@ -540,7 +540,7 @@ class FoxSellMixMatch extends HTMLElement {
     //! support add-on strategy: add_on_step, automatic_add
     const addOnStrategy = this.config.additionalSettings['add_on_settings'].strategy ?? 'add_on_step';
 
-    const allowedIds = Object.keys(this.config.addOnProductProperties).map(key => getItemIdFromGid(key));
+    let allowedIds = [];
 
     let minimum = 0;
     let maximum = 0;
@@ -550,17 +550,25 @@ class FoxSellMixMatch extends HTMLElement {
       if(!currentValidOption) return { ...emptyAddOnsConfig };
       minimum = currentValidOption.add_on.minimum ?? 0;
       maximum = currentValidOption.add_on.maximum ?? 0;
+      allowedIds = currentValidOption.add_on_products.map((addOn)=> parseInt(addOn.id));
     } else {
       minimum = this.config.settings.addOn.minimum ?? 0;
       maximum = this.config.settings.addOn.maximum ?? 0;
+      allowedIds = Object.keys(this.config.addOnProductProperties).map(key => getItemIdFromGid(key));
     }
 
     const isMaximumQuantity = this.getSelectedAddOns().reduce((sum, item) => sum + item.quantity, 0) >= maximum;
     const selectedQuantity = this.getSelectedAddOns().reduce((sum, item) => sum + item.quantity, 0);
+
+    //! If the maximum is 0, we don't need to validate the add-ons
+    if(maximum === 0) {
+      allowedIds = [];
+    }
+
     return {
       addOnStrategy: addOnStrategy,
       allowedIds: allowedIds,
-      enabled: allowedIds.length > 0,
+      enabled: (allowedIds.length > 0 && maximum > 0),
       minimum,
       maximum,
       selectedQuantity,
@@ -699,6 +707,73 @@ class FoxSellMixMatch extends HTMLElement {
   }
 }
 
+class GlowMixMatch extends FoxSellMixMatch {
+
+  constructor() {
+    super();
+    this.currentView = 'items';
+
+    this.boundToggleToItems = this.toggleView.bind(this, 'items');
+    this.boundToggleToAddOns = this.toggleView.bind(this, 'add_ons');
+
+    this.addToCartButton = this.querySelector('.foxsell-add-to-cart-button');
+
+    this.continueButton = this.querySelector('#foxsell--continue-button');
+
+    this.returnButton = this.querySelector('#foxsell--return-button');
+  }
+
+  connectedCallback() {
+    this.validateBundle();
+
+    this.querySelector('.foxsell-add-to-cart-button')?.classList.remove('foxsell--hidden');
+    this.querySelector('.foxsell-mix-match__overlay')?.addEventListener('click', this.boundHandleOverlayClick);
+    this.returnButton?.addEventListener('click', this.boundToggleToItems);
+    this.continueButton?.addEventListener('click', this.boundToggleToAddOns);
+  }
+
+  disconnectedCallback() {
+    this.querySelector('.foxsell-mix-match__overlay')?.removeEventListener('click', this.boundHandleOverlayClick);
+    this.returnButton?.removeEventListener('click', this.boundToggleToItems);
+    this.continueButton?.removeEventListener('click', this.boundToggleToAddOns);
+  }
+
+  validateBundle() {
+    super.validateBundle();
+    if(this.continueButton && this.returnButton) {
+      this.toggleContinueButton();
+    }
+  }
+
+  toggleContinueButton() {
+    if(!this.config) return;
+
+    const continueButtonWrapper = this.querySelector('.foxsell-mix-match__continue-buttons');
+    const showContinueButton = this.bundle.addOns.enabled;
+
+    continueButtonWrapper?.classList.toggle('foxsell--hidden', !showContinueButton);
+    this.addToCartButton?.classList.toggle('foxsell--hidden', showContinueButton);
+
+    if(!this.bundle.isItemsValid) {
+      this.toggleView('items');
+    }
+  }
+
+  toggleView(view) {
+    this.currentView = view;
+    const isItems = view === 'items';
+    this.returnButton?.classList.toggle('foxsell--hidden', isItems);
+    this.continueButton?.classList.toggle('foxsell--hidden', !isItems);
+    this.addToCartButton?.classList.toggle('foxsell--hidden', isItems && this.bundle.addOns.enabled);
+
+    const categories = this.querySelectorAll('.foxsell-category__item');
+    categories.forEach(category => {
+      const isAddOns = category.dataset.category === '__add_ons__';
+      category.classList.toggle('foxsell--hidden', isItems ? isAddOns : !isAddOns);
+    });
+  }
+}
+
 class FoxSellCategoryHeader extends HTMLElement {
   constructor() {
     super();
@@ -803,11 +878,11 @@ class FoxSellProductCard extends HTMLElement {
       } else {
         const { enabled, allowedIds, isMaximumQuantity } = bundle.addOns;
         const isAllowed = allowedIds.includes(this.variantSelector.product?.id ?? 0);
-        disable = !enabled || !isAllowed || isMaximumQuantity || this.isAddOnAtInventoryLimit();
+        disable = !enabled || !isAllowed || isMaximumQuantity || this.isCurrentVariantAtInventoryLimit();
       }
     } else {
       const category = this.foxsell?.getCategory(this.categoryId ?? '');
-      disable = (category?.isMaxQuantity ?? false) || this.isVariantAtInventoryLimit();
+      disable = (category?.isMaxQuantity ?? false) || this.isCurrentVariantAtInventoryLimit();
     }
 
     this.disableAddToBundle = disable;
@@ -817,9 +892,7 @@ class FoxSellProductCard extends HTMLElement {
   handleBundleUpdated(event) {
     if (event.detail.action === 'clear') {
       this.updateQuantity(0);
-      const atInventoryLimit = this.categoryId === '__add_ons__'
-        ? this.isAddOnAtInventoryLimit()
-        : this.isVariantAtInventoryLimit();
+      const atInventoryLimit = this.isCurrentVariantAtInventoryLimit();
       this.disableAddToBundle = atInventoryLimit;
       this.toggleAddToBundleButton(atInventoryLimit);
       return;
@@ -842,19 +915,16 @@ class FoxSellProductCard extends HTMLElement {
 
     if (event.detail.action !== 'add' && event.detail.action !== 'remove') return;
 
-    const { category, item } = event.detail;
+    const { category } = event.detail;
     const disableAddToBundle = category.isMaxQuantity;
 
     if (!qaoEnabled && this.categoryId !== category.id) return;
 
-    this.disableAddToBundle = disableAddToBundle || this.isVariantAtInventoryLimit();
+    this.disableAddToBundle = disableAddToBundle || this.isCurrentVariantAtInventoryLimit();
     this.toggleAddToBundleButton(this.disableAddToBundle);
 
     if (qaoEnabled) this.updatePrice();
-
-    if (this.productId === item.product.id) {
-      this.updateQuantity(this.getCurrentQuantity());
-    }
+    this.updateQuantity(this.getCurrentQuantity());
   }
 
   handleAddOnUpdated(event) {
@@ -885,12 +955,9 @@ class FoxSellProductCard extends HTMLElement {
 
     const disableAddToBundle = !enabled || !isAllowed || isMaximumQuantity;
 
-    this.disableAddToBundle = disableAddToBundle || this.isAddOnAtInventoryLimit();
-    this.toggleAddToBundleButton(disableAddToBundle);
-
-    if (this.productId === item.product.id) {
-      this.updateQuantity(this.getCurrentQuantity());
-    }
+    this.disableAddToBundle = disableAddToBundle || this.isCurrentVariantAtInventoryLimit();
+    this.toggleAddToBundleButton(this.disableAddToBundle);
+    this.updateQuantity(this.getCurrentQuantity());
   }
 
   getCurrentQuantity() {
@@ -946,21 +1013,11 @@ class FoxSellProductCard extends HTMLElement {
     if (el) el.textContent = String(quantity);
   }
 
-  isVariantAtInventoryLimit() {
-    const variant = this.variantSelector?.currentVariant;
-    if (!variant || !this.foxsell || !this.categoryId) return true;
-
-    if (!variant.inventory_management || variant.inventory_policy === 'continue') return false;
-    const currentQuantity = this.getCurrentQuantity();
-    return currentQuantity >= variant.inventory_quantity;
-  }
-
-  isAddOnAtInventoryLimit() {
+  isCurrentVariantAtInventoryLimit() {
     const variant = this.variantSelector?.currentVariant;
     if (!variant || !this.foxsell || !this.categoryId) return true;
     if (!variant.inventory_management || variant.inventory_policy === 'continue') return false;
-    const currentQuantity = this.getCurrentQuantity() ?? 0;
-    return currentQuantity >= variant.inventory_quantity;
+    return this.getCurrentQuantity() >= variant.inventory_quantity;
   }
 
   addToBundle() {
@@ -968,12 +1025,12 @@ class FoxSellProductCard extends HTMLElement {
     if (this.categoryId === '__add_ons__') {
 
       this.foxsell.addToAddOns(this.variantSelector.currentVariant, 1);
-      if (this.isAddOnAtInventoryLimit()) {
+      if (this.isCurrentVariantAtInventoryLimit()) {
         this.toggleAddToBundleButton(true);
       }
     } else {
       this.foxsell.addToBundle(this.variantSelector.currentVariant, 1, this.categoryId);
-      if (this.isVariantAtInventoryLimit()) {
+      if (this.isCurrentVariantAtInventoryLimit()) {
         this.toggleAddToBundleButton(true);
       }
     }
@@ -1608,30 +1665,8 @@ class FoxSellProductModal extends HTMLElement {
   }
 }
 
-class GlowFoxSellProductModal extends FoxSellProductModal {
-
-  async renderProductModal(productId) {
-    if(!this.foxsell || !this.foxsell.config) return;
-    const productHandle = this.foxsell.config.productHandle;
-    const sectionName = 'foxsell-glow-product-modal';
-    const response = await(await fetch(`/products/${productHandle}?sections=${sectionName}`)).json();
-
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(response[sectionName], 'text/html');
-
-    const productModal = doc.querySelector('foxsell-product-card[data-product-id="' + productId + '"]');
-    if(!productModal || !this.content) return;
-    const addToBundleButton = productModal.querySelector('.foxsell--button-full-width.add-to-bundle');
-    if(addToBundleButton) {
-      addToBundleButton.textContent = this.foxsell.config.locale.addToBundleButtonText;
-      addToBundleButton.setAttribute('aria-label', this.foxsell.config.locale.addToBundleButtonText);
-    }
-    this.content.innerHTML = productModal.outerHTML;
-  }
-}
-
 const elements = [
-  ['foxsell-mix-match', FoxSellMixMatch],
+  ['foxsell-mix-match', GlowMixMatch],
   ['foxsell-category-header', FoxSellCategoryHeader],
   ['foxsell-product-card', GlowFoxSellProductCard],
   ['foxsell-bundle-summary', FoxSellBundleSummary],
@@ -1639,7 +1674,7 @@ const elements = [
   ['foxsell-bundle-progress', FoxSellBundleProgress],
   ['foxsell-variant-radio', FoxSellVariantRadio],
   ['foxsell-variant-select', FoxSellVariantSelect],
-  ['foxsell-product-modal', GlowFoxSellProductModal],
+  ['foxsell-product-modal', FoxSellProductModal],
 ];
 
 for (const [name, constructor] of elements) {
