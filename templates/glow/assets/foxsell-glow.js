@@ -752,7 +752,7 @@ class GlowMixMatch extends FoxSellMixMatch {
     const showContinueButton = this.bundle.addOns.enabled;
 
     continueButtonWrapper?.classList.toggle('foxsell--hidden', !showContinueButton);
-    this.addToCartButton?.classList.toggle('foxsell--hidden', showContinueButton);
+    this.addToCartButton?.classList.toggle('foxsell--hidden', showContinueButton && this.currentView === 'items');
 
     if(!this.bundle.isItemsValid) {
       this.toggleView('items');
