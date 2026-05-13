@@ -384,6 +384,7 @@ foxsell-mix-match {
   position: sticky;
   bottom: 0;
   z-index: 1;
+  background: var(--foxsell-color-background);
 }
 
 /* Fieldset resets */
@@ -795,7 +796,7 @@ foxsell-bundle-progress.foxsell-desktop-header {
   inset-block-end: 0;
   height: 90vh;
   padding: var(--foxsell-space-3);
-  background-color: #fff;
+  background-color: var(--foxsell-color-background);
   flex-direction: column;
   overflow: hidden;
   transform: translateY(100%);

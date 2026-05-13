@@ -1665,6 +1665,28 @@ class FoxSellProductModal extends HTMLElement {
   }
 }
 
+class GlowFoxSellProductModal extends FoxSellProductModal {
+
+  async renderProductModal(productId) {
+    if(!this.foxsell || !this.foxsell.config) return;
+    const productHandle = this.foxsell.config.productHandle;
+    const sectionName = 'foxsell-glow-product-modal';
+    const response = await(await fetch(`/products/${productHandle}?sections=${sectionName}`)).json();
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(response[sectionName], 'text/html');
+
+    const productModal = doc.querySelector('foxsell-product-card[data-product-id="' + productId + '"]');
+    if(!productModal || !this.content) return;
+    const addToBundleButton = productModal.querySelector('.foxsell--button-full-width.add-to-bundle');
+    if(addToBundleButton) {
+      addToBundleButton.textContent = this.foxsell.config.locale.addToBundleButtonText;
+      addToBundleButton.setAttribute('aria-label', this.foxsell.config.locale.addToBundleButtonText);
+    }
+    this.content.innerHTML = productModal.outerHTML;
+  }
+}
+
 const elements = [
   ['foxsell-mix-match', GlowMixMatch],
   ['foxsell-category-header', FoxSellCategoryHeader],
@@ -1674,7 +1696,7 @@ const elements = [
   ['foxsell-bundle-progress', FoxSellBundleProgress],
   ['foxsell-variant-radio', FoxSellVariantRadio],
   ['foxsell-variant-select', FoxSellVariantSelect],
-  ['foxsell-product-modal', FoxSellProductModal],
+  ['foxsell-product-modal', GlowFoxSellProductModal],
 ];
 
 for (const [name, constructor] of elements) {
