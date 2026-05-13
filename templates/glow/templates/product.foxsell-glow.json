@@ -1,0 +1,11 @@
+{
+  "sections": {
+    "main": {
+      "type": "foxsell-glow-mix-match",
+      "settings": {}
+    }
+  },
+  "order": [
+    "main"
+  ]
+}
