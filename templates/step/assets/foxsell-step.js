@@ -746,7 +746,8 @@ class StepMixMatch extends FoxSellMixMatch {
       this.goToPreviousStep();
     }
 
-    this.validateBundle();
+    super.validateBundle();
+    this.updateNavigationButtons();
   }
 
   goToNextStep() {
@@ -756,7 +757,6 @@ class StepMixMatch extends FoxSellMixMatch {
     if(!nextStep) return;
 
     this.goToStep(nextStepIndex);
-    this.updateNavigationButtons();
     this.scrollToMixMatchBlock();
 
     this.dispatchEvent(new CustomEvent(FOXSELL_EVENTS.stepProgressUpdated));
@@ -769,7 +769,6 @@ class StepMixMatch extends FoxSellMixMatch {
     if(!previousStep) return;
 
     this.goToStep(previousStepIndex);
-    this.updateNavigationButtons();
     this.scrollToMixMatchBlock();
 
     this.dispatchEvent(new CustomEvent(FOXSELL_EVENTS.stepProgressUpdated));
