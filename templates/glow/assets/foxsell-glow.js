@@ -459,10 +459,16 @@ class FoxSellMixMatch extends HTMLElement {
     let selectedQuantity = 0;
     for (const allowedId of allowedIds) {
       const item = this.config.addOnProducts.find(item => item.id === allowedId);
-      if(item && item.variants[0]) {
-        this.selectedAddOns.set(item.variants[0].id, {
-          ...item.variants[0],
-          foxsell_price: getAddOnPrice(item.id, item.variants[0].id, this.config.addOnProductProperties),
+      if(!item) continue;
+
+      const productGid = `gid://shopify/Product/${allowedId}`;
+      const configuredVariantGids = Object.keys(this.config.addOnProductProperties[productGid]?.variants ?? {});
+      const variant = item.variants.find(v => configuredVariantGids.includes(`gid://shopify/ProductVariant/${v.id}`)) ?? item.variants[0];
+
+      if(variant) {
+        this.selectedAddOns.set(variant.id, {
+          ...variant,
+          foxsell_price: getAddOnPrice(item.id, variant.id, this.config.addOnProductProperties),
           product: {
             ...item,
             featured_image: {
