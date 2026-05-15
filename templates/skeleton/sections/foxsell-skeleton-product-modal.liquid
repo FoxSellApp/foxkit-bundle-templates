@@ -7,7 +7,6 @@
   assign add_on_products = dynamic_add_ons_bundle_config.add_on_products.value
   assign add_on_product_properties = dynamic_add_ons_bundle_config.add_on_product_properties.value
   assign categories = dynamic_add_ons_bundle_config.categories.value
-  assign product_card_options_type = section.settings.product_card_options_type | default: 'radio'
 %}
  
 <div class="foxsell-mix-match" data-bundle-id="{{ bundle_id }}">
@@ -30,7 +29,8 @@
           category_title: category.title, 
           product: product_ref, 
           allowed_variants: p.variants,
-          type: product_card_options_type
+          image_aspect_ratio: 'original',
+          type: 'select'
           %}
       {% endfor %}
     {% endfor %}
@@ -50,13 +50,14 @@
         category_title: '__add_ons__', 
         product: add_on, 
         allowed_variants: allowed_variants,
-        type: product_card_options_type
+        image_aspect_ratio: 'original',
+        type: 'select'
       %}
     {% endfor %}
 </div>
 
 {% schema %}
 {
-  "name": "Foxsell Product Modal"
+  "name": "FoxSell Product Modal"
 }
 {% endschema %}

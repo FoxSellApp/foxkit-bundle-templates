@@ -1,5 +1,5 @@
 {% doc %}
-  Renders the Foxsell CSS Variables component.
+  Renders the FoxSell CSS Variables component.
 
   @param {section} section - The section to be rendered
     @example
@@ -9,6 +9,7 @@
 {% liquid
   assign product_grid_columns_mobile = section.settings.product_grid_columns_mobile
   assign product_grid_columns_desktop = section.settings.product_grid_columns_desktop
+  assign product_grid_gap = section.settings.product_grid_gap | default: 16
 %}
 
 {% style %}
@@ -16,5 +17,7 @@
     --foxsell-color-foreground: #333;
     --foxsell-product-grid-columns-mobile: {{ product_grid_columns_mobile }};
     --foxsell-product-grid-columns-desktop: {{ product_grid_columns_desktop }};
+    --foxsell-product-grid-column-gap: {{ product_grid_gap }}px;
+    --foxsell-product-grid-row-gap: {{ product_grid_gap | plus: 8 }}px;
   }
 {% endstyle %}
