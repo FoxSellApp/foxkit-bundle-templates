@@ -162,6 +162,22 @@ foxsell-mix-match {
   }
 }
 
+.foxsell-mix-match__category-navigation {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--foxsell-space-2);
+  font-size: var(--foxsell-text-lg);
+}
+
+.foxsell-mix-match__category-navigation-item {
+  font-weight: inherit;
+}
+
+.foxsell-mix-match__category-navigation-item.active {
+  font-weight: var(--foxsell-font-header-weight);
+}
+
 .foxsell--hidden {
   display: none;
 }

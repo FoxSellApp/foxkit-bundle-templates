@@ -790,11 +790,21 @@ class GlowMixMatch extends FoxSellMixMatch {
     this.continueButton?.classList.toggle('foxsell--hidden', !isItems);
     this.addToCartButton?.classList.toggle('foxsell--hidden', isItems && this.bundle.addOns.enabled);
 
-    const categories = this.querySelectorAll('.foxsell-category__item');
-    categories.forEach(category => {
-      const isAddOns = category.dataset.category === '__add_ons__';
-      category.classList.toggle('foxsell--hidden', isItems ? isAddOns : !isAddOns);
-    });
+    const categoryNavigation = (this.querySelector('foxsell-category-navigation'));
+    if (categoryNavigation && view === 'items') {
+      categoryNavigation.enableCategoryNavigation();
+      categoryNavigation.toggleCategoryItemsVisibility();
+    } else {
+      if (categoryNavigation && view === 'add_ons') {
+        categoryNavigation.disableCategoryNavigation();
+      }
+
+      const categories = this.querySelectorAll('.foxsell-category__item');
+      categories.forEach(category => {
+        const isAddOns = category.dataset.category === '__add_ons__';
+        category.classList.toggle('foxsell--hidden', isItems ? isAddOns : !isAddOns);
+      });
+    }
   }
 }
 
@@ -834,6 +844,72 @@ class FoxSellCategoryHeader extends HTMLElement {
     if (!bundle) return;
     if (!this.quantityElement) return;
     this.quantityElement.textContent = `(${bundle.addOns.selectedQuantity}/${bundle.addOns.maximum})`;
+  }
+}
+
+class FoxSellCategoryNavigation extends HTMLElement {
+  constructor() {
+    super();
+
+    this.foxsell = this.closest('foxsell-mix-match');
+
+    this.categoryItems = this.foxsell?.querySelectorAll('.foxsell-category__item') ?? [];
+
+    this.categoryNavigationItems = this.querySelectorAll('.foxsell-mix-match__category-navigation-item');
+
+    this.currentActiveCategoryId = 'all';
+    this.boundHandleCategoryNavigationItemClick = this.handleCategoryNavigationItemClick.bind(this);
+  }
+  connectedCallback() {
+    this.categoryNavigationItems.forEach(item => {
+      item.addEventListener('click', this.boundHandleCategoryNavigationItemClick);
+    });
+  }
+
+  disconnectedCallback() {
+    this.categoryNavigationItems.forEach(item => {
+      item.removeEventListener('click', this.boundHandleCategoryNavigationItemClick);
+    });
+  }
+
+  handleCategoryNavigationItemClick(event) {
+    event.preventDefault();
+    const target = (event.currentTarget);
+
+    if(!target) return;
+    const currentActiveItem = Array.from(this.categoryNavigationItems).find(item => item.classList.contains('active'));
+    if(currentActiveItem) {
+      currentActiveItem.classList.remove('active');
+    }
+
+    target.classList.add('active');
+    this.currentActiveCategoryId = target.dataset.categoryId ?? 'all';
+    this.toggleCategoryItemsVisibility(this.currentActiveCategoryId);
+  }
+
+  toggleCategoryItemsVisibility(categoryId = this.currentActiveCategoryId) {
+    if(categoryId === 'all') {
+      this.categoryItems.forEach(item => {
+        if (item.dataset.category === '__add_ons__') return;
+        item.classList.remove('foxsell--hidden');
+      });
+    } else {
+      this.categoryItems.forEach(item => {
+        item.classList.toggle('foxsell--hidden', item.dataset.category !== categoryId);
+      });
+    }
+  }
+
+  disableCategoryNavigation() {
+    this.categoryNavigationItems.forEach(item => {
+      item.disabled = true;
+    });
+  }
+
+  enableCategoryNavigation() {
+    this.categoryNavigationItems.forEach(item => {
+      item.disabled = false;
+    });
   }
 }
 
@@ -1712,6 +1788,7 @@ class GlowFoxSellProductModal extends FoxSellProductModal {
 }
 
 const elements = [
+  ['foxsell-category-navigation', FoxSellCategoryNavigation],
   ['foxsell-mix-match', GlowMixMatch],
   ['foxsell-category-header', FoxSellCategoryHeader],
   ['foxsell-product-card', GlowFoxSellProductCard],
@@ -1720,7 +1797,7 @@ const elements = [
   ['foxsell-bundle-progress', FoxSellBundleProgress],
   ['foxsell-variant-radio', FoxSellVariantRadio],
   ['foxsell-variant-select', FoxSellVariantSelect],
-  ['foxsell-product-modal', GlowFoxSellProductModal],
+  ['foxsell-product-modal', GlowFoxSellProductModal]
 ];
 
 for (const [name, constructor] of elements) {

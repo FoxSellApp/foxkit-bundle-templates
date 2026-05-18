@@ -55,6 +55,20 @@
   <div class="foxsell-mix-match__container">
     {% comment %} Bundle summary header {% endcomment %}
     {% render 'foxsell-glow-bundle-summary', section: section, options: options, view: 'header', header_class: 'foxsell-mobile-header' %}
+
+    {% if section.settings.show_category_navigation and options.size > 0 %}
+      <foxsell-category-navigation class="foxsell-mix-match__category-navigation">
+        <button class="foxsell--button foxsell--button-ghost foxsell-mix-match__category-navigation-item active" data-category-id="all">
+          {{ section.settings.category_navigation_all_label | default: 'All' }}
+        </button>
+        {% for category in categories %}
+          <button class="foxsell--button foxsell--button-ghost foxsell-mix-match__category-navigation-item" data-category-id="{{ category.title | sha1 }}">
+            {{ category.title }}
+          </button>
+        {% endfor %}
+      </foxsell-category-navigation>
+    {% endif %}
+
     {% comment %} Category list {% endcomment %}
     <div class="foxsell-category__list">
       {% for category in categories %}
