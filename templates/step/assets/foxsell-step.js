@@ -1727,6 +1727,7 @@ class FoxSellProductModal extends HTMLElement {
     this.closeButton = this.querySelector('#foxsell-product-modal-close-button');
     this.boundCloseModal = this.closeModal.bind(this);
     this.boundOpenModal = this.openModal.bind(this);
+    this.boundFoxSellKeyDown = this.handleKeyDown.bind(this);
     this.emptyState = this.querySelector('.foxsell-product-modal__empty-state');
   }
 
@@ -1741,6 +1742,8 @@ class FoxSellProductModal extends HTMLElement {
     if(this.closeButton) {
       this.closeButton.addEventListener('click', this.boundCloseModal);
     }
+
+    document.addEventListener('keydown', this.boundFoxSellKeyDown);
   }
 
   disconnectedCallback() {
@@ -1755,6 +1758,7 @@ class FoxSellProductModal extends HTMLElement {
       this.closeButton.removeEventListener('click', this.boundCloseModal);
     }
 
+    document.removeEventListener('keydown', this.boundFoxSellKeyDown);
     unlockBodyScroll();
   }
 
@@ -1770,6 +1774,12 @@ class FoxSellProductModal extends HTMLElement {
     const productId = event.target?.closest('foxsell-product-card')?.dataset.productId;
     if(!productId) return;
     this.renderProductModal(productId);
+  }
+
+  handleKeyDown(event) {
+    if(event.key === 'Escape' && this.modal?.hasAttribute('open')) {
+      this.closeModal();
+    }
   }
 
   closeModal() {
