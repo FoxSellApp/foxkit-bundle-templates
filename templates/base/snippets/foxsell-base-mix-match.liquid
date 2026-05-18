@@ -1,0 +1,280 @@
+{% doc %}
+  Renders the FoxSell Mix Match component.
+  @param {product} product - The product to be rendered
+  @param {section} section - The section to be rendered
+  
+  @example
+  {% render 'foxsell-base-mix-match', product: product, section: section %}
+{% enddoc %}
+
+{% liquid
+  assign app_namespace = 'app--67872686081'
+  assign template_name = 'base'
+  assign dynamic_add_ons_bundle_config = product.metafields[app_namespace].dynamic_add_ons_bundle.value
+  assign bundle_id = dynamic_add_ons_bundle_config.bundle_id
+  assign options = dynamic_add_ons_bundle_config.options_v2.value
+  assign products = dynamic_add_ons_bundle_config.products.value
+  assign add_on_products = dynamic_add_ons_bundle_config.add_on_products.value
+  assign add_on_product_properties = dynamic_add_ons_bundle_config.add_on_product_properties.value
+  assign categories = dynamic_add_ons_bundle_config.categories.value
+  assign settings = dynamic_add_ons_bundle_config.settings.value
+  
+  assign additional_settings = product.metafields[app_namespace][template_name].value | default: product.metafields.custom.foxsell_additional_settings.value
+
+  assign add_on_strategy = additional_settings.add_on_settings.strategy | default: 'add_on_step'
+  assign quantity_rules_strategy = additional_settings.quantity_rules.strategy | default: 'any'
+  assign quantity_rules_max = additional_settings.quantity_rules.max | default: 'cap_at_highest'
+
+  assign addons_quantity = 0
+  if options.size == 0
+    assign addons_quantity = settings.add_on.maximum
+  endif
+
+  assign hide_category_header = false
+  if section.settings.hide_category_title and options.size > 0
+    assign hide_category_header = true
+  endif
+
+  assign product_card_options_type = section.settings.product_card_options_type | default: 'radio'
+  assign product_card_image_aspect_ratio = section.settings.product_card_image_aspect_ratio | default: 'original'
+  assign product_card_secondary_image_on_hover = section.settings.product_card_secondary_image_on_hover | default: false
+  assign product_card_show_color_swatches = section.settings.product_card_show_color_swatches | default: false
+%}
+
+{% capture close_icon_svg %}
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+{% endcapture %}
+
+{% render 'foxsell-base-css-variables', section: section %}
+
+{% # theme-check-disable %}
+<link rel="stylesheet" href="{{ 'foxsell-base.css' | asset_url }}">
+{% # theme-check-enable %}
+
+<foxsell-mix-match class="foxsell-mix-match" data-bundle-id="{{ bundle_id }}">
+  <div class="foxsell-mix-match__container">
+    {% comment %} Bundle summary header {% endcomment %}
+    {% render 'foxsell-base-bundle-summary', section: section, options: options, view: 'header', header_class: 'foxsell-mobile-header' %}
+    {% comment %} Category list {% endcomment %}
+    <div class="foxsell-category__list">
+      {% for category in categories %}
+        <div class="foxsell-category__item" data-category="{{ category.title | sha1 }}">
+          {% unless hide_category_header %}
+            <foxsell-category-header data-category-id="{{ category.title | sha1 }}" class="foxsell-category__header">
+              <div class="foxsell-category__title">{{ category.title }}</div>
+              {% if options.size == 0 %}
+                <div class="js foxsell-category__quantity">(0/{{ category.quantity }})</div>
+              {% endif %}
+            </foxsell-category-header>
+          {% endunless %}
+          <div class="foxsell-category__product-grid">
+            {% for p in category.products %}
+              {% liquid
+                assign int_product_id = p.id | times: 1
+                assign product_ref = null
+                paginate products by 128
+                  for ref in products
+                    if ref.id == int_product_id
+                      assign product_ref = ref
+                      break
+                    endif
+                  endfor
+                endpaginate
+              %}
+              {% if product_ref %}
+                {% render 'foxsell-base-product-card',
+                  section: section,
+                  category_title: category.title,
+                  product: product_ref,
+                  allowed_variants: p.variants,
+                  type: product_card_options_type,
+                  image_aspect_ratio: product_card_image_aspect_ratio,
+                  show_secondary_image_on_hover: product_card_secondary_image_on_hover,
+                  show_color_swatches: product_card_show_color_swatches
+                %}
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+      {% endfor %}
+  
+      {% if add_on_strategy == 'add_on_step' and add_on_products.size > 0 %}
+        <div class="foxsell-category__item" data-category="__add_ons__">
+          <foxsell-category-header data-category-id="__add_ons__" class="foxsell-category__header">
+            <div class="foxsell-category__title">{{ section.settings.add_ons_category_title | default: 'Add-ons' }}</div>
+            <div class="js foxsell-category__quantity">(0/{{ addons_quantity }})</div>
+          </foxsell-category-header>
+          <div class="foxsell-category__product-grid">
+            {% for add_on in add_on_products %}
+              {% liquid
+                assign allowed_variants = null
+                for add_on_property in add_on_product_properties
+                  if add_on_property[0] contains add_on.id
+                    assign allowed_variants = add_on_property[1].variants
+                    break
+                  endif
+                endfor
+              %}
+              {% if add_on %}
+                {% render 'foxsell-base-product-card',
+                  section: section,
+                  category_title: '__add_ons__',
+                  product: add_on,
+                  allowed_variants: allowed_variants,
+                  type: product_card_options_type,
+                  image_aspect_ratio: product_card_image_aspect_ratio,
+                  show_secondary_image_on_hover: product_card_secondary_image_on_hover,
+                  show_color_swatches: product_card_show_color_swatches
+                %}
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+    </div>
+    {% comment %} Bundle summary {% endcomment %}
+    <div class="foxsell-mix-match__summary-wrapper">
+      <div class="foxsell-mix-match__summary">
+        {% render 'foxsell-base-bundle-summary', section: section, options: options %}
+        <div class="foxsell-mix-match__summary-form">
+          {% form 'product', product %}
+            <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}">
+            <input type="hidden" name="quantity" value="1">
+            <input type="hidden" name="properties[__foxsell:dynamic_add_on_bundle_id]" value="{{ bundle_id }}">
+            <input type="hidden" name="properties[__foxsell:dynamic_add_on_bundle_items]" value="">
+            <input type="hidden" name="properties[__foxsell:dynamic_add_on_bundle_savings]" value="">
+            <button type="submit" class="foxsell--button foxsell--button-full-width" disabled>{{ section.settings.button_atc_text | default: 'Add to Cart' }}</button>
+          {% endform %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% comment %} Product modal overlay {% endcomment %}
+  <div class="foxsell-mix-match__overlay"></div>
+
+  {% comment %} Product modal {% endcomment %}
+  <foxsell-product-modal class="foxsell-product-modal">
+    <div id="foxsell-product-dialog" data-modal>
+      <button id="foxsell-product-modal-close-button" class="foxsell--button foxsell--button-ghost">{{ close_icon_svg }}</button>
+      <div class="foxsell-product-modal__content">
+        <div class="foxsell-product-modal__empty-state">
+          <div class="foxsell__loading-spinner">
+            <svg xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="foxsell-product-modal__loading-spinner"
+            >
+              <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </foxsell-product-modal>
+  {% comment %} End product modal {% endcomment %}
+</foxsell-mix-match>
+
+<script>
+  window.foxsell = window.foxsell || { config: {} };
+
+  //! use this to fallback if no metafield is configured
+  const defaultAdditionalSettings = {
+    "quantity_rules": {
+      "strategy": {{ quantity_rules_strategy | json }},
+      "max": {{ quantity_rules_max | json }}
+    },
+    "add_on_settings": {
+      "strategy": {{ add_on_strategy | json }}
+    }
+  };
+
+  const additionalSettings = {{ additional_settings | json }} || defaultAdditionalSettings;
+  
+  window.foxsell.config['{{ bundle_id }}'] = {
+    "productHandle": {{ product.handle | json }},
+    "productId": {{ product.id | json }},
+    "variants": {{ product.variants | json }},
+    "bundleId": {{ bundle_id | json }},
+    "options": {{ options | json }},
+    "addOnProducts": {{ add_on_products | json }},
+    "addOnProductProperties": {{ add_on_product_properties | json }},
+    "categories": [
+      {%- for category in categories -%}
+        {"id": {{ category.title | sha1 | json }},"title": {{ category.title | json }},"quantity": {{ category.quantity | json }}, "items": {{ category.products | json }}}
+      {%- if forloop.last == false -%},{%- endif -%}
+    {%- endfor -%}],
+    "settings": {{ settings | json | replace: 'add_on', 'addOn' }},
+    "locale": {
+      "addToCartButtonText": {{ section.settings.button_atc_text | default: 'Add to Cart' | json }},
+      "addToBundleButtonText": {{ section.settings.button_add_to_bundle_text | default: 'Add to bundle' | json }},
+      "addOnsCategoryTitle": {{ section.settings.add_ons_category_title | default: 'Add-ons' | json }},
+      "addOnsLineItemLabel": {{ section.settings.add_ons_line_item_label | default: 'Add-On' | json }},
+      "priceLabel": {{ section.settings.price_label | default: 'Price' | json }},
+      "summaryTitle": {{ section.settings.summary_title | default: 'My Bundle' | json }},
+      "summaryEmptyStateText": {{ section.settings.summary_empty_state_text | default: 'No items in the bundle yet' | json }},
+      "summaryEmptyStateBodyText": {{ section.settings.summary_empty_state_body_text | default: 'No items in bundle. Add items to your bundle to see the summary here.' | json }},
+      "summaryProgressStateText": {{ section.settings.summary_progress_state_text | default: 'You have selected <strong>_currentQuantity</strong> of <strong>_requiredQuantity</strong> items' | json }},
+      "summaryEndStateText": {{ section.settings.summary_end_state_text | default: 'Bundle complete' | json }},
+    },
+    "additionalSettings": additionalSettings
+  }
+
+  window.foxsell.formatMoney = (cents, format = "{{ shop.money_format }}") => {
+    if (typeof cents === 'string') {
+      cents = cents.replace('.', '');
+    }
+    const currencyRate = window.Shopify?.currency?.rate ?? 1;
+    cents *= currencyRate;
+    const placeholderRegex = /\{\{\s*(\w+)\s*\}\}/;
+    const formatWithDelimiters = (number, precision = 2, thousands = ',', decimal = '.') => {
+      if (isNaN(number) || number == null) {
+        return 0;
+      }
+      number = (number / 100).toFixed(precision);
+      const [dollars, cents] = number.split('.');
+      const dollarsAmount = dollars.replace(/(\d)(?=(\d{3})+(?!\d))/g, `$1${thousands}`);
+      const centsAmount = cents ? `${decimal}${cents}` : '';
+      return dollarsAmount + centsAmount;
+    };
+    let value = '';
+    const formatKey = format.match(placeholderRegex)?.[1];
+    switch (formatKey) {
+      case 'amount':
+        value = formatWithDelimiters(cents, 2);
+        break;
+      case 'amount_no_decimals':
+        value = formatWithDelimiters(cents, 0);
+        break;
+      case 'amount_with_space_separator':
+        value = formatWithDelimiters(cents, 2, ' ', '.');
+        break;
+      case 'amount_with_comma_separator':
+        value = formatWithDelimiters(cents, 2, '.', ',');
+        break;
+      case 'amount_with_apostrophe_separator':
+        value = formatWithDelimiters(cents, 2, "'", '.');
+        break;
+      case 'amount_no_decimals_with_comma_separator':
+        value = formatWithDelimiters(cents, 0, '.', ',');
+        break;
+      case 'amount_no_decimals_with_space_separator':
+        value = formatWithDelimiters(cents, 0, ' ');
+        break;
+      case 'amount_no_decimals_with_apostrophe_separator':
+        value = formatWithDelimiters(cents, 0, "'");
+        break;
+    }
+    return format.replace(placeholderRegex, value);
+  }
+</script>
+
+{% # theme-check-disable %}
+<script src="{{ 'foxsell-base.js' | asset_url }}" defer></script>
+{% # theme-check-enable %}

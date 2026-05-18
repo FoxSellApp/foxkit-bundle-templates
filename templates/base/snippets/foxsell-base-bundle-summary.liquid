@@ -1,0 +1,88 @@
+{% doc %}
+  Renders the FoxSell Bundle Summary component.
+  @param {section} section - The section that contains the settings for the bundle summary
+  @param {object} options - The options for the bundle summary
+  @param {string} [view] - The view to render, either 'header' or 'summary'
+  @param {string} [header_class] - The class to add to the header
+{% enddoc %}
+
+{% liquid
+  assign title = section.settings.summary_title | default: 'My Bundle'
+  assign price_label = section.settings.price_label | default: 'Price'
+  assign empty_state_text = section.settings.summary_empty_state_text | default: 'No items in the bundle yet'
+  assign empty_state_body_text = section.settings.summary_empty_state_body_text
+  assign progress_state_text = section.settings.summary_progress_state_text | default: 'You have selected <strong>_currentQuantity</strong> of <strong>_requiredQuantity</strong> items'
+  assign end_state_text = section.settings.summary_end_state_text | default: 'Bundle complete'
+%}
+
+{% capture chevron_down_svg %}
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+{% endcapture %}
+
+{% capture chevron_up_svg %}
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>
+{% endcapture %}
+
+{% capture script_config %}
+  <script id="foxsell-bundle-progress-config" type="application/json">
+    {
+      "emptyStateText": {{ empty_state_text | json }},
+      "progressStateText": {{ progress_state_text | json }},
+      "endStateText": {{ end_state_text | json }}
+    }
+  </script>
+{% endcapture %}
+
+{% case view %}
+  {% when 'header' %}
+    {% if options.size > 0 %}
+      <foxsell-bundle-progress class="{{ header_class }}" data-type="summary-header">
+        <div class="foxsell-bundle-progress__header-content">
+          <div class="foxsell-bundle-progress__price">
+            <div class="foxsell-bundle-progress__price-label">{{ price_label }}</div>
+            <div class="foxsell-bundle-progress__price-value"><span class="foxsell-sale-price">{{ 0 | money_without_trailing_zeros }}</span></div>
+          </div>
+          <div class="foxsell-bundle-progress__list">
+            {% for option in options %}
+              <div class="foxsell-bundle-progress__item {% if forloop.first %}active{% endif %}" data-id="{{ option.variant_id }}">
+                <div class="foxsell-bundle-progress__title">{{ option.title }}</div>
+                {% if option.price.strategy == 'dynamic_pricing' %}
+                  <div class="foxsell-bundle-progress__value">{{ option.price.value | remove: '.0' }}%</div>
+                {% else %}
+                  <div class="foxsell-bundle-progress__value">{{ option.price.value | times: 100 | money_without_trailing_zeros }}</div>
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </foxsell-bundle-progress>
+    {% endif %}
+  {% else %}
+    <foxsell-bundle-summary class="foxsell-bundle-summary">
+      <div class="foxsell-bundle-summary__header">
+        <div class="foxsell-bundle-summary__title">
+          <span>{{ title }}</span>
+          <span data-foxsell-total-quantity>(0)</span>
+        </div>
+        <button type="button" class="foxsell-bundle-summary__toggle foxsell--button foxsell--button-ghost" id="foxsell-bundle-summary-toggle" aria-expanded="false" aria-controls="foxsell-bundle-summary-panel">
+          <span class="foxsell--show">{{ chevron_up_svg }}</span>
+          <span class="foxsell--hide">{{ chevron_down_svg }}</span>
+        </button>
+      </div>
+      {% render 'foxsell-base-bundle-summary', section: section, view: 'header', options: options, header_class: 'foxsell-desktop-header' %}
+      <div class="foxsell-bundle-summary__content">
+        <foxsell-bundle-progress data-type="progress-bar">
+          <div class="foxsell-bundle-progress">
+            <div class="foxsell-bundle-progress__label">{{ empty_state_text }}</div>
+            <div class="foxsell-bundle-progress__bars">
+              {% comment %} Dynamically rendered by updateProgressBar {% endcomment %}
+            </div>
+            {{ script_config }}
+          </div>
+        </foxsell-bundle-progress>
+        <div class="foxsell-bundle-summary__items-list" id="foxsell-bundle-summary-panel" role="region" aria-label="{{ title | escape }}">
+          <p class="foxsell-bundle-summary__empty-state">{{ empty_state_body_text }}</p>
+        </div>
+      </div>
+    </foxsell-bundle-summary>
+{% endcase %}
