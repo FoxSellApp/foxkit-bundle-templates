@@ -948,7 +948,7 @@ class FoxSellProductCard extends HTMLElement {
   }
 
   updateQuantity(quantity) {
-    const el = this.querySelector('.quantity');
+    const el = this.querySelector('.foxsell-quantity');
     if (el) el.textContent = String(quantity);
   }
 

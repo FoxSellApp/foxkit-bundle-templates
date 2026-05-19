@@ -287,11 +287,13 @@ foxsell-mix-match {
 .foxsell-product-card__quantity .add-to-bundle {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
+  font-size: 0!important;
 }
 
 .foxsell-product-card__quantity .remove-from-bundle {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
+  font-size: 0!important;
 }
 
 .foxsell-product-card__info {
@@ -685,6 +687,7 @@ foxsell-bundle-progress.foxsell-desktop-header {
   width: 0;
   background-color: var(--foxsell-color-accent-2);
   border-radius: var(--foxsell-radius-button);
+  display: block!important;
 }
 
 /* Mobile (default) — collapsible list, bottom sheet summary */
