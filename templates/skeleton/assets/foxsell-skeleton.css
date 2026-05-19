@@ -464,6 +464,7 @@ foxsell-bundle-progress.foxsell-desktop-header {
   height: 100%;
   width: 0;
   background-color: black;
+  display: block!important;
 }
 
 /* Mobile (default) — collapsible list, bottom sheet summary */
