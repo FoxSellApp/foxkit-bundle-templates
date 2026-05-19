@@ -827,9 +827,9 @@ class StepMixMatch extends FoxSellMixMatch {
     const currentCategory = this.getCategory(currentStepId);
     const currentCategoryMetadata = this.config?.additionalSettings?.categories_metadata?.[this.currentStepIndex];
 
-    if(!currentCategory || !currentCategoryMetadata) return noProgress;
+    if(!currentCategory) return noProgress;
 
-    const minQuantity = currentCategoryMetadata.min_quantity;
+    const minQuantity = currentCategoryMetadata?.min_quantity ?? currentCategory.maxQuantity;
     let allowNext = currentCategory.quantity >= minQuantity;
 
     if(this.config) {
@@ -1138,7 +1138,7 @@ class FoxSellProductCard extends HTMLElement {
   }
 
   updateQuantity(quantity) {
-    const el = this.querySelector('.quantity');
+    const el = this.querySelector('.foxsell-quantity');
     if (el) el.textContent = String(quantity);
   }
 
