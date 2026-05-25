@@ -61,16 +61,14 @@ foxsell-mix-match img {
 }
 
 .foxsell--button {
-  --foxsell-color-background: var(--foxsell-color-accent-1);
-  --foxsell-color-foreground: var(--foxsell-color-accent-text-1);
   appearance: none;
   border: 0;
   border-radius: var(--foxsell-radius-button);
   margin: 0;
   padding-block: var(--foxsell-space-3);
   padding-inline: var(--foxsell-space-3);
-  background-color: var(--foxsell-color-background);
-  color: var(--foxsell-color-foreground);
+  background-color: var(--foxsell-color-accent-1);
+  color: var(--foxsell-color-accent-text-1);
   font: inherit;
   font-size: var(--foxsell-text-md);
   font-weight: var(--foxsell-font-header-weight);
@@ -78,7 +76,7 @@ foxsell-mix-match img {
   line-height: inherit;
   cursor: pointer;
   line-height: 1;
-  border: 1px solid var(--foxsell-color-background);
+  border: 1px solid var(--foxsell-color-accent-1);
 }
 
 .foxsell--button-secondary {
@@ -280,6 +278,7 @@ foxsell-mix-match {
   border: 1px solid var(--foxsell-color-accent-1);
   border-radius: var(--foxsell-radius-button);
   background: color-mix(in srgb, var(--foxsell-color-accent-1) 20%, var(--foxsell-color-background));
+  color: var(--foxsell-color-accent-text-1);
 }
 
 .foxsell-product-card:not(.foxsell-product-card--modal) .foxsell-product-card__quantity-wrapper {
@@ -313,6 +312,7 @@ foxsell-mix-match {
   border-bottom-left-radius: 0;
   font-size: 0px!important;
   border: none;
+  color: var(--foxsell-color-accent-text-1);
 }
 
 .foxsell-product-card__quantity .remove-from-bundle {
@@ -367,6 +367,11 @@ foxsell-mix-match {
   .foxsell-product-card__image--secondary {
     transition: none;
   }
+}
+
+.foxsell--button .foxsell-compare-at-price {
+  --foxsell-color-foreground: var(--foxsell-color-accent-text-1);
+  --foxsell-color-background: var(--foxsell-color-accent-1);
 }
 
 .foxsell-compare-at-price {
@@ -542,6 +547,7 @@ fieldset.fieldset--color-swatch > legend {
 .foxsell-bundle-summary__toggle {
   display: inline-flex;
   align-items: center;
+  color: var(--foxsell-color-foreground);
 }
 
 .foxsell-bundle-summary__content {
@@ -584,7 +590,7 @@ fieldset.fieldset--color-swatch > legend {
 
 .foxsell-bundle-summary__item-add-on-tag {
   width: max-content;
-  border: 1px solid black;
+  border: 1px solid var(--foxsell-color-foreground);
   padding: 4px;
   font-size: var(--foxsell-text-xs);
 }
@@ -593,6 +599,10 @@ fieldset.fieldset--color-swatch > legend {
   white-space: nowrap;
   font-family: var(--foxsell-font-header-family);
   font-weight: var(--foxsell-font-header-weight);
+}
+
+.foxsell-bundle-summary__item-delete {
+  color: var(--foxsell-color-foreground);
 }
 
 /* Bundle progress header — price + tier list (summary-header) */
@@ -630,9 +640,6 @@ fieldset.fieldset--color-swatch > legend {
   gap: var(--foxsell-space-2);
   flex-wrap: wrap;
   text-align: right;
-}
-
-.foxsell-bundle-progress__price-value .foxsell-sale-price {
   font-family: var(--foxsell-font-header-family);
   font-weight: var(--foxsell-font-header-weight);
 }
