@@ -13,14 +13,6 @@
   --foxsell-space-11: 44px;
   --foxsell-space-12: 48px;
 
-  /* Font size scale (1rem = 16px at browser default) */
-  --foxsell-text-xs: 0.75rem;
-  --foxsell-text-sm: 0.875rem;
-  --foxsell-text-md: 0.9375rem;
-  --foxsell-text-base: 1rem;
-  --foxsell-text-lg: 1.125rem;
-  --foxsell-text-xl: 1.25rem;
-
   --foxsell-font-header-family: inherit;
   --foxsell-font-header-weight: 600;
   --foxsell-font-base-weight: 400;
@@ -85,6 +77,8 @@ foxsell-mix-match img {
   text-align: center;
   line-height: inherit;
   cursor: pointer;
+  line-height: 1;
+  border: 1px solid var(--foxsell-color-background);
 }
 
 .foxsell--button-secondary {
@@ -105,6 +99,7 @@ foxsell-mix-match img {
 
 .foxsell--button-ghost {
   background-color: transparent;
+  border: none;
   padding: 0;
 }
 
@@ -348,16 +343,23 @@ foxsell-mix-match {
   font-weight: var(--foxsell-font-header-weight);
 }
 
+.foxsell-product-card__quantity svg {
+  width: var(--foxsell-text-md);
+  height: var(--foxsell-text-md);
+}
+
 .foxsell-product-card__quantity .add-to-bundle {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
-  font-size: 0!important;
+  font-size: 0px!important;
+  border: none;
 }
 
 .foxsell-product-card__quantity .remove-from-bundle {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
-  font-size: 0!important;
+  font-size: 0px!important;
+  border: none;
 }
 
 .foxsell-product-card__info {
