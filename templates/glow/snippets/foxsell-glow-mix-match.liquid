@@ -39,6 +39,11 @@
   assign product_card_image_aspect_ratio = section.settings.product_card_image_aspect_ratio | default: 'original'
   assign product_card_secondary_image_on_hover = section.settings.product_card_secondary_image_on_hover | default: false
   assign product_card_show_color_swatches = section.settings.product_card_show_color_swatches | default: false
+
+  assign product_card_show_price = true
+  if settings.price.strategy == "fixed_pricing"
+    assign product_card_show_price = false
+  endif
 %}
 
 {% capture close_icon_svg %}
@@ -103,6 +108,7 @@
                   allowed_variants: p.variants,
                   type: product_card_options_type,
                   image_aspect_ratio: product_card_image_aspect_ratio,
+                  show_price: product_card_show_price,
                   show_secondary_image_on_hover: product_card_secondary_image_on_hover,
                   show_color_swatches: product_card_show_color_swatches
                 %}
@@ -137,6 +143,7 @@
                   allowed_variants: allowed_variants,
                   type: product_card_options_type,
                   image_aspect_ratio: product_card_image_aspect_ratio,
+                  show_price: true,
                   show_secondary_image_on_hover: product_card_secondary_image_on_hover,
                   show_color_swatches: product_card_show_color_swatches
                 %}

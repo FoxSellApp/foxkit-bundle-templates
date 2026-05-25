@@ -17,8 +17,8 @@
   {% render 'foxsell-glow-product-card', section: section, view: 'card', product: product %}
 {% enddoc %}
 
+
 {% liquid
-  assign show_price = show_price | default: true
   assign show_secondary_image_on_hover = show_secondary_image_on_hover | default: false
   assign image_aspect_ratio = image_aspect_ratio | default: 'original'
   assign image_class = 'js foxsell-product-card__image foxsell--image-' | append: image_aspect_ratio
@@ -38,6 +38,7 @@
     endfor
   endif
 %}
+
 
 {% capture plus_icon_svg %}
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
