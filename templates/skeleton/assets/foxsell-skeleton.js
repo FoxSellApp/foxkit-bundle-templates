@@ -1237,6 +1237,7 @@ class FoxSellBundleSummary extends HTMLElement {
           ${item.category.id === '__add_ons__' ? `<span>Add-On</span>` : ''}
           <div>${item.product.title}</div>
           ${item.option1 !== 'Default Title' ? `<div>${item.options.join(", ")}</div>` : ''}
+          ${(item.category.id === '__add_ons__' || priceStrategy?.strategy !== 'fixed_pricing') ? `
           <div>
             ${itemPrice > discountedPrice ? `
               <div>
@@ -1249,7 +1250,7 @@ class FoxSellBundleSummary extends HTMLElement {
                 <span>${window.foxsell?.formatMoney?.(itemPrice)}</span>
               </div>`
             }
-          </div>
+          </div>` : ''}
         </div>
         <div class="foxsell-bundle-summary__quantity">x ${item.quantity}</div>
         ${item.category.id === '__add_ons__' && addOnStrategy === 'automatic_add' ? ""
