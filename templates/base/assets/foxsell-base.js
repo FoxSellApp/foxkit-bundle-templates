@@ -1249,6 +1249,7 @@ class FoxSellBundleSummary extends HTMLElement {
           ${item.category.id === '__add_ons__' ? `<span class="foxsell-bundle-summary__item-add-on-tag">${this.foxsell.config.locale.addOnsLineItemLabel}</span>` : ''}
           <div class="foxsell-bundle-summary__item-title">${item.product.title}</div>
           ${item.option1 !== 'Default Title' ? `<div>${item.options.join(", ")}</div>` : ''}
+          ${(item.category.id === '__add_ons__' || priceStrategy?.strategy === 'dynamic_pricing') ? `
           <div>
             ${itemPrice > discountedPrice ? `
               <div>
@@ -1261,7 +1262,7 @@ class FoxSellBundleSummary extends HTMLElement {
                 <span class="foxsell-sale-price">${window.foxsell?.formatMoney?.(itemPrice)}</span>
               </div>`
             }
-          </div>
+          </div>` : ''}
         </div>
         <div class="foxsell-bundle-summary__quantity">x ${item.quantity}</div>
         ${item.category.id === '__add_ons__' && addOnStrategy === 'automatic_add' ? ""

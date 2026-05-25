@@ -21,6 +21,7 @@
 
   assign card_border_radius = section.settings.card_border_radius | default: 5
   assign button_border_radius = section.settings.button_border_radius | default: 5
+  assign section_base_font_size = section.settings.section_base_font_size | default: 16
 %}
 
 {% style %}
@@ -38,5 +39,13 @@
     --foxsell-product-grid-columns-desktop: {{ product_grid_columns_desktop }};
     --foxsell-product-grid-column-gap: {{ product_grid_gap }}px;
     --foxsell-product-grid-row-gap: {{ product_grid_gap | plus: 8 }}px;
+
+    /* Font size scale (1rem = 16px at browser default) */
+    --foxsell-text-xs: {{ section_base_font_size | times: 0.75 }}px;
+    --foxsell-text-sm: {{ section_base_font_size | times: 0.875 }}px;
+    --foxsell-text-md: {{ section_base_font_size | times: 0.9375 }}px;
+    --foxsell-text-base: {{ section_base_font_size }}px;
+    --foxsell-text-lg: {{ section_base_font_size | times: 1.125 }}px;
+    --foxsell-text-xl: {{ section_base_font_size | times: 1.25 }}px;
   }
 {% endstyle %}
