@@ -188,7 +188,14 @@
     {% comment %} Bundle summary {% endcomment %}
     <div class="foxsell-mix-match__summary-wrapper">
       <div class="foxsell-mix-match__summary">
-        {% render 'foxsell-step-bundle-summary', section: section, options: options %}
+        {% render 'foxsell-step-bundle-summary', 
+          section: section, 
+          categories: categories, 
+          additional_settings: additional_settings, 
+          add_on_strategy: add_on_strategy, 
+          add_on_products: add_on_products,
+          settings: settings
+        %}
         <div class="foxsell-mix-match__step-navigation-wrapper">
           <button 
             data-direction="previous" 

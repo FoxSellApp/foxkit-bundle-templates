@@ -1,7 +1,11 @@
 {% doc %}
   Renders the FoxSell Bundle Summary component.
   @param {section} section - The section that contains the settings for the bundle summary
-  @param {object} options - The options for the bundle summary
+  @param {object} [categories] - The categories for the bundle summary
+  @param {object} [additional_settings] - The additional settings for the bundle summary
+  @param {string} [add_on_strategy] - The add-on strategy for the bundle summary
+  @param {object} [add_on_products] - The add-on products for the bundle summary
+  @param {object} [settings] - The settings for the bundle summary
   @param {string} [view] - The view to render, either 'header' or 'summary'
 {% enddoc %}
 
@@ -71,11 +75,56 @@
         </div>
       </button>
       <div class="foxsell-bundle-summary__content">
-        {% render 'foxsell-step-bundle-summary', section: section, view: 'header', options: options %}
+        {% render 'foxsell-step-bundle-summary', section: section, view: 'header' %}
         <div class="foxsell-bundle-summary__items-list" id="foxsell-bundle-summary-panel" role="region" aria-label="{{ title | escape }}">
-          <p class="foxsell-bundle-summary__empty-state">
-            Need to add the skeleton placeholder here
-          </p>
+          {% for category in categories %}
+            {% liquid
+              assign category_index = forloop.index0
+              assign category_metadata = additional_settings.categories_metadata[category_index]
+              assign min_quantity = category_metadata.min_quantity | default: category.quantity
+              assign max_quantity = category_metadata.max_quantity | default: category.quantity
+            %}
+            <div class="foxsell-bundle-summary__step">
+              <div class="foxsell-bundle-summary__step-header">
+                <div class="foxsell-bundle-summary__step-title">{{ category_metadata.title | default: category.title }}</div>
+              </div>
+              <div class="foxsell-bundle-summary__step-items">
+                <div class="foxsell-bundle-summary__empty-step">
+                  <div class="foxsell-bundle-summary__empty-step-add">
+                    <div class="foxsell-bundle-summary__empty-step-add-icon">+</div>
+                  </div>
+                  <div class="foxsell-bundle-summary__step-description">
+                    {% render 'foxsell-step-quantity-rules', min_quantity: min_quantity, max_quantity: max_quantity, section: section %}
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+
+          {% if add_on_strategy == 'add_on_step' and add_on_products.size > 0 %}
+            {% liquid
+              assign add_ons_category_metadata = additional_settings.add_on_settings
+              assign min_quantity = settings.add_on.minimum
+              assign max_quantity = settings.add_on.maximum
+            %}
+            <div class="foxsell-bundle-summary__step">
+              <div class="foxsell-bundle-summary__step-header">
+                <div class="foxsell-bundle-summary__step-title">
+                  {{ add_ons_category_metadata.title | default: section.settings.add_ons_category_title | default: 'Add-ons' }}
+                </div>
+              </div>
+            </div>
+            <div class="foxsell-bundle-summary__step-items">
+              <div class="foxsell-bundle-summary__empty-step">
+                <div class="foxsell-bundle-summary__empty-step-add">
+                  <div class="foxsell-bundle-summary__empty-step-add-icon">+</div>
+                </div>
+                <div class="foxsell-bundle-summary__step-description">
+                  {% render 'foxsell-step-quantity-rules', min_quantity: min_quantity, max_quantity: max_quantity, section: section %}
+                </div>
+              </div>
+            </div>
+          {% endif %}
         </div>
       </div>
     </foxsell-bundle-summary>
