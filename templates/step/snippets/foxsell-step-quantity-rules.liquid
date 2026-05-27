@@ -1,0 +1,41 @@
+{% doc %}
+  Renders quantity rule text for a category.
+  @param {number} min_quantity - Minimum quantity required
+  @param {number} max_quantity - Maximum quantity allowed
+  @param {section} section - The section settings
+  
+  @example
+  {% render 'foxsell-step-quantity-rules', min_quantity: 1, max_quantity: 5, section: section %}
+{% enddoc %}
+
+{% liquid
+  assign min = min_quantity | default: 0 | times: 1
+  assign max = max_quantity | default: 0 | times: 1
+  
+  comment
+    Determine which rule applies:
+    - Optional (Infinite): min = 0 and max = 10000
+    - Optional (Limited): min = 0 and max > 0 and max < 10000
+    - Exact: min = max and min > 0
+    - Range: min < max and min > 0 and max < 10000
+    - Minimum: min > 0 and max = 10000
+  endcomment
+  
+  assign rule_text = ''
+  
+  if min == 0 and max == 10000
+    assign rule_text = section.settings.quantity_rule_optional | default: 'Optional'
+  elsif min == 0 and max > 0 and max < 10000
+    assign rule_text = section.settings.quantity_rule_optional_limited | default: 'Optional, select up to <strong>_max</strong> item(s)'
+  elsif min == max
+    assign rule_text = section.settings.quantity_rule_exact | default: 'Select <strong>_min</strong> item(s)'
+  elsif min > 0 and max > 0 and min < max and max < 10000
+    assign rule_text = section.settings.quantity_rule_range | default: 'Select <strong>_min</strong> to <strong>_max</strong> item(s)'
+  elsif min > 0 and max == 10000
+    assign rule_text = section.settings.quantity_rule_minimum | default: 'Select at least <strong>_min</strong> item(s)'
+  endif
+
+  assign rule_text = rule_text | replace: '_min', min | replace: '_max', max
+%}
+
+<div class="foxsell-quantity-rule">{{ rule_text }}</div>

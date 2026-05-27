@@ -25,24 +25,27 @@
   assign quantity_rules_strategy = additional_settings.quantity_rules.strategy | default: 'any'
   assign quantity_rules_max = additional_settings.quantity_rules.max | default: 'cap_at_highest'
 
-  assign addons_quantity = 0
-  if options.size == 0
-    assign addons_quantity = settings.add_on.maximum
-  endif
-
-  assign hide_category_header = false
-  if section.settings.hide_category_title and options.size > 0
-    assign hide_category_header = true
-  endif
-
   assign product_card_options_type = section.settings.product_card_options_type | default: 'radio'
   assign product_card_image_aspect_ratio = section.settings.product_card_image_aspect_ratio | default: 'original'
   assign product_card_secondary_image_on_hover = section.settings.product_card_secondary_image_on_hover | default: false
   assign product_card_show_color_swatches = section.settings.product_card_show_color_swatches | default: false
+
+  assign product_card_show_price = true
+  if settings.price.strategy == 'fixed_pricing'
+    assign product_card_show_price = false
+  endif
 %}
 
 {% capture close_icon_svg %}
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+{% endcapture %}
+
+{% capture arrow_left_svg %}
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m15 18-6-6 6-6"/></svg>
+{% endcapture %}
+
+{% capture arrow_right_svg %}
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m9 18 6-6-6-6"/></svg>
 {% endcapture %}
 
 {% render 'foxsell-step-css-variables', section: section %}
@@ -51,19 +54,7 @@
 <link rel="stylesheet" href="{{ 'foxsell-step.css' | asset_url }}">
 {% # theme-check-enable %}
 
-{% capture chevron_right_svg %}
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-    <path d="m9 18 6-6-6-6"/>
-  </svg>
-{% endcapture %}
-
-{% capture chevron_left_svg %}
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-    <path d="m15 18-6-6 6-6"/>
-  </svg>
-{% endcapture %}
-
-<foxsell-mix-match class="foxsell-mix-match" data-bundle-id="{{ bundle_id }}" data-scroll-offset="{{ section.settings.scroll_offset | default: 0 }}">
+<foxsell-mix-match class="foxsell-mix-match" data-bundle-id="{{ bundle_id }}">
   <div class="foxsell-mix-match__container">
     {% comment %} Category table {% endcomment %}
     <div class="foxsell-category__table">
@@ -98,22 +89,22 @@
         {% liquid
           assign category_index = forloop.index0
           assign category_metadata = additional_settings.categories_metadata[category_index]
-          assign fallback_title = "Step " | append: forloop.index
+          assign min_quantity = category_metadata.min_quantity | default: category.quantity
+          assign max_quantity = category_metadata.max_quantity | default: category.quantity
         %}
         <div data-category-index="{{ category_index }}" class="foxsell-category__item {%  unless forloop.first %}foxsell--hidden{% endunless %}" data-category="{{ category.title | sha1 }}">
-          {% unless hide_category_header %}
-            <foxsell-category-header data-category-id="{{ category.title | sha1 }}" class="foxsell-category__header">
-              <div class="foxsell-category__title">{{ category_metadata.title | default: fallback_title }}</div>
-              {% if options.size == 0 %}
-                {% if category.quantity == 10000 %}
-                  <div class="js foxsell-category__quantity">(0)</div>
-                {% else %}
-                  <div class="js foxsell-category__quantity">(0/{{ category.quantity }})</div>
-                {% endif %}
-              {% endif %}
-              <div class="foxsell-category__description">{{ category_metadata.description | default: category.title }}</div>
-            </foxsell-category-header>
-          {% endunless %}
+          <foxsell-category-header data-category-id="{{ category.title | sha1 }}" class="foxsell-category__header">
+            <div class="foxsell-category__title-container">
+              <div class="foxsell-category__title">{{ category_metadata.title | default: category.title }}</div>
+              <div class="js foxsell-category__quantity">(0)</div>
+            </div>
+            <div class="foxsell-category__subtitle">
+              {% render 'foxsell-step-quantity-rules', min_quantity: min_quantity, max_quantity: max_quantity, section: section %}
+            </div>
+            {% if category_metadata.description %}
+              <div class="foxsell-category__description">{{ category_metadata.description }}</div>
+            {% endif %}
+          </foxsell-category-header>
           <div class="foxsell-category__product-grid">
             {% for p in category.products %}
               {% liquid
@@ -137,7 +128,8 @@
                   type: product_card_options_type,
                   image_aspect_ratio: product_card_image_aspect_ratio,
                   show_secondary_image_on_hover: product_card_secondary_image_on_hover,
-                  show_color_swatches: product_card_show_color_swatches
+                  show_color_swatches: product_card_show_color_swatches,
+                  show_price: product_card_show_price
                 %}
               {% endif %}
             {% endfor %}
@@ -149,14 +141,21 @@
         {% liquid
           assign add_ons_category_index = categories.size
           assign add_ons_category_metadata = additional_settings.add_on_settings
-          assign fallback_add_on_index = categories.size | plus: 1
-          assign fallback_title = "Step " | append: fallback_add_on_index
+          assign min_quantity = settings.add_on.minimum
+          assign max_quantity = settings.add_on.maximum
         %}
         <div data-category-index="{{ add_ons_category_index }}" class="foxsell-category__item foxsell--hidden" data-category="__add_ons__">
           <foxsell-category-header data-category-id="__add_ons__" class="foxsell-category__header">
-            <div class="foxsell-category__title">{{ add_ons_category_metadata.title | default: fallback_title }}</div>
-            <div class="js foxsell-category__quantity">(0/{{ addons_quantity }})</div>
-            <div class="foxsell-category__description">{{ add_ons_category_metadata.description | default: section.settings.add_ons_category_title | default: 'Add-ons' }}</div>
+            <div class="foxsell-category__title-container">
+              <div class="foxsell-category__title">{{ add_ons_category_metadata.title | default: section.settings.add_ons_category_title | default: 'Add-ons' }}</div>
+              <div class="js foxsell-category__quantity">(0)</div>
+            </div>
+            <div class="foxsell-category__subtitle">
+              {% render 'foxsell-step-quantity-rules', min_quantity: min_quantity, max_quantity: max_quantity, section: section %}
+            </div>
+            {% if add_ons_category_metadata.description %}
+              <div class="foxsell-category__description">{{ add_ons_category_metadata.description }}</div>
+            {% endif %}
           </foxsell-category-header>
           <div class="foxsell-category__product-grid">
             {% for add_on in add_on_products %}
@@ -190,30 +189,35 @@
     <div class="foxsell-mix-match__summary-wrapper">
       <div class="foxsell-mix-match__summary">
         {% render 'foxsell-step-bundle-summary', section: section, options: options %}
-        <div class="foxsell-mix-match__summary-form">
+        <div class="foxsell-mix-match__step-navigation-wrapper">
+          <button 
+            data-direction="previous" 
+            class="foxsell--button foxsell--button-ghost foxsell-step-navigation-button--previous"
+            disabled
+          >
+            {{ arrow_left_svg }} <span>Back</span>
+          </button>
+         <button 
+          data-direction="next" 
+          class="foxsell--button foxsell--button-primary foxsell-step-navigation-button--next"
+          disabled
+         >
+          <span>Next</span>{{ arrow_right_svg }}
+         </button>
+        </div>
+        <div class="foxsell-mix-match__summary-form foxsell--hidden">
           {% form 'product', product %}
             <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}">
             <input type="hidden" name="quantity" value="1">
             <input type="hidden" name="properties[__foxsell:dynamic_add_on_bundle_id]" value="{{ bundle_id }}">
             <input type="hidden" name="properties[__foxsell:dynamic_add_on_bundle_items]" value="">
             <input type="hidden" name="properties[__foxsell:dynamic_add_on_bundle_savings]" value="">
-            <div class="foxsell-category__navigation">
-              <button 
-                type="button" 
-                data-direction="previous"
-                class="foxsell--button foxsell-category__navigation-button"
-                disabled
-              >
-                {{ chevron_left_svg }}
+            <div class="foxsell-mix-match__step-navigation-wrapper">
+              <button type="button" data-direction="previous" class="foxsell--button foxsell--button-ghost foxsell-step-navigation-button--previous">
+                {{ arrow_left_svg }} <span>Back</span>
               </button>
-              <button type="submit" class="foxsell--button foxsell--button-full-width foxsell-add-to-cart-button" disabled>{{ section.settings.button_atc_text | default: 'Add to Cart' }}</button>
-              <button 
-                type="button" 
-                data-direction="next"
-                class="foxsell--button foxsell-category__navigation-button"
-                disabled
-              >
-                {{ chevron_right_svg }}
+              <button type="submit" class="foxsell--button foxsell--button-primary foxsell-add-to-cart-button" disabled>
+                {{ section.settings.button_atc_text | default: 'Add to Cart' }}
               </button>
             </div>
           {% endform %}
@@ -263,19 +267,32 @@
       "max": {{ quantity_rules_max | json }}
     },
     "add_on_settings": {
-      "strategy": {{ add_on_strategy | json }}
+      {% if add_on_products.size > 0 %}
+        "strategy": {{ add_on_strategy | json }},
+        "title": {{ section.settings.add_ons_category_title | default: 'Add-ons' | json }},
+        "min_quantity": {{ settings.add_on.minimum | default: 0 | json }},
+        "max_quantity": {{ settings.add_on.maximum | default: 0 | json }},
+        "description": ""
+      {% else %}
+        "strategy": {{ add_on_strategy | json }}
+      {% endif %}
     },
     "categories_metadata": [{% for category in categories %}
       {
-        "title": "Step {{ forloop.index }}",
-        "description": "{{ category.title }}",
+        "id": {{ category.title | sha1 | json }},
+        "title": "{{ category.title }}",
+        "description": "",
         "min_quantity": {{ category.quantity }},
         "max_quantity": {{ category.quantity }}
       }{% if forloop.last == false %},{% endif %}
     {% endfor %}]
   };
 
-  const additionalSettings = {{ additional_settings | json }} || defaultAdditionalSettings;
+  let additionalSettings = {
+    quantity_rules: {{ additional_settings.quantity_rules | json }} || defaultAdditionalSettings.quantity_rules,
+    add_on_settings: {{ additional_settings.add_on_settings | json }} || defaultAdditionalSettings.add_on_settings,
+    categories_metadata: {{ additional_settings.categories_metadata | json }} || defaultAdditionalSettings.categories_metadata,
+  };
   
   window.foxsell.config['{{ bundle_id }}'] = {
     "productHandle": {{ product.handle | json }},
@@ -296,8 +313,17 @@
       "addToBundleButtonText": {{ section.settings.button_add_to_bundle_text | default: 'Add to bundle' | json }},
       "addOnsCategoryTitle": {{ section.settings.add_ons_category_title | default: 'Add-ons' | json }},
       "addOnsLineItemLabel": {{ section.settings.add_ons_line_item_label | default: 'Add-On' | json }},
+      "priceLabel": {{ section.settings.price_label | default: 'Price' | json }},
       "summaryTitle": {{ section.settings.summary_title | default: 'My Bundle' | json }},
+      "summaryEmptyStateText": {{ section.settings.summary_empty_state_text | default: 'Step <strong>_currentStep</strong> of <strong>_maxSteps</strong>' | json }},
       "summaryEmptyStateBodyText": {{ section.settings.summary_empty_state_body_text | default: 'No items in bundle. Add items to your bundle to see the summary here.' | json }},
+      "summaryProgressStateText": {{ section.settings.summary_progress_state_text | default: 'Step <strong>_currentStep</strong> of <strong>_maxSteps</strong> — <strong>_remainingSteps</strong> step(s) remaining.' | json }},
+      "summaryEndStateText": {{ section.settings.summary_end_state_text | default: 'All <strong>_maxSteps</strong> steps complete!' | json }},
+      "quantityRuleOptional": {{ section.settings.quantity_rule_optional | default: 'Optional' | json }},
+      "quantityRuleOptionalLimited": {{ section.settings.quantity_rule_optional_limited | default: 'Optional, select up to <strong>_max</strong> item(s)' | json }},
+      "quantityRuleExact": {{ section.settings.quantity_rule_exact | default: 'Select <strong>_min</strong> item(s)' | json }},
+      "quantityRuleRange": {{ section.settings.quantity_rule_range | default: 'Select <strong>_min</strong> to <strong>_max</strong> item(s)' | json }},
+      "quantityRuleMinimum": {{ section.settings.quantity_rule_minimum | default: 'Select at least <strong>_min</strong> item(s)' | json }},
     },
     "additionalSettings": additionalSettings
   }

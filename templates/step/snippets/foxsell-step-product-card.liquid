@@ -18,7 +18,9 @@
 {% enddoc %}
 
 {% liquid
-  assign show_price = show_price | default: true
+  unless show_price == false
+    assign show_price = true
+  endunless
   assign show_secondary_image_on_hover = show_secondary_image_on_hover | default: false
   assign image_aspect_ratio = image_aspect_ratio | default: 'original'
   assign image_class = 'js foxsell-product-card__image foxsell--image-' | append: image_aspect_ratio
@@ -70,15 +72,15 @@
         </div>
         <div class="foxsell-product-card__quantity-wrapper">
           <div class="foxsell-product-card__quantity">
-            <button class="js foxsell--button remove-from-bundle" aria-label="Remove from bundle">
+            <button class="js foxsell--button foxsell--button-primary remove-from-bundle" aria-label="Remove from bundle">
               {{ minus_icon_svg }}
             </button>
             <span class="foxsell-quantity">0</span>
-            <button class="js foxsell--button add-to-bundle" aria-label="Add to bundle">
+            <button class="js foxsell--button foxsell--button-primary add-to-bundle" aria-label="Add to bundle">
               {{ plus_icon_svg }}
             </button>
           </div>
-          <button class="js foxsell--button foxsell--button-full-width add-to-bundle" aria-label="{{ add_to_bundle_button_text | escape }}">{{ add_to_bundle_button_text }}</button>
+          <button class="js foxsell--button foxsell--button-primary foxsell--button-full-width add-to-bundle" aria-label="{{ add_to_bundle_button_text | escape }}">{{ add_to_bundle_button_text }}</button>
         </div>
       </div>
     </foxsell-product-card>
@@ -107,15 +109,15 @@
         </div>
         <div class="foxsell-product-card__quantity-wrapper">
           <div class="foxsell-product-card__quantity">
-            <button class="js foxsell--button remove-from-bundle" aria-label="Remove from bundle">
+            <button class="js foxsell--button foxsell--button-primary remove-from-bundle" aria-label="Remove from bundle">
               {{ minus_icon_svg }}
             </button>
             <span class="foxsell-quantity">0</span>
-            <button class="js foxsell--button add-to-bundle" aria-label="Add to bundle">
+            <button class="js foxsell--button foxsell--button-primary add-to-bundle" aria-label="Add to bundle">
               {{ plus_icon_svg }}
             </button>
           </div>
-          <button class="js foxsell--button foxsell--button-full-width add-to-bundle" aria-label="{{ add_to_bundle_button_text | escape }}">{{ add_to_bundle_button_text }}</button>
+          <button class="js foxsell--button foxsell--button-primary foxsell--button-full-width add-to-bundle" aria-label="{{ add_to_bundle_button_text | escape }}">{{ add_to_bundle_button_text }}</button>
         </div>
       </div>
     </foxsell-product-card>

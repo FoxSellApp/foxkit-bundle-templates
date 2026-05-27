@@ -1,9 +1,7 @@
 'use strict';
 
 const FOXSELL_EVENTS = {
-  bundleUpdated: 'foxsell:bundle-updated',
-  stepProgressUpdated: 'foxsell:step-progress-updated',
-};
+  bundleUpdated: 'foxsell:bundle-updated'};
 
 const emptyBundleState = {
   items: [],
@@ -105,6 +103,35 @@ function getVariantPrice(variants, option) {
   const price = (option.price.value ?? 0) * 100;
   const compareAtPrice = variant.compare_at_price ?? 0;
   return { price, compareAtPrice };
+}
+
+function getQuantityRuleText(minQuantity, maxQuantity, locale) {
+
+  if (minQuantity === 0 && maxQuantity === 10000) {
+    return locale.quantityRuleOptional;
+  }
+
+  if (minQuantity === 0 && maxQuantity > 0 && maxQuantity < 10000) {
+    const template = locale.quantityRuleOptionalLimited;
+    return template.replace(/_max/g, String(maxQuantity));
+  }
+
+  if (minQuantity === maxQuantity) {
+    const template = locale.quantityRuleExact;
+    return template.replace(/_min/g, String(minQuantity));
+  }
+
+  if (minQuantity > 0 && maxQuantity > 0 && minQuantity < maxQuantity && maxQuantity < 10000) {
+    const template = locale.quantityRuleRange;
+    return template.replace(/_min/g, String(minQuantity)).replace(/_max/g, String(maxQuantity));
+  }
+
+  if (minQuantity > 0 && maxQuantity === 10000) {
+    const template = locale.quantityRuleMinimum;
+    return template.replace(/_min/g, String(minQuantity));
+  }
+
+  return '';
 }
 
 class FoxSellMixMatch extends HTMLElement {
@@ -715,26 +742,23 @@ class FoxSellMixMatch extends HTMLElement {
   }
 }
 
-class StepMixMatch extends FoxSellMixMatch {
+class StepFoxSellMixMatch extends FoxSellMixMatch {
 
   constructor() {
     super();
+
     this.currentStepIndex = 0;
+
+    this.completedSteps = 1;
     this._boundNavigationButtonClick = this.handleNavigationButtonClick.bind(this);
   }
 
   connectedCallback() {
-    this.nextCategoryButton =  (this.querySelector('.foxsell-category__navigation-button[data-direction="next"]'));
-    this.previousCategoryButton =  (this.querySelector('.foxsell-category__navigation-button[data-direction="previous"]'));
-    this.nextCategoryButton?.addEventListener('click', this._boundNavigationButtonClick);
-    this.previousCategoryButton?.addEventListener('click', this._boundNavigationButtonClick);
+    this.nextCategoryButton =  (this.querySelectorAll('.foxsell-step-navigation-button--next'));
+    this.previousCategoryButton =  (this.querySelectorAll('.foxsell-step-navigation-button--previous'));
+    this.nextCategoryButton.forEach(button => button.addEventListener('click', this._boundNavigationButtonClick));
+    this.previousCategoryButton.forEach(button => button.addEventListener('click', this._boundNavigationButtonClick));
     super.connectedCallback();
-  }
-
-  disconnectedCallback() {
-    super.disconnectedCallback();
-    this.nextCategoryButton?.removeEventListener('click', this._boundNavigationButtonClick);
-    this.previousCategoryButton?.removeEventListener('click', this._boundNavigationButtonClick);
   }
 
   validateBundle() {
@@ -742,73 +766,29 @@ class StepMixMatch extends FoxSellMixMatch {
     this.validateStep();
   }
 
-  handleNavigationButtonClick(event) {
-    const target =  ( (event.target).closest('[data-direction]'));
-    const direction = target?.dataset.direction || '';
-
-    if(direction === 'next') {
-      this.goToNextStep();
-    } else if(direction === 'previous') {
-      this.goToPreviousStep();
+  validateBundleWithoutQAO() {
+    if (!this.config || !this.config.categories) {
+      this.toggleAddToCartButton(true);
+      return false;
     }
 
-    super.validateBundle();
-    this.updateNavigationButtons();
+    const isValid = this.config.categories.reduce((allValid, category, index) => {
+      const categoryMetadata = this.config?.additionalSettings?.categories_metadata?.[index];
+      const minQuantity = categoryMetadata?.min_quantity ?? category.quantity;
+      const maxQuantity = category.quantity;
+
+      const selectedCategory = this.getCategory(category.id, true);
+      if (!selectedCategory) return false;
+
+      selectedCategory.isMaxQuantity = selectedCategory.quantity >= maxQuantity;
+      return allValid && selectedCategory.quantity >= minQuantity;
+    }, true);
+
+    return isValid;
   }
 
-  goToNextStep() {
-    const { currentStep } = this.getCurrentStepProgress();
-    const nextStepIndex = String(parseInt(currentStep) + 1);
-    const nextStep = this.querySelector('.foxsell-category__item[data-category-index="' + nextStepIndex + '"]');
-    if(!nextStep) return;
-
-    this.goToStep(nextStepIndex);
-    this.scrollToMixMatchBlock();
-
-    this.dispatchEvent(new CustomEvent(FOXSELL_EVENTS.stepProgressUpdated));
-  }
-
-  goToPreviousStep() {
-    const { currentStep } = this.getCurrentStepProgress();
-    const previousStepIndex = String(parseInt(currentStep) - 1);
-    const previousStep = this.querySelector('.foxsell-category__item[data-category-index="' + previousStepIndex + '"]');
-    if(!previousStep) return;
-
-    this.goToStep(previousStepIndex);
-    this.scrollToMixMatchBlock();
-
-    this.dispatchEvent(new CustomEvent(FOXSELL_EVENTS.stepProgressUpdated));
-  }
-
-  goToStep(stepIndex) {
-    this.currentStepIndex = parseInt(stepIndex);
-
-    const allCategories = this.querySelectorAll('.foxsell-category__item');
-    allCategories.forEach(category=> {
-      category.classList.toggle('foxsell--hidden', category.getAttribute('data-category-index') !== stepIndex);
-    });
-  }
-
-  updateNavigationButtons() {
-    const { allowPrevious, allowNext } = this.getCurrentStepProgress();
-    if(this.nextCategoryButton) this.nextCategoryButton.disabled = !allowNext;
-    if(this.previousCategoryButton) this.previousCategoryButton.disabled = !allowPrevious;
-
-    const nextStepIndex = String(this.currentStepIndex + 1);
-    const hasNextStep = !!this.querySelector('.foxsell-category__item[data-category-index="' + nextStepIndex + '"]');
-    if(hasNextStep) this.toggleAddToCartButton(true);
-  }
-
-  validateStep() {
-    const { isMaxQuantity } = this.getCurrentStepProgress();
-    if(isMaxQuantity) {
-      this.goToNextStep();
-    }
-    this.updateNavigationButtons();
-  }
-
-  getCurrentStepProgress() {
-    const noProgress = { allowPrevious: false, isMaxQuantity: false, currentStep: '0', totalSteps: 0, allowNext: false };
+  getStepProgress() {
+    const noProgress = { allowPrevious: false, isMaxQuantity: false, currentStep: '0', totalSteps: 0, allowNext: false, isLastStep: false };
     const currentStep = this.querySelector('.foxsell-category__item[data-category-index="' + this.currentStepIndex + '"]');
     if(!currentStep) return noProgress;
 
@@ -821,7 +801,8 @@ class StepMixMatch extends FoxSellMixMatch {
     const currentStepIndex = currentStep.getAttribute('data-category-index') || '';
     const currentStepId = currentStep.getAttribute('data-category') || '';
     if(currentStepId === '__add_ons__') {
-      return { allowPrevious: true, isMaxQuantity: false, currentStep: currentStepIndex, totalSteps, allowNext: false };
+      this.completedSteps = this.bundle?.isValid ? this.currentStepIndex + 1 : this.currentStepIndex;
+      return { allowPrevious: true, isMaxQuantity: false, currentStep: currentStepIndex, totalSteps, allowNext: false, isLastStep: true };
     }
 
     const currentCategory = this.getCategory(currentStepId);
@@ -842,7 +823,92 @@ class StepMixMatch extends FoxSellMixMatch {
 
     const allowPrevious = currentStepIndex !== '0';
 
-    return { allowPrevious, isMaxQuantity: currentCategory.isMaxQuantity, currentStep: currentStepIndex, totalSteps, allowNext };
+    const isLastStep = parseInt(currentStepIndex) === totalSteps - 1;
+    this.completedSteps = (isLastStep && this.bundle?.isValid) ? this.currentStepIndex + 1 : this.currentStepIndex;
+    return { allowPrevious, isMaxQuantity: currentCategory.isMaxQuantity, currentStep: currentStepIndex, totalSteps, allowNext, isLastStep };
+  }
+
+  getFirstInvalidStepIndex() {
+    if (!this.config?.categories) return -1;
+    return this.config.categories.findIndex((category, index) => {
+      const categoryMetadata = this.config?.additionalSettings?.categories_metadata?.[index];
+      const minQuantity = categoryMetadata?.min_quantity ?? category.quantity;
+      const selectedCategory = this.getCategory(category.id, true);
+      return !selectedCategory || selectedCategory.quantity < minQuantity;
+    });
+  }
+
+  validateStep() {
+    const { isMaxQuantity } = this.getStepProgress();
+    if(isMaxQuantity) {
+      this.goToNextStep();
+    }
+
+    const firstInvalidIndex = this.getFirstInvalidStepIndex();
+    if (firstInvalidIndex !== -1 && firstInvalidIndex < this.currentStepIndex) {
+      this.goToStep(String(firstInvalidIndex));
+      return;
+    }
+
+    this.updateNavigationButtons();
+  }
+
+  handleNavigationButtonClick(event) {
+    const target =  ( (event.target).closest('[data-direction]'));
+    const direction = target?.dataset.direction || '';
+
+    if(direction === 'next') {
+      this.goToNextStep();
+    } else if(direction === 'previous') {
+      this.goToPreviousStep();
+    }
+  }
+
+  goToNextStep() {
+    const { currentStep } = this.getStepProgress();
+    const nextStepIndex = String(parseInt(currentStep) + 1);
+    const nextStep = this.querySelector('.foxsell-category__item[data-category-index="' + nextStepIndex + '"]');
+    if(!nextStep) return;
+
+    this.goToStep(nextStepIndex);
+    this.scrollToMixMatchBlock();
+  }
+
+  goToPreviousStep() {
+    const { currentStep } = this.getStepProgress();
+    const previousStepIndex = String(parseInt(currentStep) - 1);
+    const previousStep = this.querySelector('.foxsell-category__item[data-category-index="' + previousStepIndex + '"]');
+    if(!previousStep) return;
+
+    this.goToStep(previousStepIndex);
+    this.scrollToMixMatchBlock();
+  }
+
+  goToStep(stepIndex) {
+    this.currentStepIndex = parseInt(stepIndex);
+
+    const allCategories = this.querySelectorAll('.foxsell-category__item');
+    allCategories.forEach(category=> {
+      category.classList.toggle('foxsell--hidden', category.getAttribute('data-category-index') !== stepIndex);
+    });
+
+    this.updateNavigationButtons();
+  }
+
+  updateNavigationButtons() {
+    const { allowPrevious, allowNext, isLastStep } = this.getStepProgress();
+    this.nextCategoryButton?.forEach(button => button.toggleAttribute('disabled', !allowNext));
+    this.previousCategoryButton?.forEach(button => button.toggleAttribute('disabled', !allowPrevious));
+
+    const navWrapper = this.querySelector('.foxsell-mix-match__step-navigation-wrapper');
+    const summaryForm = this.querySelector('.foxsell-mix-match__summary-form');
+    if (navWrapper) navWrapper.classList.toggle('foxsell--hidden', isLastStep);
+    if (summaryForm) summaryForm.classList.toggle('foxsell--hidden', !isLastStep);
+
+    const bundleProgress =  (this.querySelector('foxsell-bundle-progress'));
+    if (typeof bundleProgress?.updateProgressBar === 'function') {
+      bundleProgress.updateProgressBar();
+    }
   }
 
   scrollToMixMatchBlock() {
@@ -853,23 +919,34 @@ class StepMixMatch extends FoxSellMixMatch {
     window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
   }
 
-  validateBundleWithoutQAO() {
-    if (!this.config?.categories) {
-      this.toggleAddToCartButton(true);
-      return false;
+  renderPrice() {
+    const addToCartButton = this.querySelector('button[type="submit"]');
+    const { originalTotalPrice, totalPrice } = this.bundle;
+
+    if (addToCartButton) {
+      if (!this.initialAddToCartButtonHTML) {
+        this.initialAddToCartButtonHTML = addToCartButton.innerHTML;
+      }
+      if (originalTotalPrice > totalPrice) {
+        addToCartButton.innerHTML = `${this.initialAddToCartButtonHTML} -
+        <span class="foxsell-compare-at-price">${window.foxsell?.formatMoney?.(originalTotalPrice)}</span>
+        <span class="foxsell-sale-price">${window.foxsell?.formatMoney?.(totalPrice)}</span>`;
+      } else {
+        addToCartButton.innerHTML = `${this.initialAddToCartButtonHTML} -
+        <span class="foxsell-sale-price">${window.foxsell?.formatMoney?.(totalPrice)}</span>`;
+      }
     }
 
-    return this.config.categories.reduce((allValid, category, index) => {
-      const categoryMetadata = this.config?.additionalSettings?.categories_metadata?.[index];
-      const minQuantity = categoryMetadata?.min_quantity ?? category.quantity;
-      const maxQuantity = category.quantity;
-
-      const selectedCategory = this.getCategory(category.id, true);
-      if (!selectedCategory) return false;
-
-      selectedCategory.isMaxQuantity = selectedCategory.quantity >= maxQuantity;
-      return allValid && selectedCategory.quantity >= minQuantity;
-    }, true);
+    const bundleSummaryPriceEls = this.querySelectorAll('.foxsell-bundle-summary__price-value');
+    if (bundleSummaryPriceEls.length > 0) {
+      if (originalTotalPrice > totalPrice) {
+        bundleSummaryPriceEls.forEach(el => el.innerHTML = `
+        <span class="foxsell-compare-at-price">${window.foxsell?.formatMoney?.(originalTotalPrice)}</span>
+        <span class="foxsell-sale-price">${window.foxsell?.formatMoney?.(totalPrice)}</span>`);
+      } else {
+        bundleSummaryPriceEls.forEach(el => el.innerHTML = `<span class="foxsell-sale-price">${window.foxsell?.formatMoney?.(totalPrice)}</span>`);
+      }
+    }
   }
 }
 
@@ -912,8 +989,7 @@ class FoxSellCategoryHeader extends HTMLElement {
   }
 }
 
-class StepCategoryHeader extends FoxSellCategoryHeader {
-
+class StepFoxSellCategoryHeader extends FoxSellCategoryHeader {
   updateQuantity(event) {
     if (this.categoryId === '__add_ons__') {
       this.updateAddOnQuantity(event);
@@ -923,22 +999,14 @@ class StepCategoryHeader extends FoxSellCategoryHeader {
     if (!category) return;
     if (category.id !== this.categoryId) return;
     if (!this.quantityElement) return;
-    if(category.maxQuantity === 10000) {
-      this.quantityElement.textContent = `(${category.quantity})`;
-    } else {
-      this.quantityElement.textContent = `(${category.quantity}/${category.maxQuantity})`;
-    }
+    this.quantityElement.textContent = `(${category.quantity})`;
   }
 
   updateAddOnQuantity(event) {
     const { bundle } = event.detail;
     if (!bundle) return;
     if (!this.quantityElement) return;
-    if(bundle.addOns.maximum === 10000) {
-      this.quantityElement.textContent = `(${bundle.addOns.selectedQuantity})`;
-    } else {
-      this.quantityElement.textContent = `(${bundle.addOns.selectedQuantity}/${bundle.addOns.maximum})`;
-    }
+    this.quantityElement.textContent = `(${bundle.addOns.selectedQuantity})`;
   }
 }
 
@@ -1439,6 +1507,7 @@ class FoxSellBundleSummary extends HTMLElement {
           ${item.category.id === '__add_ons__' ? `<span class="foxsell-bundle-summary__item-add-on-tag">${this.foxsell.config.locale.addOnsLineItemLabel}</span>` : ''}
           <div class="foxsell-bundle-summary__item-title">${item.product.title}</div>
           ${item.option1 !== 'Default Title' ? `<div>${item.options.join(", ")}</div>` : ''}
+          ${(item.category.id === '__add_ons__' || priceStrategy?.strategy === 'dynamic_pricing') ? `
           <div>
             ${itemPrice > discountedPrice ? `
               <div>
@@ -1451,7 +1520,7 @@ class FoxSellBundleSummary extends HTMLElement {
                 <span class="foxsell-sale-price">${window.foxsell?.formatMoney?.(itemPrice)}</span>
               </div>`
             }
-          </div>
+          </div>` : ''}
         </div>
         <div class="foxsell-bundle-summary__quantity">x ${item.quantity}</div>
         ${item.category.id === '__add_ons__' && addOnStrategy === 'automatic_add' ? ""
@@ -1716,6 +1785,165 @@ class FoxSellBundleProgress extends HTMLElement {
   }
 }
 
+const renderEmptyStepHTML = (quantityRuleText) => {
+  return `
+    <div class="foxsell-bundle-summary__empty-step">
+      <div class="foxsell-bundle-summary__empty-step-add">
+        <div class="foxsell-bundle-summary__empty-step-add-icon">+</div>
+      </div>
+      <div class="foxsell-bundle-summary__step-description">${quantityRuleText}</div>
+    </div>
+  `;
+};
+
+class StepFoxSellBundleSummary extends FoxSellBundleSummary {
+
+  updateBundleSummary(event) {
+    const { bundle } = event.detail;
+
+    this.updateHeaderTotalQuantity(bundle);
+    const bundleItemsContainer = this.querySelector('.foxsell-bundle-summary__items-list');
+    if (!bundle || !bundleItemsContainer) return
+
+    if (!this.emptyStateHTML) {
+      this.emptyStateHTML = bundleItemsContainer.innerHTML;
+    }
+
+    if(!this.foxsell || !this.foxsell.config) return;
+
+    const items = bundle.items;
+
+    const categories = this.foxsell.config.categories;
+    const categoriesMetadata = this.foxsell.config?.additionalSettings.categories_metadata;
+
+    const steps = categories.map((category, index) => {
+      const step = categoriesMetadata[index];
+      return {
+        ...step,
+        items: items.filter(item => item.category.id === category.id),
+      }
+    });
+
+    const addOnItems = bundle.addOns.items.map(item => ({
+      ...item,
+      category: {
+        id: '__add_ons__',
+        title: 'AddOns',
+        quantity: bundle.addOns.selectedQuantity,
+        maxQuantity: bundle.addOns.maximum,
+        isMaxQuantity: bundle.addOns.isMaximumQuantity
+      }
+    }));
+
+    const addOnsStrategy = this.foxsell.config.additionalSettings.add_on_settings.strategy;
+    const addOnsProducts = this.foxsell.config.addOnProducts;
+
+    if((addOnsStrategy === 'add_on_step' && addOnsProducts.length > 0) || bundle.addOns.items.length > 0) {
+      steps.push({
+        title: this.foxsell.config.additionalSettings.add_on_settings.title || this.foxsell.config.locale.addOnsCategoryTitle || 'Add-ons',
+        description: this.foxsell.config.additionalSettings.add_on_settings.description || '',
+        min_quantity: this.foxsell.config.settings.addOn.minimum,
+        max_quantity: this.foxsell.config.settings.addOn.maximum,
+        items: addOnItems,
+      });
+    }
+
+    bundleItemsContainer.innerHTML = steps.map(step => {
+
+      return this.renderStep(step);
+    }).join('');
+  }
+
+  renderStep(step) {
+    let quantityRuleText = '';
+    if(this.foxsell && this.foxsell.config) {
+      quantityRuleText = getQuantityRuleText(step.min_quantity, step.max_quantity, this.foxsell.config.locale);
+    }
+    return `
+      <div class="foxsell-bundle-summary__step">
+        <div class="foxsell-bundle-summary__step-header">
+          <div class="foxsell-bundle-summary__step-title">${step.title}</div>
+        </div>
+        <div class="foxsell-bundle-summary__step-items">
+          ${step.items.length > 0 ? step.items.map(item => {
+            return this.renderLineItem(item);
+          }).join('') : renderEmptyStepHTML(quantityRuleText)}
+        </div>
+      </div>
+    `;
+  }
+}
+
+class StepFoxSellBundleProgress extends FoxSellBundleProgress {
+
+  formatProgressMessage(currentStep, maxSteps, completedSteps) {
+    let message = '';
+    const isCompleted = completedSteps === maxSteps;
+
+    if (currentStep === 0) {
+      message = this.config.emptyStateText;
+    } else if (isCompleted) {
+      message = this.config.endStateText;
+    } else {
+      message = this.config.progressStateText;
+    }
+
+    message = message
+    .replaceAll('_currentStep', String(currentStep))
+    .replaceAll('_completedSteps', String(completedSteps))
+    .replaceAll('_maxSteps', String(maxSteps))
+    .replaceAll('_remainingSteps', String(maxSteps - completedSteps));
+
+    return message;
+  }
+
+  getStepProgress() {
+    if(!this.foxsell || !this.foxsell.config) return { maxSteps: 0, currentStep: 0, completedSteps: 0, message: '', isLastStep: false };
+    const categories = this.foxsell.config.categories;
+
+    let maxSteps = categories.length;
+    if(this.foxsell.config.additionalSettings.add_on_settings.strategy === 'add_on_step' && this.foxsell.config.addOnProducts.length > 0) {
+      maxSteps += 1;
+    }
+
+    const foxsell =  (this.foxsell);
+    const currentStep = foxsell.currentStepIndex + 1;
+    const completedSteps = foxsell.completedSteps;
+    const message = this.formatProgressMessage(currentStep, maxSteps, completedSteps);
+    const isLastStep = completedSteps === maxSteps;
+    return { maxSteps, currentStep, completedSteps, message, isLastStep };
+  }
+
+  updateProgressBar() {
+    const stepProgress = this.getStepProgress();
+
+    const progressLabel = this.querySelector('.foxsell-bundle-progress__label');
+    if (progressLabel) {
+      progressLabel.innerHTML = stepProgress.message;
+    }
+
+    const progressBarsWrapper = this.querySelector('.foxsell-bundle-progress__bars');
+    if (!progressBarsWrapper) return;
+
+    progressBarsWrapper.innerHTML = '';
+
+    for(let i = 1; i <= stepProgress.maxSteps; i++) {
+      const progressBar = document.createElement('div');
+      const progressTrack = document.createElement('div');
+
+      progressTrack.classList.add('foxsell-bundle-progress__track');
+      progressBar.classList.add('foxsell-bundle-progress__bar');
+
+      if(i <= stepProgress.completedSteps) {
+        progressBar.style.width = '100%';
+      }
+
+      progressTrack.appendChild(progressBar);
+      progressBarsWrapper.appendChild(progressTrack);
+    }
+  }
+}
+
 class FoxSellProductModal extends HTMLElement {
   constructor() {
     super();
@@ -1826,175 +2054,16 @@ class StepFoxSellProductModal extends FoxSellProductModal {
   }
 }
 
-class StepBundleSummary extends FoxSellBundleSummary {
-  constructor() {
-    super();
-  }
-
-  updateBundleSummary(event) {
-    const { bundle } = event.detail;
-
-    this.updateHeaderTotalQuantity(bundle);
-    const bundleItemsContainer = this.querySelector('.foxsell-bundle-summary__items-list');
-    if (!bundle || !bundleItemsContainer) return
-
-    if (!this.emptyStateHTML) {
-      this.emptyStateHTML = bundleItemsContainer.innerHTML;
-    }
-
-    const items = bundle.items;
-
-    const addOnItems = bundle.addOns.items.map(item => ({
-      ...item,
-      category: {
-        id: '__add_ons__',
-        title: 'AddOns',
-        quantity: bundle.addOns.selectedQuantity,
-        maxQuantity: bundle.addOns.maximum,
-        isMaxQuantity: bundle.addOns.isMaximumQuantity
-      }
-    }));
-
-    const allItems = [...items, ...addOnItems];
-
-    if (!allItems || allItems.length === 0) {
-      bundleItemsContainer.innerHTML = this.emptyStateHTML;
-      return;
-    }
-
-    const groupedItems = allItems.reduce((acc, item) => {
-      acc[item.category.id] = acc[item.category.id] || [];
-      acc[item.category.id].push(item);
-      return acc;
-    }, {});
-
-    bundleItemsContainer.innerHTML = Object.values(groupedItems).map(items => {
-      let categoryTitle = items[0].category.title;
-      if(this.foxsell && categoryTitle !== 'AddOns') {
-        let currentCategory = this.foxsell?.config?.categories.findIndex((category)=> category.title === categoryTitle) ?? -1;
-        let currentStepTitle = this.foxsell.config?.additionalSettings.categories_metadata?.[currentCategory]?.title ?? categoryTitle;
-        categoryTitle = currentStepTitle;
-      } else if(categoryTitle === 'AddOns') {
-        categoryTitle = this.foxsell?.config?.additionalSettings.add_on_settings.title ?? this.foxsell?.config?.locale.addOnsCategoryTitle ?? 'Add-ons';
-      }
-      return `
-        <div class="foxsell-bundle-summary__item-category">
-          <div class="foxsell-bundle-summary__item-category-title">
-            <span>${categoryTitle}:</span>
-          </div>
-          <div class="foxsell-bundle-summary__item-category-items">
-            ${items.map(item => this.renderLineItem(item)).join('')}
-          </div>
-        </div>
-      `;
-    }).join('');
-  }
-
-  renderLineItem(item) {
-    let itemImage = item.featured_image ? item.featured_image.src : item.product.featured_image?.src;
-    if (itemImage) {
-      const separator = itemImage.includes('?') ? '&' : '?';
-      itemImage = itemImage + separator + 'width=150';
-    }
-    let itemPrice = item.foxsell_price;
-    let discountedPrice = item.foxsell_price;
-    let discount = 0;
-    if (!this.foxsell || !this.foxsell.config || !this.foxsell.bundle) return '';
-    const priceStrategy = this.foxsell.bundle.priceStrategy;
-
-    //! Only apply price strategy to items, not add-ons
-    if (item.category.id !== '__add_ons__') {
-      if (priceStrategy && priceStrategy.strategy === 'dynamic_pricing') {
-        discount = priceStrategy.value;
-        discountedPrice = item.foxsell_price - (item.foxsell_price * (discount / 100));
-      }
-    }
-
-    return (`
-      <foxsell-bundle-line-item data-item-id="${item.id}" data-category-id="${item.category.id}" data-category-title="${item.category.title}" data-quantity="${item.quantity}" class="foxsell-bundle-summary__item">
-        <div><img src="${itemImage}"/></div>
-        <div class="foxsell-bundle-summary__item-info">
-          ${item.category.id === '__add_ons__' ? `<span class="foxsell-bundle-summary__item-add-on-tag">${this.foxsell.config.locale.addOnsLineItemLabel}</span>` : ''}
-          <div class="foxsell-bundle-summary__item-title">${item.product.title}</div>
-          ${item.option1 !== 'Default Title' ? `<div>${item.options.join(", ")}</div>` : ''}
-          <div>
-            ${itemPrice > discountedPrice ? `
-              <div>
-                <span class="foxsell-sale-price">${window.foxsell?.formatMoney?.(discountedPrice)}</span>
-                <span class="foxsell-compare-at-price">${window.foxsell?.formatMoney?.(itemPrice)}</span>
-                <span>(${discount}% off)</span>
-              </div>`
-              :
-              `<div>
-                <span class="foxsell-sale-price">${window.foxsell?.formatMoney?.(itemPrice)}</span>
-              </div>`
-            }
-          </div>
-        </div>
-        <div class="foxsell-bundle-summary__quantity">x ${item.quantity}</div>
-      </foxsell-bundle-line-item>
-    `)
-  }
-}
-
-class StepBundleProgress extends HTMLElement {
-  constructor() {
-    super();
-
-    this.foxsell = this.closest('foxsell-mix-match');
-    this.boundUpdateStepProgress = this.updateStepProgress.bind(this);
-  }
-
-  connectedCallback() {
-    if(this.foxsell) {
-      this.foxsell.addEventListener(FOXSELL_EVENTS.stepProgressUpdated, this.boundUpdateStepProgress);
-    }
-    this.updateStepProgress();
-  }
-
-  disconnectedCallback() {
-    if(this.foxsell) {
-      this.foxsell.removeEventListener(FOXSELL_EVENTS.stepProgressUpdated, this.boundUpdateStepProgress);
-    }
-  }
-
-  updateStepProgress() {
-    if(!this.foxsell) return;
-    const { currentStep, totalSteps } = this.foxsell.getCurrentStepProgress();
-
-    const progressLabel = this.querySelector('.foxsell-step-progress__label');
-
-    const progressBars = this.querySelector('.foxsell-step-progress__bars');
-
-    if(progressLabel) {
-      progressLabel.innerHTML = `${parseInt(currentStep) + 1}/${totalSteps}`;
-    }
-
-    if(progressBars) {
-      progressBars.innerHTML = '';
-      for(let i = 0; i < totalSteps; i++) {
-        const progressBar = document.createElement('div');
-        progressBar.classList.add('foxsell-step-progress__bar');
-        if(parseInt(currentStep) >= i) {
-          progressBar.classList.add('active');
-        }
-        progressBars.appendChild(progressBar);
-      }
-    }
-  }
-}
-
 const elements = [
-  ['foxsell-mix-match', StepMixMatch],
-  ['foxsell-category-header', StepCategoryHeader],
+  ['foxsell-mix-match', StepFoxSellMixMatch],
+  ['foxsell-category-header', StepFoxSellCategoryHeader],
   ['foxsell-product-card', StepFoxSellProductCard],
-  ['foxsell-bundle-summary', StepBundleSummary],
+  ['foxsell-bundle-summary', StepFoxSellBundleSummary],
   ['foxsell-bundle-line-item', FoxSellBundleLineItem],
-  ['foxsell-bundle-progress', FoxSellBundleProgress],
+  ['foxsell-bundle-progress', StepFoxSellBundleProgress],
   ['foxsell-variant-radio', FoxSellVariantRadio],
   ['foxsell-variant-select', FoxSellVariantSelect],
   ['foxsell-product-modal', StepFoxSellProductModal],
-  ['foxsell-step-progress', StepBundleProgress],
 ];
 
 for (const [name, constructor] of elements) {

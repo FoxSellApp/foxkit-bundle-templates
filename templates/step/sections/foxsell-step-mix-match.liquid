@@ -74,17 +74,6 @@
       "step": 1
     },
     {
-      "type": "range",
-      "id": "scroll_offset",
-      "label": "Scroll offset",
-      "info": "Pixels to offset when scrolling to the bundle block (e.g. to clear a sticky header)",
-      "default": 0,
-      "min": 0,
-      "max": 100,
-      "step": 1,
-      "unit": "px"
-    },
-    {
       "type": "header",
       "content": "Color scheme"
     },
@@ -129,13 +118,13 @@
       "type": "color",
       "id": "accent_3",
       "label": "Accent 3",
-      "default": "#EECCFF"
+      "default": "#C97AEC"
     },
     {
       "type": "color",
       "id": "accent_text_3",
       "label": "Accent 3 text",
-      "default": "#000000"
+      "default": "#2C0A3C"
     },
     {
       "type": "color",
@@ -151,7 +140,7 @@
       "type": "range",
       "id": "card_border_radius",
       "label": "Card",
-      "default": 0,
+      "default": 5,
       "min": 0,
       "max": 25,
       "step": 1,
@@ -161,7 +150,7 @@
       "type": "range",
       "id": "button_border_radius",
       "label": "Button",
-      "default": 0,
+      "default": 5,
       "min": 0,
       "max": 50,
       "step": 1,
@@ -205,13 +194,6 @@
       "max": 16,
       "step": 2,
       "unit": "px"
-    },
-    {
-      "type": "checkbox",
-      "id": "hide_category_title",
-      "label": "Hide category titles",
-      "default": false,
-      "info": "Only applies when quantity options (QAO) are enabled."
     },
     {
       "type": "header",
@@ -263,6 +245,45 @@
     },
     {
       "type": "header",
+      "content": "Quantity Rules"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "quantity_rule_optional",
+      "label": "Optional (Infinite)",
+      "default": "Optional",
+      "info": "Text shown when category has no quantity restrictions"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "quantity_rule_optional_limited",
+      "label": "Optional (Limited)",
+      "default": "Optional, select up to <strong>_max</strong> item(s)",
+      "info": "Text shown when optional with max limit, use _max placeholder."
+    },
+    {
+      "type": "inline_richtext",
+      "id": "quantity_rule_exact",
+      "label": "Exact",
+      "default": "Select <strong>_min</strong> item(s)",
+      "info": "Use _min placeholder for the exact quantity required"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "quantity_rule_range",
+      "label": "Range",
+      "default": "Select <strong>_min</strong> to <strong>_max</strong> item(s)",
+      "info": "Use _min and _max placeholders"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "quantity_rule_minimum",
+      "label": "Minimum",
+      "default": "Select at least <strong>_min</strong> item(s)",
+      "info": "Use _min placeholder for the minimum quantity required"
+    },
+    {
+      "type": "header",
       "content": "Bundle Summary"
     },
     {
@@ -273,14 +294,41 @@
     },
     {
       "type": "inline_richtext",
+      "id": "summary_empty_state_text",
+      "label": "Empty state text",
+      "default": "Step _currentStep of _maxSteps",
+      "info": "Use _currentStep, _completedSteps, _maxSteps, _remainingSteps placeholders"
+    },
+    {
+      "type": "inline_richtext",
       "id": "summary_empty_state_body_text",
       "label": "Empty state body text",
       "default": "No items in bundle. Add items to your bundle to see the summary here.",
       "info": "Shown in the summary panel when no items are added."
     },
     {
+      "type": "inline_richtext",
+      "id": "summary_progress_state_text",
+      "label": "Progress state text",
+      "default": "Step _currentStep of _maxSteps",
+      "info": "Use _currentStep, _completedSteps, _maxSteps, _remainingSteps placeholders"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "summary_end_state_text",
+      "label": "End state text",
+      "default": "Step _currentStep of _maxSteps",
+      "info": "Use _currentStep, _completedSteps, _maxSteps, _remainingSteps placeholders"
+    },
+    {
       "type": "header",
       "content": "Locale settings"
+    },
+    {
+      "type": "text",
+      "id": "price_label",
+      "label": "Price label",
+      "default": "Price"
     },
     {
       "type": "text",

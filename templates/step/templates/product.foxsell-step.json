@@ -2,9 +2,7 @@
   "sections": {
     "main": {
       "type": "foxsell-step-mix-match",
-      "settings": {
-        "bundle_product": "{{ product }}"
-      }
+      "settings": {}
     }
   },
   "order": [
