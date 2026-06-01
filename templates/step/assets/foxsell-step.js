@@ -1798,6 +1798,24 @@ const renderEmptyStepHTML = (quantityRuleText) => {
 
 class StepFoxSellBundleSummary extends FoxSellBundleSummary {
 
+  updateHeaderTotalQuantity(bundle) {
+    const elements = this.querySelectorAll('[data-foxsell-total-quantity]');
+    if (!elements.length) return;
+
+    const text = !bundle
+      ? ''
+      : (() => {
+          const { items, addOns } = bundle;
+          const addOnItems = addOns?.items ?? [];
+          let total = 0;
+          for (let i = 0; i < items.length; i++) total += items[i].quantity;
+          for (let i = 0; i < addOnItems.length; i++) total += addOnItems[i].quantity;
+          return `(${total})`;
+        })();
+
+    elements.forEach((el) => { el.textContent = text; });
+  }
+
   updateBundleSummary(event) {
     const { bundle } = event.detail;
 
