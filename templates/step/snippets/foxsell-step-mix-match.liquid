@@ -197,19 +197,19 @@
           settings: settings
         %}
         <div class="foxsell-mix-match__step-navigation-wrapper">
-          <button 
-            data-direction="previous" 
+          <button
+            data-direction="previous"
             class="foxsell--button foxsell--button-ghost foxsell-step-navigation-button--previous"
             disabled
           >
-            {{ arrow_left_svg }} <span>Back</span>
+            {{ arrow_left_svg }} <span>{{ section.settings.button_back_text | default: 'Back' }}</span>
           </button>
-         <button 
-          data-direction="next" 
+         <button
+          data-direction="next"
           class="foxsell--button foxsell--button-primary foxsell-step-navigation-button--next"
           disabled
          >
-          <span>Next</span>{{ arrow_right_svg }}
+          <span>{{ section.settings.button_next_text | default: 'Next' }}</span>{{ arrow_right_svg }}
          </button>
         </div>
         <div class="foxsell-mix-match__summary-form foxsell--hidden">
@@ -221,7 +221,7 @@
             <input type="hidden" name="properties[__foxsell:dynamic_add_on_bundle_savings]" value="">
             <div class="foxsell-mix-match__step-navigation-wrapper">
               <button type="button" data-direction="previous" class="foxsell--button foxsell--button-ghost foxsell-step-navigation-button--previous">
-                {{ arrow_left_svg }} <span>Back</span>
+                {{ arrow_left_svg }} <span>{{ section.settings.button_back_text | default: 'Back' }}</span>
               </button>
               <button type="submit" class="foxsell--button foxsell--button-primary foxsell-add-to-cart-button" disabled>
                 {{ section.settings.button_atc_text | default: 'Add to Cart' }}
@@ -331,6 +331,8 @@
       "quantityRuleExact": {{ section.settings.quantity_rule_exact | default: 'Select <strong>_min</strong> item(s)' | json }},
       "quantityRuleRange": {{ section.settings.quantity_rule_range | default: 'Select <strong>_min</strong> to <strong>_max</strong> item(s)' | json }},
       "quantityRuleMinimum": {{ section.settings.quantity_rule_minimum | default: 'Select at least <strong>_min</strong> item(s)' | json }},
+      "backButtonText": {{ section.settings.button_back_text | default: 'Back' | json }},
+      "nextButtonText": {{ section.settings.button_next_text | default: 'Next' | json }},
     },
     "additionalSettings": additionalSettings
   }
