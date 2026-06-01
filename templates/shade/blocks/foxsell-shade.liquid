@@ -1,6 +1,6 @@
 {% liquid
   assign app_namespace = 'app--67872686081'
-  assign bundle_product = block.settings.bundle_product
+  assign bundle_product = block.settings.bundle_product | default: product
   assign dynamic_add_ons_bundle_config = bundle_product.metafields[app_namespace].dynamic_add_ons_bundle.value
 %}
 
@@ -29,12 +29,6 @@
       "type": "product",
       "id": "bundle_product",
       "label": "Bundle product"
-    },
-    {
-      "type": "text",
-      "id": "title",
-      "label": "Title",
-      "default": "Frequently Bought Together"
     },
     {
       "type": "number",

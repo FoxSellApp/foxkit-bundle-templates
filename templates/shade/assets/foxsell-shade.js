@@ -719,6 +719,98 @@ class FoxSellMixMatch extends HTMLElement {
   }
 }
 
+class ShadeFoxSellMixMatch extends FoxSellMixMatch {
+
+  updateLineItemProperties() {
+    const lineItems = this.bundle.items.map(item => ({
+      variantId: Number(item.id) || item.id,
+      quantity: item.quantity || 1,
+      category: item.category.title,
+      type: 'product',
+      properties: item.properties || {}
+    }));
+
+    const addOnLineItems = this.bundle.addOns.items.map(item => ({
+      variantId: Number(item.id) || item.id,
+      quantity: item.quantity || 1,
+      category: '',
+      type: 'addOns',
+      properties: item.properties || {}
+    }));
+
+    lineItems.push(...addOnLineItems);
+
+    const requiredInputs = [
+      {
+        name: 'properties[__foxsell:dynamic_add_on_bundle_items]',
+        value: JSON.stringify(lineItems)
+      },
+      {
+        name: 'properties[__foxsell:dynamic_add_on_bundle_id]',
+        value: this.bundle.id
+      },
+      {
+        name: 'properties[__foxsell:dynamic_add_on_bundle_savings]',
+        value: window.foxsell?.formatMoney?.(this.bundle.totalDiscount)
+      }
+    ];
+
+    const section = this.closest('.shopify-section');
+    if(section) {
+      const form = section.querySelector('form[action*="cart/Add" i]');
+      if(form) {
+        const bundleIdInput = form.querySelector('input[name="properties[__foxsell:dynamic_add_on_bundle_id]"]');
+        const itemInput = form.querySelector('input[name="properties[__foxsell:dynamic_add_on_bundle_items]"]');
+        const savingsInput = form.querySelector('input[name="properties[__foxsell:dynamic_add_on_bundle_savings]"]');
+        const idInput = form.querySelector('input[name="id"]');
+
+        if(bundleIdInput) {
+          bundleIdInput.setAttribute('value', this.bundle.id);
+          itemInput?.setAttribute('value', JSON.stringify(lineItems));
+          savingsInput?.setAttribute('value', window.foxsell?.formatMoney?.(this.bundle.totalDiscount));
+        } else {
+          for(const input of requiredInputs) {
+            const newInput = document.createElement('input');
+            newInput.setAttribute('name', input.name);
+            newInput.setAttribute('value', input.value);
+            newInput.setAttribute('type', 'hidden');
+            newInput.setAttribute('data-foxsell-mix-match', 'true');
+            form.appendChild(newInput);
+          }
+
+          //! Set the variant id input if QAO is enabled
+          const variantIdInput = form.querySelector('input[name="id"]');
+          if (this.bundle.qaoEnabled) {
+            const validOption = this.getCurrentValidOption();
+            if (variantIdInput) {
+              variantIdInput.setAttribute('value', validOption?.variant_id ?? '');
+            }
+          }
+        }
+
+        //! Set the variant id input if QAO is enabled
+        if (this.bundle.qaoEnabled && idInput) {
+          const validOption = this.getCurrentValidOption();
+          idInput.setAttribute('value', validOption?.variant_id ?? '');
+        }
+      }
+    }
+  }
+
+  toggleAddToCartButton(disable) {
+    const section = this.closest('.shopify-section');
+    if(section) {
+      const form = section.querySelector('form[action*="cart/Add" i]');
+      if(form) {
+        const addToCartButton = form.querySelector('button[type="submit"]');
+        if (addToCartButton) {
+          addToCartButton.toggleAttribute('disabled', disable);
+        }
+      }
+    }
+  }
+}
+
 class FoxSellCategoryHeader extends HTMLElement {
   constructor() {
     super();
@@ -1135,6 +1227,9 @@ class ShadeFoxSellProductCard extends FoxSellProductCard {
       return;
     }
 
+    //! Sync products with the bundle
+    this.syncProductsWithBundle();
+
     let disable;
     if (this.categoryId === '__add_ons__') {
       const bundle = this.foxsell?.bundle;
@@ -1149,9 +1244,6 @@ class ShadeFoxSellProductCard extends FoxSellProductCard {
       const category = this.foxsell?.getCategory(this.categoryId ?? '');
       disable = (category?.isMaxQuantity ?? false) || this.isCurrentVariantAtInventoryLimit();
     }
-
-    //! Sync products with the bundle
-    if(!disable) this.syncProductsWithBundle();
 
     this.disableAddToBundle = disable;
     this.toggleAddToBundleButton(disable);
@@ -1176,6 +1268,23 @@ class ShadeFoxSellProductCard extends FoxSellProductCard {
   updateQuantity(quantity) {
     super.updateQuantity(quantity);
     this.classList.toggle('item-in-bundle', quantity > 0);
+  }
+
+  addToBundle() {
+    const quantity = parseInt(this.getAttribute('data-quantity') || '1');
+    if (!this.variantSelector || !this.variantSelector.currentVariant || !this.foxsell || !this.categoryId) return;
+    if (this.categoryId === '__add_ons__') {
+
+      this.foxsell.addToAddOns(this.variantSelector.currentVariant, quantity);
+      if (this.isCurrentVariantAtInventoryLimit()) {
+        this.toggleAddToBundleButton(true);
+      }
+    } else {
+      this.foxsell.addToBundle(this.variantSelector.currentVariant, quantity, this.categoryId);
+      if (this.isCurrentVariantAtInventoryLimit()) {
+        this.toggleAddToBundleButton(true);
+      }
+    }
   }
 }
 
@@ -1304,6 +1413,7 @@ class FoxSellBundleSummary extends HTMLElement {
           ${item.category.id === '__add_ons__' ? `<span class="foxsell-bundle-summary__item-add-on-tag">${this.foxsell.config.locale.addOnsLineItemLabel}</span>` : ''}
           <div class="foxsell-bundle-summary__item-title">${item.product.title}</div>
           ${item.option1 !== 'Default Title' ? `<div>${item.options.join(", ")}</div>` : ''}
+          ${(item.category.id === '__add_ons__' || priceStrategy?.strategy === 'dynamic_pricing') ? `
           <div>
             ${itemPrice > discountedPrice ? `
               <div>
@@ -1316,7 +1426,7 @@ class FoxSellBundleSummary extends HTMLElement {
                 <span class="foxsell-sale-price">${window.foxsell?.formatMoney?.(itemPrice)}</span>
               </div>`
             }
-          </div>
+          </div>` : ''}
         </div>
         <div class="foxsell-bundle-summary__quantity">x ${item.quantity}</div>
         ${item.category.id === '__add_ons__' && addOnStrategy === 'automatic_add' ? ""
@@ -1581,8 +1691,118 @@ class FoxSellBundleProgress extends HTMLElement {
   }
 }
 
+class FoxSellProductModal extends HTMLElement {
+  constructor() {
+    super();
+
+    this.foxsell = this.closest('foxsell-mix-match');
+
+    this.modal = this.querySelector('#foxsell-product-dialog[data-modal]');
+    this.content = this.querySelector('.foxsell-product-modal__content');
+    this.closeButton = this.querySelector('#foxsell-product-modal-close-button');
+    this.boundCloseModal = this.closeModal.bind(this);
+    this.boundOpenModal = this.openModal.bind(this);
+    this.boundFoxSellKeyDown = this.handleKeyDown.bind(this);
+    this.emptyState = this.querySelector('.foxsell-product-modal__empty-state');
+  }
+
+  connectedCallback() {
+    const productCards = this.foxsell?.querySelectorAll('foxsell-product-card');
+    if(productCards && productCards.length > 0) {
+      productCards.forEach(card => {
+        card.querySelector('[data-open-modal]')?.addEventListener('click', this.boundOpenModal);
+      });
+    }
+
+    if(this.closeButton) {
+      this.closeButton.addEventListener('click', this.boundCloseModal);
+    }
+
+    document.addEventListener('keydown', this.boundFoxSellKeyDown);
+  }
+
+  disconnectedCallback() {
+    const productCards = this.foxsell?.querySelectorAll('foxsell-product-card');
+    if(productCards && productCards.length > 0) {
+      productCards.forEach(card => {
+        card.querySelector('[data-open-modal]')?.removeEventListener('click', this.boundOpenModal);
+      });
+    }
+
+    if(this.closeButton) {
+      this.closeButton.removeEventListener('click', this.boundCloseModal);
+    }
+
+    document.removeEventListener('keydown', this.boundFoxSellKeyDown);
+    unlockBodyScroll();
+  }
+
+  openModal(event) {
+    if(!this.modal) return;
+    this.modal.setAttribute('open', '');
+    lockBodyScroll();
+
+    if(this.content) this.content.innerHTML = this.emptyState?.outerHTML || '';
+
+    if(!event.target) return;
+
+    const productId = event.target?.closest('foxsell-product-card')?.dataset.productId;
+    if(!productId) return;
+    this.renderProductModal(productId);
+  }
+
+  handleKeyDown(event) {
+    if(event.key === 'Escape' && this.modal?.hasAttribute('open')) {
+      this.closeModal();
+    }
+  }
+
+  closeModal() {
+    if(!this.modal || !this.content) return;
+    this.content.innerHTML = '';
+    this.modal.removeAttribute('open');
+    unlockBodyScroll();
+  }
+
+  async renderProductModal(productId) {
+    if(!this.foxsell || !this.foxsell.config) return;
+    const productHandle = this.foxsell.config.productHandle;
+    const sectionName = 'foxsell-shade-product-modal';
+    const response = await(await fetch(`/products/${productHandle}?sections=${sectionName}`)).json();
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(response[sectionName], 'text/html');
+
+    const productModal = doc.querySelector('foxsell-product-card[data-product-id="' + productId + '"]');
+    if(!productModal || !this.content) return;
+    this.content.innerHTML = productModal.outerHTML;
+  }
+}
+
+class BaseFoxSellProductModal extends FoxSellProductModal {
+
+  async renderProductModal(productId) {
+    if(!this.foxsell || !this.foxsell.config) return;
+    const productHandle = this.foxsell.config.productHandle;
+    const sectionName = 'foxsell-shade-product-modal';
+    const response = await(await fetch(`/products/${productHandle}?sections=${sectionName}`)).json();
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(response[sectionName], 'text/html');
+
+    const productModal = doc.querySelector('foxsell-product-card[data-product-id="' + productId + '"]');
+    if(!productModal || !this.content) return;
+    const addToBundleButton = productModal.querySelector('.foxsell--button-full-width.add-to-bundle');
+    if(addToBundleButton) {
+      addToBundleButton.textContent = this.foxsell.config.locale.addToBundleButtonText;
+      addToBundleButton.setAttribute('aria-label', this.foxsell.config.locale.addToBundleButtonText);
+    }
+    this.content.innerHTML = productModal.outerHTML;
+  }
+}
+
 const elements = [
-  ['foxsell-mix-match', FoxSellMixMatch],
+  ['foxsell-mix-match', ShadeFoxSellMixMatch],
   ['foxsell-category-header', FoxSellCategoryHeader],
   ['foxsell-product-card', ShadeFoxSellProductCard],
   ['foxsell-bundle-summary', FoxSellBundleSummary],
@@ -1590,6 +1810,7 @@ const elements = [
   ['foxsell-bundle-progress', FoxSellBundleProgress],
   ['foxsell-variant-radio', FoxSellVariantRadio],
   ['foxsell-variant-select', FoxSellVariantSelect],
+  ['foxsell-product-modal', BaseFoxSellProductModal]
 ];
 
 for (const [name, constructor] of elements) {

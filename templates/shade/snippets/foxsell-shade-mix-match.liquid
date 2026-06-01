@@ -25,17 +25,15 @@
   assign quantity_rules_strategy = additional_settings.quantity_rules.strategy | default: 'any'
   assign quantity_rules_max = additional_settings.quantity_rules.max | default: 'cap_at_highest'
 
-  assign addons_quantity = 0
-  if options.size == 0
-    assign addons_quantity = settings.add_on.maximum
-  endif
-
-  assign hide_category_header = section.settings.hide_category_title
-
   assign product_card_options_type = section.settings.product_card_options_type | default: 'radio'
   assign product_card_image_aspect_ratio = section.settings.product_card_image_aspect_ratio | default: 'original'
   assign product_card_secondary_image_on_hover = section.settings.product_card_secondary_image_on_hover | default: false
   assign product_card_show_color_swatches = section.settings.product_card_show_color_swatches | default: false
+
+  assign product_card_show_price = true
+  if settings.price.strategy == 'fixed_pricing'
+    assign product_card_show_price = false
+  endif
 %}
 
 {% render 'foxsell-shade-css-variables', section: section %}
@@ -46,21 +44,10 @@
 
 <foxsell-mix-match class="foxsell-mix-match" data-bundle-id="{{ bundle_id }}">
   <div class="foxsell-mix-match__container">
-    {% if section.settings.title != blank %}
-      <div class="foxsell-mix-match__title">{{ section.settings.title }}</div>
-    {% endif %}
     {% comment %} Category list {% endcomment %}
     <div class="foxsell-category__list">
       {% for category in categories %}
         <div class="foxsell-category__item" data-category="{{ category.title | sha1 }}">
-          {% unless hide_category_header %}
-            <foxsell-category-header data-category-id="{{ category.title | sha1 }}" class="foxsell-category__header">
-              <div class="foxsell-category__title">{{ category.title }}</div>
-              {% if options.size == 0 %}
-                <div class="js foxsell-category__quantity">(0/{{ category.quantity }})</div>
-              {% endif %}
-            </foxsell-category-header>
-          {% endunless %}
           <div class="foxsell-category__product-grid">
             {% for p in category.products %}
               {% liquid
@@ -82,9 +69,11 @@
                   product: product_ref,
                   allowed_variants: p.variants,
                   type: product_card_options_type,
+                  default_quantity: category.quantity,
                   image_aspect_ratio: product_card_image_aspect_ratio,
                   show_secondary_image_on_hover: product_card_secondary_image_on_hover,
-                  show_color_swatches: product_card_show_color_swatches
+                  show_color_swatches: product_card_show_color_swatches,
+                  show_price: product_card_show_price
                 %}
               {% endif %}
             {% endfor %}
@@ -92,11 +81,10 @@
         </div>
       {% endfor %}
   
-      {% if add_on_strategy == 'add_on_step' and add_on_products.size > 0 %}
+      {% if add_on_products.size > 0 %}
         <div class="foxsell-category__item" data-category="__add_ons__">
           <foxsell-category-header data-category-id="__add_ons__" class="foxsell-category__header">
             <div class="foxsell-category__title">{{ section.settings.add_ons_category_title | default: 'Add-ons' }}</div>
-            <div class="js foxsell-category__quantity">(0/{{ addons_quantity }})</div>
           </foxsell-category-header>
           <div class="foxsell-category__product-grid">
             {% for add_on in add_on_products %}
@@ -126,16 +114,37 @@
         </div>
       {% endif %}
     </div>
-    {% comment %} Bundle summary {% endcomment %}
-    {% form 'product', product %}
-      <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}">
-      <input type="hidden" name="quantity" value="1">
-      <input type="hidden" name="properties[__foxsell:dynamic_add_on_bundle_id]" value="{{ bundle_id }}">
-      <input type="hidden" name="properties[__foxsell:dynamic_add_on_bundle_items]" value="">
-      <input type="hidden" name="properties[__foxsell:dynamic_add_on_bundle_savings]" value="">
-      <button type="submit" class="foxsell--button foxsell--button-full-width" disabled>{{ section.settings.button_atc_text | default: 'Add to Cart' }}</button>
-    {% endform %}
   </div>
+
+  {% comment %} Product modal overlay {% endcomment %}
+  <div class="foxsell-mix-match__overlay"></div>
+
+  {% comment %} Product modal {% endcomment %}
+  <foxsell-product-modal class="foxsell-product-modal">
+    <div id="foxsell-product-dialog" data-modal>
+      <button id="foxsell-product-modal-close-button" class="foxsell--button foxsell--button-ghost">{{ close_icon_svg }}</button>
+      <div class="foxsell-product-modal__content">
+        <div class="foxsell-product-modal__empty-state">
+          <div class="foxsell__loading-spinner">
+            <svg xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="foxsell-product-modal__loading-spinner"
+            >
+              <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </foxsell-product-modal>
+  {% comment %} End product modal {% endcomment %}
 </foxsell-mix-match>
 
 <script>

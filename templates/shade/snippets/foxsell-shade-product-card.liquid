@@ -6,9 +6,11 @@
   @param {string} image_aspect_ratio - The aspect ratio of the image, either 'original' or 'square'
 
   @param {boolean} [show_price] - Whether to show the price of the product
+  @param {string} [view] - The view to render, either 'card' or 'modal'
   @param {string} [type] - The type of options to render, either 'radio' or 'select'
   @param {boolean} [show_secondary_image_on_hover] - Card view defaults to false unless passed. Modal view defaults to true unless passed.
   @param {boolean} [show_color_swatches] - Whether to render color swatches for options that support them.
+  @param {number} [default_quantity] - The default quantity of the product
 
   @param {section} [section] - Theme section (e.g. mix-match) whose settings supply labels like the add-to-bundle button.
 
@@ -17,8 +19,11 @@
 {% enddoc %}
 
 {% liquid
-  assign show_price = show_price | default: true
+  unless show_price == false
+    assign show_price = true
+  endunless
   assign show_secondary_image_on_hover = show_secondary_image_on_hover | default: false
+  assign quantity = default_quantity | default: 1
   assign image_aspect_ratio = image_aspect_ratio | default: 'original'
   assign image_class = 'js foxsell-product-card__image foxsell--image-' | append: image_aspect_ratio
   unless category_title == '__add_ons__'
@@ -46,41 +51,61 @@
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14"/></svg>
 {% endcapture %}
 
-<foxsell-product-card 
-  class="foxsell-product-card" 
-  data-product-id="{{ product.id }}"
-  data-category="{{ category_title }}"
->
-  <div class="foxsell-product-card__image-wrapper" data-open-modal>
-    <div class="foxsell-product-card__media">
-      {{ product.featured_image | image_url: width: 500 | image_tag: class: image_class }}
-      {% if secondary_image != blank %}
-        {% assign secondary_image_class = image_class | append: ' foxsell-product-card__image--secondary' %}
-        {{ secondary_image | image_url: width: 500 | image_tag: class: secondary_image_class }}
-      {% endif %}
-    </div>
-  </div>
-  <div class="foxsell-product-card__info">
-    <div class="foxsell-product-card__title">{{ product.title }}</div>
-    {% if show_price %}
-      <div class="js foxsell-product-card__price">{{ product.first_available_variant.price | money }}</div>
-    {% endif %}
-    <div {% if product.has_only_default_variant %}class="foxsell--hidden"{% endif %}>
-      {% render 'foxsell-shade-product-options', product: product, allowed_variants: allowed_variants, type: type, show_color_swatches: show_color_swatches %}
-    </div>
-    {% if category_title == '__add_ons__' %}
-      <div class="foxsell-product-card__quantity-wrapper">
-        <div class="foxsell-product-card__quantity">
-          <button class="js foxsell--button remove-from-bundle" aria-label="Remove from bundle">
-            {{ minus_icon_svg }}
-          </button>
-          <span class="foxsell-quantity">0</span>
-          <button class="js foxsell--button add-to-bundle" aria-label="Add to bundle">
-            {{ plus_icon_svg }}
-          </button>
-        </div>
-        <button class="js foxsell--button foxsell--button-full-width add-to-bundle" aria-label="{{ add_to_bundle_button_text | escape }}">{{ add_to_bundle_button_text }}</button>
+{% case view %}
+  {% when 'modal' %}
+    <foxsell-product-card
+      class="foxsell-product-card foxsell-product-card--modal"
+      data-product-id="{{ product.id }}"
+      data-category="{{ category_title }}"
+    >
+      <div class="foxsell-product-card__image-wrapper">
+        {{ product.featured_image | image_url: width: 500 | image_tag: class: image_class }}
       </div>
-    {% endif %}
-  </div>
-</foxsell-product-card>
+      <div class="foxsell-product-card__info">
+        <div class="foxsell-product-card__title">{{ product.title }}</div>
+        <div>
+          {{ product.description }}
+        </div>
+      </div>
+    </foxsell-product-card>
+  {% else %}
+    <foxsell-product-card 
+      class="foxsell-product-card" 
+      data-product-id="{{ product.id }}"
+      data-category="{{ category_title }}"
+      data-quantity="{{ quantity }}"
+    >
+      <div class="foxsell-product-card__image-wrapper" data-open-modal>
+        <div class="foxsell-product-card__media">
+          {{ product.featured_image | image_url: width: 500 | image_tag: class: image_class }}
+          {% if secondary_image != blank %}
+            {% assign secondary_image_class = image_class | append: ' foxsell-product-card__image--secondary' %}
+            {{ secondary_image | image_url: width: 500 | image_tag: class: secondary_image_class }}
+          {% endif %}
+        </div>
+      </div>
+      <div class="foxsell-product-card__info">
+        <div class="foxsell-product-card__title">{{ product.title }}</div>
+        {% if show_price %}
+          <div class="js foxsell-product-card__price">{{ product.first_available_variant.price | money }}</div>
+        {% endif %}
+        <div {% if product.has_only_default_variant %}class="foxsell--hidden"{% endif %}>
+          {% render 'foxsell-shade-product-options', product: product, allowed_variants: allowed_variants, type: type, show_color_swatches: show_color_swatches %}
+        </div>
+        {% if category_title == '__add_ons__' %}
+          <div class="foxsell-product-card__quantity-wrapper">
+            <div class="foxsell-product-card__quantity">
+              <button class="js foxsell--button remove-from-bundle" aria-label="Remove from bundle">
+                {{ minus_icon_svg }}
+              </button>
+              <span class="foxsell-quantity">0</span>
+              <button class="js foxsell--button add-to-bundle" aria-label="Add to bundle">
+                {{ plus_icon_svg }}
+              </button>
+            </div>
+            <button class="js foxsell--button foxsell--button-full-width add-to-bundle" aria-label="{{ add_to_bundle_button_text | escape }}">{{ add_to_bundle_button_text }}</button>
+          </div>
+        {% endif %}
+      </div>
+    </foxsell-product-card>
+{% endcase %}
