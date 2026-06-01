@@ -166,10 +166,10 @@
           {% else %}
             <span>{{ value }}</span>
           {% endif %}
-          <input 
-            type="radio" 
-            name="{{ section.id }}-{{ name }}" 
-            value="{{ value }}"
+          <input
+            type="radio"
+            name="{{ section.id }}-{{ name }}"
+            value="{{ value | escape }}"
             {% if is_checked %}checked{% endif %}
             {% unless is_available %}disabled{% endunless %}
           >
@@ -250,7 +250,7 @@
             <input
               type="radio"
               name="{{ section.id }}-{{ name }}"
-              value="{{ value }}"
+              value="{{ value | escape }}"
               {% if is_checked %}checked{% endif %}
               {% unless is_available %}disabled{% endunless %}
             >
@@ -294,7 +294,7 @@
                 endcase
               endif
             %}
-            <option value="{{ value }}" {% if is_checked %}selected{% endif %}>
+            <option value="{{ value | escape }}" {% if is_checked %}selected{% endif %}>
               {{ value }} {% unless is_available %}- unavailable{% endunless %}
             </option>
           {% endfor %}

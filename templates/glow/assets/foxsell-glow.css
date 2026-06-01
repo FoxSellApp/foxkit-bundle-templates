@@ -97,6 +97,7 @@ foxsell-mix-match img {
 
 .foxsell--button-ghost {
   background-color: transparent;
+  color: var(--foxsell-color-foreground);
   border: none;
   padding: 0;
 }
@@ -158,9 +159,15 @@ foxsell-mix-match {
 .foxsell-mix-match__category-navigation {
   grid-column: 1 / -1;
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--foxsell-space-2);
+  gap: var(--foxsell-space-3);
   font-size: var(--foxsell-text-lg);
+  overflow-x: scroll;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.foxsell-mix-match__category-navigation::-webkit-scrollbar {
+  display: none;
 }
 
 .foxsell-mix-match__category-navigation-item {
@@ -277,7 +284,7 @@ foxsell-mix-match {
   align-items: center;
   border: 1px solid var(--foxsell-color-accent-1);
   border-radius: var(--foxsell-radius-button);
-  background: color-mix(in srgb, var(--foxsell-color-accent-1) 20%, var(--foxsell-color-background));
+  background: color-mix(in srgb, var(--foxsell-color-accent-1) 55%, var(--foxsell-color-background));
   color: var(--foxsell-color-accent-text-1);
 }
 

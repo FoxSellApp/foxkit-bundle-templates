@@ -61,7 +61,7 @@
     {% comment %} Bundle summary header {% endcomment %}
     {% render 'foxsell-glow-bundle-summary', section: section, options: options, view: 'header', header_class: 'foxsell-mobile-header' %}
 
-    {% if section.settings.show_category_navigation and options.size > 0 %}
+    {% if section.settings.show_category_navigation and categories.size > 1 %}
       <foxsell-category-navigation class="foxsell-mix-match__category-navigation">
         <button class="foxsell--button foxsell--button-ghost foxsell-mix-match__category-navigation-item active" data-category-id="all">
           {{ section.settings.category_navigation_all_label | default: 'All' }}
