@@ -96,7 +96,6 @@
           <foxsell-category-header data-category-id="{{ category.title | sha1 }}" class="foxsell-category__header">
             <div class="foxsell-category__title-container">
               <div class="foxsell-category__title">{{ category_metadata.title | default: category.title }}</div>
-              <div class="js foxsell-category__quantity">(0)</div>
             </div>
             <div class="foxsell-category__subtitle">
               {% render 'foxsell-step-quantity-rules', min_quantity: min_quantity, max_quantity: max_quantity, section: section %}
@@ -148,7 +147,6 @@
           <foxsell-category-header data-category-id="__add_ons__" class="foxsell-category__header">
             <div class="foxsell-category__title-container">
               <div class="foxsell-category__title">{{ add_ons_category_metadata.title | default: section.settings.add_ons_category_title | default: 'Add-ons' }}</div>
-              <div class="js foxsell-category__quantity">(0)</div>
             </div>
             <div class="foxsell-category__subtitle">
               {% render 'foxsell-step-quantity-rules', min_quantity: min_quantity, max_quantity: max_quantity, section: section %}
