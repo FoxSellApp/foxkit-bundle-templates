@@ -254,7 +254,7 @@ foxsell-mix-match {
   align-items: center;
   border: 1px solid var(--foxsell-color-accent-1);
   border-radius: var(--foxsell-radius-button);
-  background: color-mix(in srgb, var(--foxsell-color-accent-1) 20%, var(--foxsell-color-background));
+  background: var(--foxsell-color-accent-1);
   color: var(--foxsell-color-accent-text-1);
 }
 
@@ -275,7 +275,7 @@ foxsell-mix-match {
   display: none;
 }
 
-.foxsell-product-card__quantity .quantity {
+.foxsell-product-card__quantity .foxsell-quantity {
   font-weight: var(--foxsell-font-header-weight);
 }
 
