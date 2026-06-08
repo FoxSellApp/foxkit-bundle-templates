@@ -159,8 +159,8 @@
         {% render 'foxsell-glow-bundle-summary', section: section, options: options %}
         {% if add_on_products.size > 0 and add_on_strategy == 'add_on_step' %}
           <div class="foxsell-mix-match__continue-buttons foxsell--hidden">
-            <button id="foxsell--continue-button" class="foxsell--button foxsell--button-full-width">Continue</button>
-            <button id="foxsell--return-button" class="foxsell--button foxsell--button-full-width foxsell--button-secondary foxsell--hidden">Return</button>
+            <button id="foxsell--continue-button" class="foxsell--button foxsell--button-full-width">{{ section.settings.button_continue_text | default: 'Continue' }}</button>
+            <button id="foxsell--return-button" class="foxsell--button foxsell--button-full-width foxsell--button-secondary foxsell--hidden">{{ section.settings.button_return_text | default: 'Return' }}</button>
           </div>
         {% endif %}
         <div class="foxsell-mix-match__summary-form">
@@ -249,6 +249,8 @@
       "summaryEmptyStateBodyText": {{ section.settings.summary_empty_state_body_text | default: 'No items in bundle. Add items to your bundle to see the summary here.' | json }},
       "summaryProgressStateText": {{ section.settings.summary_progress_state_text | default: 'You have selected <strong>_currentQuantity</strong> of <strong>_requiredQuantity</strong> items' | json }},
       "summaryEndStateText": {{ section.settings.summary_end_state_text | default: 'Bundle complete' | json }},
+      "continueButtonText": {{ section.settings.button_continue_text | default: 'Continue' | json }},
+      "returnButtonText": {{ section.settings.button_return_text | default: 'Return' | json }},
     },
     "additionalSettings": additionalSettings
   }
