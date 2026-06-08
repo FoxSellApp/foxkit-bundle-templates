@@ -662,7 +662,7 @@ class FoxSellMixMatch extends HTMLElement {
       totalPrice = (itemsTotalPrice - totalDiscount) + addOnsTotalPrice;
     } else {
       if(qaoEnabled) {
-        const validOption = this.getCurrentValidOption();
+        const validOption = this.getCurrentValidOption() ?? this.config.options[0];
         if(validOption) {
           const { price, compareAtPrice } = getVariantPrice(this.config.variants, validOption);
           totalPrice = price + addOnsTotalPrice;
