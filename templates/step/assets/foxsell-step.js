@@ -691,7 +691,7 @@ class FoxSellMixMatch extends HTMLElement {
       totalPrice = (itemsTotalPrice - totalDiscount) + addOnsTotalPrice;
     } else {
       if(qaoEnabled) {
-        const validOption = this.getCurrentValidOption();
+        const validOption = this.getCurrentValidOption() ?? this.config.options[0];
         if(validOption) {
           const { price, compareAtPrice } = getVariantPrice(this.config.variants, validOption);
           totalPrice = price + addOnsTotalPrice;
@@ -986,27 +986,6 @@ class FoxSellCategoryHeader extends HTMLElement {
     if (!bundle) return;
     if (!this.quantityElement) return;
     this.quantityElement.textContent = `(${bundle.addOns.selectedQuantity}/${bundle.addOns.maximum})`;
-  }
-}
-
-class StepFoxSellCategoryHeader extends FoxSellCategoryHeader {
-  updateQuantity(event) {
-    if (this.categoryId === '__add_ons__') {
-      this.updateAddOnQuantity(event);
-      return;
-    }
-    const { category } = event.detail;
-    if (!category) return;
-    if (category.id !== this.categoryId) return;
-    if (!this.quantityElement) return;
-    this.quantityElement.textContent = `(${category.quantity})`;
-  }
-
-  updateAddOnQuantity(event) {
-    const { bundle } = event.detail;
-    if (!bundle) return;
-    if (!this.quantityElement) return;
-    this.quantityElement.textContent = `(${bundle.addOns.selectedQuantity})`;
   }
 }
 
@@ -2074,7 +2053,7 @@ class StepFoxSellProductModal extends FoxSellProductModal {
 
 const elements = [
   ['foxsell-mix-match', StepFoxSellMixMatch],
-  ['foxsell-category-header', StepFoxSellCategoryHeader],
+  ['foxsell-category-header', FoxSellCategoryHeader],
   ['foxsell-product-card', StepFoxSellProductCard],
   ['foxsell-bundle-summary', StepFoxSellBundleSummary],
   ['foxsell-bundle-line-item', FoxSellBundleLineItem],
