@@ -34,6 +34,8 @@
   if settings.price.strategy == 'fixed_pricing'
     assign product_card_show_price = false
   endif
+  assign color_option_name = section.settings.color_option_name | default: 'Color'
+  assign manual_color_swatches = section.settings.manual_color_swatches | default: ''
 %}
 
 {% capture close_icon_svg %}
@@ -129,6 +131,8 @@
                   show_secondary_image_on_hover: product_card_secondary_image_on_hover,
                   show_color_swatches: product_card_show_color_swatches,
                   show_price: product_card_show_price
+                  color_option_name: color_option_name,
+                  manual_color_swatches: manual_color_swatches
                 %}
               {% endif %}
             {% endfor %}
@@ -175,7 +179,9 @@
                   type: product_card_options_type,
                   image_aspect_ratio: product_card_image_aspect_ratio,
                   show_secondary_image_on_hover: product_card_secondary_image_on_hover,
-                  show_color_swatches: product_card_show_color_swatches
+                  show_color_swatches: product_card_show_color_swatches,
+                  color_option_name: color_option_name,
+                  manual_color_swatches: manual_color_swatches
                 %}
               {% endif %}
             {% endfor %}

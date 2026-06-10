@@ -1889,7 +1889,7 @@ class StepFoxSellBundleProgress extends FoxSellBundleProgress {
     .replaceAll('_currentStep', String(currentStep))
     .replaceAll('_completedSteps', String(completedSteps))
     .replaceAll('_maxSteps', String(maxSteps))
-    .replaceAll('_remainingSteps', String(maxSteps - completedSteps));
+    .replaceAll('_remainingSteps', String(maxSteps - currentStep));
 
     return message;
   }
@@ -1931,7 +1931,7 @@ class StepFoxSellBundleProgress extends FoxSellBundleProgress {
       progressTrack.classList.add('foxsell-bundle-progress__track');
       progressBar.classList.add('foxsell-bundle-progress__bar');
 
-      if(i <= stepProgress.completedSteps) {
+      if(i <= stepProgress.currentStep) {
         progressBar.style.width = '100%';
       }
 
