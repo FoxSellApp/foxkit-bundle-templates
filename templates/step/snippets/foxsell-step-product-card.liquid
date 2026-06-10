@@ -10,6 +10,8 @@
   @param {string} [type] - The type of options to render, either 'radio' or 'select'
   @param {boolean} [show_secondary_image_on_hover] - Card view defaults to false unless passed. Modal view defaults to true unless passed.
   @param {boolean} [show_color_swatches] - Whether to render color swatches for options that support them.
+  @param {string} [color_option_name] - The option name to treat as the color swatch option. Defaults to "Color".
+  @param {string} [manual_color_swatches] - Comma-separated "OptionValue: #hex" map for manual color swatches.
 
   @param {section} [section] - Theme section (e.g. mix-match) whose settings supply labels like the add-to-bundle button.
 
@@ -65,7 +67,7 @@
           <div class="js foxsell-product-card__price">{{ product.first_available_variant.price | money }}</div>
         {% endif %}
         <div {% if product.has_only_default_variant %}class="foxsell--hidden"{% endif %}>
-          {% render 'foxsell-step-product-options', product: product, allowed_variants: allowed_variants, type: type, show_color_swatches: show_color_swatches %}
+          {% render 'foxsell-step-product-options', product: product, allowed_variants: allowed_variants, type: type, show_color_swatches: show_color_swatches, color_option_name: color_option_name, manual_color_swatches: manual_color_swatches %}
         </div>
         <div>
           {{ product.description }}
@@ -105,7 +107,7 @@
           <div class="js foxsell-product-card__price">{{ product.first_available_variant.price | money }}</div>
         {% endif %}
         <div {% if product.has_only_default_variant %}class="foxsell--hidden"{% endif %}>
-          {% render 'foxsell-step-product-options', product: product, allowed_variants: allowed_variants, type: type, show_color_swatches: show_color_swatches %}
+          {% render 'foxsell-step-product-options', product: product, allowed_variants: allowed_variants, type: type, show_color_swatches: show_color_swatches, color_option_name: color_option_name, manual_color_swatches: manual_color_swatches %}
         </div>
         <div class="foxsell-product-card__quantity-wrapper">
           <div class="foxsell-product-card__quantity">

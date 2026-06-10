@@ -5,6 +5,8 @@
   @param {object} allowed_variants - The allowed variants for the product
   @param {string} [type] - The type of options to render, either 'radio' or 'select'
   @param {boolean} [show_color_swatches] - Whether to render color swatches for options that support them
+  @param {string} [color_option_name] - The option name to treat as the color swatch option. Defaults to "Color".
+  @param {string} [manual_color_swatches] - Comma-separated "OptionValue: #hex" map for manual color swatches
 
   @example
   {% render 'foxsell-step-product-options', allowed_variants: allowed_variants, type: 'radio' %}
@@ -52,7 +54,7 @@
         assign inv_suffix = ',"inventory_quantity":' | append: variant.inventory_quantity | append: ',"inventory_policy":"' | append: variant.inventory_policy | append: '"}'
         assign p_variant = p_variant | remove_last: '}' | append: inv_suffix
         assign available_variants = available_variants | append: p_variant
-        
+
         comment
           Collect all available option values (using exact array matching)
         endcomment
@@ -90,6 +92,23 @@
   assign option1_array = option1_values | split: ','
   assign option2_array = option2_values | split: ','
   assign option3_array = option3_values | split: ','
+
+  assign color_option_name = color_option_name | downcase
+
+  comment
+    Normalize manual_color_swatches ("Red: #FF0000, Blue: #0000FF") into a
+    "|key:color" lookup string for case-insensitive matching
+  endcomment
+  assign manual_swatch_map = ''
+  assign manual_pairs = manual_color_swatches | split: ','
+  for pair in manual_pairs
+    assign kv = pair | split: ':'
+    if kv.size == 2
+      assign pair_key = kv[0] | strip | downcase
+      assign pair_color = kv[1] | strip
+      assign manual_swatch_map = manual_swatch_map | append: '|' | append: pair_key | append: ':' | append: pair_color
+    endif
+  endfor
 %}
 
 {% capture script_data %}
@@ -108,9 +127,23 @@
     {% liquid
       assign swatch_count = option.values | map: 'swatch' | compact | size
       assign option_position = 'option' | append: option.position
+      assign option_name_lower = option.name | downcase
       assign show_color_swatch = false
-      if swatch_count > 0 and show_color_swatches
-        assign show_color_swatch = true
+      if show_color_swatches
+        if swatch_count > 0
+          assign show_color_swatch = true
+        elsif option_name_lower == color_option_name
+          assign manual_swatch_match_count = 0
+          for value in option.values
+            assign value_lookup = value | strip | downcase | prepend: '|' | append: ':'
+            if manual_swatch_map contains value_lookup
+              assign manual_swatch_match_count = manual_swatch_match_count | plus: 1
+            endif
+          endfor
+          if manual_swatch_match_count == option.values.size
+            assign show_color_swatch = true
+          endif
+        endif
       endif
     %}
     <fieldset class="{% if show_color_swatch %}fieldset--color-swatch{% else %}fieldset--radio{% endif %}">
@@ -121,13 +154,20 @@
           assign is_available = false
           assign is_checked = false
 
-          assign swatch_color_brightness = value.swatch.color | color_brightness
+          assign manual_swatch_color = false
+          assign value_lookup = value | strip | downcase | prepend: '|' | append: ':'
+          if manual_swatch_map contains value_lookup
+            assign manual_swatch_color = manual_swatch_map | split: value_lookup | last | split: '|' | first
+          endif
+          assign swatch_color = value.swatch.color | default: manual_swatch_color
+
+          assign swatch_color_brightness = swatch_color | color_brightness
           if swatch_color_brightness > 105
             assign swatch_strikethrough_color_mix = '#000'
           else
             assign swatch_strikethrough_color_mix = '#fff'
           endif
-          
+
           if first_available_variant
             case option.position
               when 1
@@ -155,11 +195,13 @@
           endif
         %}
         <label style="--swatch-strikethrough-color-mix: {{ swatch_strikethrough_color_mix }};">
-          {% if swatch_count > 0 and show_color_swatches %}
+          {% if show_color_swatch %}
             {% if value.swatch.image %}
               <span class="swatch image" style="--swatch-image: url({{ value.swatch.image | image_url: width: 100 }});"></span>
             {% elsif value.swatch.color %}
               <span class="swatch color" style="--swatch-color: {{ value.swatch.color }};"></span>
+            {% elsif manual_swatch_color %}
+              <span class="swatch color" style="--swatch-color: {{ manual_swatch_color }};"></span>
             {% else %}
               <span>{{ value }}</span>
             {% endif %}
@@ -173,7 +215,7 @@
             {% if is_checked %}checked{% endif %}
             {% unless is_available %}disabled{% endunless %}
           >
-          <svg class="variant-strikethrough" width="100%" height="100%" viewBox="0 0 100 46" preserveAspectRatio="xMidYMid slice" aria-hidden="true">        
+          <svg class="variant-strikethrough" width="100%" height="100%" viewBox="0 0 100 46" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
             <line x1="100" y1="0" x2="0" y2="46" vector-effect="non-scaling-stroke"></line>
             <line x1="100" y1="0" x2="0" y2="46" vector-effect="non-scaling-stroke"></line>
           </svg>
@@ -192,21 +234,42 @@
     {% liquid
       assign swatch_count = option.values | map: 'swatch' | compact | size
       assign option_position = 'option' | append: option.position
+      assign option_name_lower = option.name | downcase
       assign show_color_swatch = false
-      if swatch_count > 0 and show_color_swatches
-        assign show_color_swatch = true
+      if show_color_swatches
+        if swatch_count > 0
+          assign show_color_swatch = true
+        elsif option_name_lower == color_option_name
+          assign manual_swatch_match_count = 0
+          for value in option.values
+            assign value_lookup = value | strip | downcase | prepend: '|' | append: ':'
+            if manual_swatch_map contains value_lookup
+              assign manual_swatch_match_count = manual_swatch_match_count | plus: 1
+            endif
+          endfor
+          if manual_swatch_match_count == option.values.size
+            assign show_color_swatch = true
+          endif
+        endif
       endif
     %}
     <fieldset class="{% if show_color_swatch %}fieldset--color-swatch{% else %}fieldset--select{% endif %}">
       <legend>{{ option.name }}: <span class="js foxsell-variant-select__option-value">{{ first_available_variant[option_position] }}</span></legend>
-      {% if swatch_count > 0 and show_color_swatches %}
+      {% if show_color_swatch %}
         {% for value in option.values %}
           {% liquid
             assign name = option.name | handleize | append: '-' | append: option.position | append: '-' | append: product.id
             assign is_available = false
             assign is_checked = false
 
-            assign swatch_color_brightness = value.swatch.color | color_brightness
+            assign manual_swatch_color = false
+            assign value_lookup = value | strip | downcase | prepend: '|' | append: ':'
+            if manual_swatch_map contains value_lookup
+              assign manual_swatch_color = manual_swatch_map | split: value_lookup | last | split: '|' | first
+            endif
+            assign swatch_color = value.swatch.color | default: manual_swatch_color
+
+            assign swatch_color_brightness = swatch_color | color_brightness
             if swatch_color_brightness > 105
               assign swatch_strikethrough_color_mix = '#000'
             else
@@ -244,6 +307,8 @@
               <span class="swatch image" style="--swatch-image: url({{ value.swatch.image | image_url: width: 100 }});"></span>
             {% elsif value.swatch.color %}
               <span class="swatch color" style="--swatch-color: {{ value.swatch.color }};"></span>
+            {% elsif manual_swatch_color %}
+              <span class="swatch color" style="--swatch-color: {{ manual_swatch_color }};"></span>
             {% else %}
               <span>{{ value }}</span>
             {% endif %}
@@ -254,7 +319,7 @@
               {% if is_checked %}checked{% endif %}
               {% unless is_available %}disabled{% endunless %}
             >
-            <svg class="variant-strikethrough" width="100%" height="100%" viewBox="0 0 100 46" preserveAspectRatio="xMidYMid slice" aria-hidden="true">        
+            <svg class="variant-strikethrough" width="100%" height="100%" viewBox="0 0 100 46" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
               <line x1="100" y1="0" x2="0" y2="46" vector-effect="non-scaling-stroke"></line>
               <line x1="100" y1="0" x2="0" y2="46" vector-effect="non-scaling-stroke"></line>
             </svg>
