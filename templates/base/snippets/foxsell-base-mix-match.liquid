@@ -39,6 +39,8 @@
   assign product_card_image_aspect_ratio = section.settings.product_card_image_aspect_ratio | default: 'original'
   assign product_card_secondary_image_on_hover = section.settings.product_card_secondary_image_on_hover | default: false
   assign product_card_show_color_swatches = section.settings.product_card_show_color_swatches | default: false
+  assign color_option_name = section.settings.color_option_name | default: 'Color'
+  assign manual_color_swatches = section.settings.manual_color_swatches | default: ''
 %}
 
 {% capture close_icon_svg %}
@@ -90,7 +92,9 @@
                   type: product_card_options_type,
                   image_aspect_ratio: product_card_image_aspect_ratio,
                   show_secondary_image_on_hover: product_card_secondary_image_on_hover,
-                  show_color_swatches: product_card_show_color_swatches
+                  show_color_swatches: product_card_show_color_swatches,
+                  color_option_name: color_option_name,
+                  manual_color_swatches: manual_color_swatches
                 %}
               {% endif %}
             {% endfor %}
@@ -124,7 +128,9 @@
                   type: product_card_options_type,
                   image_aspect_ratio: product_card_image_aspect_ratio,
                   show_secondary_image_on_hover: product_card_secondary_image_on_hover,
-                  show_color_swatches: product_card_show_color_swatches
+                  show_color_swatches: product_card_show_color_swatches,
+                  color_option_name: color_option_name,
+                  manual_color_swatches: manual_color_swatches
                 %}
               {% endif %}
             {% endfor %}
