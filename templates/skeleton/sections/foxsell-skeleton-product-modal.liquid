@@ -30,7 +30,8 @@
           product: product_ref, 
           allowed_variants: p.variants,
           image_aspect_ratio: 'original',
-          type: 'select'
+          type: 'select',
+          section: section
           %}
       {% endfor %}
     {% endfor %}
@@ -51,7 +52,8 @@
         product: add_on, 
         allowed_variants: allowed_variants,
         image_aspect_ratio: 'original',
-        type: 'select'
+        type: 'select',
+        section: section
       %}
     {% endfor %}
 </div>
