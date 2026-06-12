@@ -154,7 +154,7 @@
 </foxsell-mix-match>
 
 <script>
-  window.foxsell = window.foxsell || { config: {} };
+  window.foxsell = window.foxsell || { config: {}, overrides: {} };
 
   //! use this to fallback if no metafield is configured
   const defaultAdditionalSettings = {
@@ -239,6 +239,8 @@
     return format.replace(placeholderRegex, value);
   }
 </script>
+
+{% render 'foxsell-shade-override' %}
 
 {% # theme-check-disable %}
 <script src="{{ 'foxsell-shade.js' | asset_url }}" defer></script>
