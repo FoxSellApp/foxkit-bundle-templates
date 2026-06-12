@@ -1,0 +1,37 @@
+{% comment %}
+  foxsell-override
+  Add your custom CSS and JS here.
+  This file is safe to edit — it will NOT be overwritten when you update the template.
+
+  JS CLASS OVERRIDES
+  ------------------
+  To override a FoxSell class, register a factory function on window.foxsell.overrides
+  before this script tag. The factory receives the base class and must return a subclass.
+
+  Available keys:
+    foxsell-mix-match
+    foxsell-product-card
+    foxsell-bundle-summary
+    foxsell-bundle-line-item
+    foxsell-bundle-progress
+    foxsell-category-header
+    foxsell-variant-radio
+    foxsell-variant-select
+    foxsell-product-modal
+
+  Example:
+    window.foxsell.overrides['foxsell-mix-match'] = (Base) => class extends Base {
+      addToBundle(item, quantity, categoryId) {
+        super.addToBundle(item, quantity, categoryId);
+        console.log('Item added:', item);
+      }
+    };
+{% endcomment %}
+
+<style>
+  /* Add your custom CSS here */
+</style>
+
+<script>
+  /* Add your custom JS here */
+</script>

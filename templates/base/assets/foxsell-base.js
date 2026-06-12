@@ -1649,6 +1649,10 @@ const elements = [
   ['foxsell-product-modal', BaseFoxSellProductModal],
 ];
 
+const overrides = window.foxsell?.overrides ?? {};
+
 for (const [name, constructor] of elements) {
-  if (!customElements.get(name)) customElements.define(name, constructor);
+  if (customElements.get(name)) continue;
+  const factory = overrides[name];
+  customElements.define(name, factory ? factory(constructor) : constructor);
 }
