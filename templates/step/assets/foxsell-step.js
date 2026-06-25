@@ -1192,12 +1192,15 @@ class FoxSellProductCard extends HTMLElement {
 
     const { currentVariant, product } = this.variantSelector;
     let price = currentVariant?.foxsell_price ?? currentVariant?.product?.price ?? product?.price ?? 0;
-
     let discountedPrice = price;
     const priceStrategy = this.foxsell.bundle.priceStrategy;
     if (!this.isAddOnCard && priceStrategy && priceStrategy.strategy === 'dynamic_pricing') {
       const discount = priceStrategy.value;
       discountedPrice = price - (price * (discount / 100));
+    }
+
+    if(price == 0) {
+      price = currentVariant?.price ?? 0;
     }
 
     if (price > discountedPrice) {
@@ -1500,6 +1503,10 @@ class FoxSellBundleSummary extends HTMLElement {
         discount = priceStrategy.value;
         discountedPrice = item.foxsell_price - (item.foxsell_price * (discount / 100));
       }
+    } else {
+      if(itemPrice === 0) {
+        itemPrice = item.price;
+      }
     }
 
     const addOnStrategy = this.foxsell.config.additionalSettings.add_on_settings.strategy;
@@ -1517,7 +1524,7 @@ class FoxSellBundleSummary extends HTMLElement {
               <div>
                 <span class="foxsell-sale-price">${window.foxsell?.formatMoney?.(discountedPrice)}</span>
                 <span class="foxsell-compare-at-price">${window.foxsell?.formatMoney?.(itemPrice)}</span>
-                <span>(${discount}% off)</span>
+                ${discount > 0 ? `<span>(${discount}% off)</span>`: ''}
               </div>`
               :
               `<div>
