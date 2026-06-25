@@ -21,10 +21,6 @@
   
   assign additional_settings = product.metafields[app_namespace][template_name].value | default: product.metafields.custom.foxsell_additional_settings.value
 
-  assign add_on_strategy = additional_settings.add_on_settings.strategy | default: 'add_on_step'
-  assign quantity_rules_strategy = additional_settings.quantity_rules.strategy | default: 'any'
-  assign quantity_rules_max = additional_settings.quantity_rules.max | default: 'cap_at_highest'
-
   assign addons_quantity = 0
   if options.size == 0
     assign addons_quantity = settings.add_on.maximum
@@ -122,7 +118,7 @@
         </div>
       {% endfor %}
   
-      {% if add_on_strategy == 'add_on_step' and add_on_products.size > 0 %}
+      {% if additional_settings.add_on_settings.strategy != 'automatic_add' and add_on_products.size > 0 %}
         <div class="foxsell-category__item foxsell--hidden" data-category="__add_ons__">
           <foxsell-category-header data-category-id="__add_ons__" class="foxsell-category__header">
             <div class="foxsell-category__title">{{ section.settings.add_ons_category_title | default: 'Add-ons' }}</div>
@@ -163,13 +159,13 @@
     <div class="foxsell-mix-match__summary-wrapper">
       <div class="foxsell-mix-match__summary">
         {% render 'foxsell-glow-bundle-summary', section: section, options: options %}
-        {% if add_on_products.size > 0 and add_on_strategy == 'add_on_step' %}
+        {% if additional_settings.add_on_settings.strategy != 'automatic_add' and add_on_products.size > 0 %}
           <div class="foxsell-mix-match__continue-buttons foxsell--hidden">
             <button id="foxsell--continue-button" class="foxsell--button foxsell--button-full-width">{{ section.settings.button_continue_text | default: 'Continue' }}</button>
             <button id="foxsell--return-button" class="foxsell--button foxsell--button-full-width foxsell--button-secondary foxsell--hidden">{{ section.settings.button_return_text | default: 'Return' }}</button>
           </div>
         {% endif %}
-        <div class="foxsell-mix-match__summary-form">
+        <foxsell-product-form class="foxsell-mix-match__summary-form">
           {% form 'product', product %}
             <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}">
             <input type="hidden" name="quantity" value="1">
@@ -178,7 +174,7 @@
             <input type="hidden" name="properties[__foxsell:dynamic_add_on_bundle_savings]" value="">
             <button type="submit" class="foxsell--button foxsell--button-full-width foxsell-add-to-cart-button" disabled>{{ section.settings.button_atc_text | default: 'Add to Cart' }}</button>
           {% endform %}
-        </div>
+        </foxsell-product-form>
       </div>
     </div>
   </div>
@@ -217,19 +213,6 @@
 <script>
   window.foxsell = window.foxsell || { config: {}, overrides: {} };
 
-  //! use this to fallback if no metafield is configured
-  const defaultAdditionalSettings = {
-    "quantity_rules": {
-      "strategy": {{ quantity_rules_strategy | json }},
-      "max": {{ quantity_rules_max | json }}
-    },
-    "add_on_settings": {
-      "strategy": {{ add_on_strategy | json }}
-    }
-  };
-
-  const additionalSettings = {{ additional_settings | json }} || defaultAdditionalSettings;
-  
   window.foxsell.config['{{ bundle_id }}'] = {
     "productHandle": {{ product.handle | json }},
     "productId": {{ product.id | json }},
@@ -258,7 +241,7 @@
       "continueButtonText": {{ section.settings.button_continue_text | default: 'Continue' | json }},
       "returnButtonText": {{ section.settings.button_return_text | default: 'Return' | json }},
     },
-    "additionalSettings": additionalSettings
+    "additionalSettings": {{ additional_settings | json }}
   }
 
   window.foxsell.formatMoney = (cents, format = "{{ shop.money_format }}") => {
