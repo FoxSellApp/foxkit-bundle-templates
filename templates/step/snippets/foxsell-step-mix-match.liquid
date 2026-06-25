@@ -140,7 +140,7 @@
         </div>
       {% endfor %}
   
-      {% if add_on_strategy == 'add_on_step' and add_on_products.size > 0 %}
+      {% if additional_settings.add_on_settings.strategy == 'add_on_step' and add_on_products.size > 0 %}
         {% liquid
           assign add_ons_category_index = categories.size
           assign add_ons_category_metadata = additional_settings.add_on_settings
@@ -216,7 +216,7 @@
           <span>{{ section.settings.button_next_text | default: 'Next' }}</span>{{ arrow_right_svg }}
          </button>
         </div>
-        <div class="foxsell-mix-match__summary-form foxsell--hidden">
+        <foxsell-product-form class="foxsell-mix-match__summary-form foxsell--hidden">
           {% form 'product', product %}
             <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}">
             <input type="hidden" name="quantity" value="1">
@@ -232,7 +232,7 @@
               </button>
             </div>
           {% endform %}
-        </div>
+        </foxsell-product-form>
       </div>
     </div>
   </div>
