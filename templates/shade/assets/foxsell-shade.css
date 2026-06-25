@@ -431,6 +431,8 @@ foxsell-mix-match select {
   padding-inline: var(--foxsell-space-3);
   padding-inline-end: calc(var(--foxsell-space-3) * 2 + 20px);
   background-color: var(--foxsell-color-background);
+  height: max-content;
+  align-self: center;
 }
 
 foxsell-mix-match select:focus-visible {
@@ -448,7 +450,8 @@ fieldset.fieldset--select::after {
   width: 20px;
   height: 20px;
   right: var(--foxsell-space-3);
-  bottom: calc(var(--foxsell-space-2) + (1lh - 20px) / 2);
+  top: 50%;
+  transform: translateY(-50%);
   background-color: currentColor;
   mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><path d='M7 10l5 5 5-5z'/></svg>") center / contain no-repeat;
   pointer-events: none;
