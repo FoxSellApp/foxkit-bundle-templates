@@ -1,5 +1,15 @@
 'use strict';
 
+const DEFAULT_ADDITIONAL_SETTINGS = {
+  quantity_rules: {
+    strategy: 'any',
+    max: 'cap_at_highest',
+  },
+  add_on_settings: {
+    strategy: 'add_on_step',
+  },
+};
+
 const FOXSELL_EVENTS = {
   bundleUpdated: 'foxsell:bundle-updated'};
 
@@ -45,6 +55,20 @@ const emptyAddOnsConfig = {
   selectedQuantity: 0,
   isMaximumQuantity: false,
 };
+
+function resolveAdditionalSettings(settings) {
+  return {
+    ...settings,
+    quantity_rules: {
+      ...DEFAULT_ADDITIONAL_SETTINGS.quantity_rules,
+      ...settings?.quantity_rules,
+    },
+    add_on_settings: {
+      ...DEFAULT_ADDITIONAL_SETTINGS.add_on_settings,
+      ...settings?.add_on_settings,
+    },
+  };
+}
 
 let bodyScrollLockDepth = 0;
 
@@ -113,6 +137,7 @@ class FoxSellMixMatch extends HTMLElement {
     this.bundle = emptyBundleState;
 
     const config = window.foxsell.config[this.dataset.bundleId ?? ''];
+    if (config) config.additionalSettings = resolveAdditionalSettings(config.additionalSettings);
     this.config = config ?? null;
     this.boundHandleOverlayClick = this.handleOverlayClick.bind(this);
   }
@@ -487,8 +512,8 @@ class FoxSellMixMatch extends HTMLElement {
     }
 
     const quantityRules = this.config.additionalSettings.quantity_rules;
-    const allowIntermediateQuantity = (quantityRules.strategy ?? 'any') === 'any';
-    const allowOverflow = (quantityRules.max ?? 'no_cap') === 'no_cap';
+    const allowIntermediateQuantity = quantityRules.strategy === 'any';
+    const allowOverflow = quantityRules.max === 'no_cap';
 
     const optionLimits = (this.config.options || [])
       .map(opt => Number(opt.quantity ?? opt))
@@ -540,7 +565,7 @@ class FoxSellMixMatch extends HTMLElement {
   getAddOnsConfig() {
     if(!this.config) return { ...emptyAddOnsConfig };
     //! support add-on strategy: add_on_step, automatic_add
-    const addOnStrategy = this.config.additionalSettings['add_on_settings'].strategy ?? 'add_on_step';
+    const addOnStrategy = this.config.additionalSettings.add_on_settings.strategy;
 
     let allowedIds = [];
 
@@ -1601,6 +1626,58 @@ class FoxSellProductModal extends HTMLElement {
   }
 }
 
+class FoxSellProductForm extends HTMLElement {
+  connectedCallback() {
+    this.addEventListener('submit', this.handleSubmit);
+  }
+
+  disconnectedCallback() {
+    this.removeEventListener('submit', this.handleSubmit);
+  }
+
+  getLineAttributes(formData) {
+    const attributes = [];
+    for (const [name, value] of formData.entries()) {
+      const match = name.match(/^properties\[(.+)\]$/);
+      const key = match?.[1];
+      if (!key || value === '') continue;
+      attributes.push({ key, value: value });
+    }
+    return attributes;
+  }
+
+  async handleSubmit(event) {
+    event.preventDefault();
+
+    const form = event.target;
+    if(!(form instanceof HTMLFormElement)) return;
+
+    const submitButton =  (form.querySelector('button[type="submit"]'));
+    if (submitButton) submitButton.disabled = true;
+
+    const formData = new FormData( (form));
+    try {
+      const result = await window.Shopify.actions.updateCart({
+        lines: [{
+          merchandiseId: `gid://shopify/ProductVariant/${formData.get("id")}`,
+          quantity: parseInt(String(formData.get('quantity') ?? '1'), 10),
+          attributes: this.getLineAttributes(formData)
+        }]
+      });
+
+      if(result.userErrors?.length) {
+        throw new Error("There was a error adding items to cart");
+      }
+
+      await window.Shopify.actions.openCart();
+    } catch (error) {
+      form.submit();
+    } finally {
+      if (submitButton) submitButton.disabled = false;
+    }
+  }
+}
+
 const elements = [
   ['foxsell-mix-match', FoxSellMixMatch],
   ['foxsell-category-header', FoxSellCategoryHeader],
@@ -1611,6 +1688,7 @@ const elements = [
   ['foxsell-variant-radio', FoxSellVariantRadio],
   ['foxsell-variant-select', FoxSellVariantSelect],
   ['foxsell-product-modal', FoxSellProductModal],
+  ['foxsell-product-form', FoxSellProductForm],
 ];
 
 const overrides = window.foxsell?.overrides ?? {};
