@@ -21,10 +21,6 @@
   
   assign additional_settings = product.metafields[app_namespace][template_name].value | default: product.metafields.custom.foxsell_additional_settings.value
 
-  assign add_on_strategy = additional_settings.add_on_settings.strategy | default: 'add_on_step'
-  assign quantity_rules_strategy = additional_settings.quantity_rules.strategy | default: 'any'
-  assign quantity_rules_max = additional_settings.quantity_rules.max | default: 'cap_at_highest'
-
   assign product_card_options_type = section.settings.product_card_options_type | default: 'radio'
   assign product_card_image_aspect_ratio = section.settings.product_card_image_aspect_ratio | default: 'original'
   assign product_card_secondary_image_on_hover = section.settings.product_card_secondary_image_on_hover | default: false
@@ -37,6 +33,10 @@
   assign color_option_name = section.settings.color_option_name | default: 'Color'
   assign manual_color_swatches = section.settings.manual_color_swatches | default: ''
 %}
+
+{% capture close_icon_svg %}
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+{% endcapture %}
 
 {% render 'foxsell-shade-css-variables', section: section %}
 
@@ -85,7 +85,7 @@
         </div>
       {% endfor %}
   
-      {% if add_on_products.size > 0 %}
+      {% if additional_settings.add_on_settings.strategy != 'automatic_add' and add_on_products.size > 0 %}
         <div class="foxsell-category__item" data-category="__add_ons__">
           <foxsell-category-header data-category-id="__add_ons__" class="foxsell-category__header">
             <div class="foxsell-category__title">{{ section.settings.add_ons_category_title | default: 'Add-ons' }}</div>
@@ -156,19 +156,6 @@
 <script>
   window.foxsell = window.foxsell || { config: {}, overrides: {} };
 
-  //! use this to fallback if no metafield is configured
-  const defaultAdditionalSettings = {
-    "quantity_rules": {
-      "strategy": {{ quantity_rules_strategy | json }},
-      "max": {{ quantity_rules_max | json }}
-    },
-    "add_on_settings": {
-      "strategy": {{ add_on_strategy | json }}
-    }
-  };
-
-  const additionalSettings = {{ additional_settings | json }} || defaultAdditionalSettings;
-  
   window.foxsell.config['{{ bundle_id }}'] = {
     "productHandle": {{ product.handle | json }},
     "productId": {{ product.id | json }},
@@ -188,7 +175,7 @@
       "addToBundleButtonText": {{ section.settings.button_add_to_bundle_text | default: 'Add to bundle' | json }},
       "addOnsCategoryTitle": {{ section.settings.add_ons_category_title | default: 'Add-ons' | json }}
     },
-    "additionalSettings": additionalSettings
+    "additionalSettings": {{ additional_settings | json }}
   }
 
   window.foxsell.formatMoney = (cents, format = "{{ shop.money_format }}") => {
