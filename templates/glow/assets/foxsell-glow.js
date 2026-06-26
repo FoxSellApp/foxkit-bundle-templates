@@ -443,15 +443,8 @@ class FoxSellMixMatch extends HTMLElement {
     if(addOnStrategy === 'automatic_add') {
       if(isItemsValid) {
         this.autoAddAddOns();
-      } else {
-        this.clearAddOns(false);
       }
       return true;
-    }
-
-    const qaoEnabled = this.config.options?.length > 0;
-    if(!qaoEnabled && !isItemsValid) {
-      this.clearAddOns(false);
     }
 
     let selectedQuantity = 0;
@@ -785,9 +778,6 @@ class GlowMixMatch extends FoxSellMixMatch {
     continueButtonWrapper?.classList.toggle('foxsell--hidden', !showContinueButton);
     this.addToCartButton?.classList.toggle('foxsell--hidden', showContinueButton && this.currentView === 'items');
 
-    if(!this.bundle.isItemsValid) {
-      this.toggleView('items');
-    }
   }
 
   toggleToItems() {
@@ -816,15 +806,23 @@ class GlowMixMatch extends FoxSellMixMatch {
     this.addToCartButton?.classList.toggle('foxsell--hidden', isItems && this.bundle.addOns.enabled);
 
     const categoryNavigation = (this.querySelector('foxsell-category-navigation'));
-    if (categoryNavigation && view === 'items') {
-      categoryNavigation.enableCategoryNavigation();
-      categoryNavigation.toggleCategoryItemsVisibility();
-    } else {
-      if (categoryNavigation && view === 'add_ons') {
+    if (categoryNavigation) {
+      if (isItems) {
+        categoryNavigation.enableCategoryNavigation();
+        categoryNavigation.toggleCategoryItemsVisibility();
+      } else {
         categoryNavigation.disableCategoryNavigation();
       }
+    }
 
-      const categories = this.querySelectorAll('.foxsell-category__item');
+    const categories = this.querySelectorAll('.foxsell-category__item');
+    if (isItems && categoryNavigation) {
+      categories.forEach(category => {
+        if (category.dataset.category === '__add_ons__') {
+          category.classList.add('foxsell--hidden');
+        }
+      });
+    } else {
       categories.forEach(category => {
         const isAddOns = category.dataset.category === '__add_ons__';
         category.classList.toggle('foxsell--hidden', isItems ? isAddOns : !isAddOns);
