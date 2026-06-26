@@ -443,15 +443,8 @@ class FoxSellMixMatch extends HTMLElement {
     if(addOnStrategy === 'automatic_add') {
       if(isItemsValid) {
         this.autoAddAddOns();
-      } else {
-        this.clearAddOns(false);
       }
       return true;
-    }
-
-    const qaoEnabled = this.config.options?.length > 0;
-    if(!qaoEnabled && !isItemsValid) {
-      this.clearAddOns(false);
     }
 
     let selectedQuantity = 0;
