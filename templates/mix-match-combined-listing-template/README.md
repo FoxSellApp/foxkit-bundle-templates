@@ -1,32 +1,43 @@
 # Mix Match Combined Listing Bundle Template
 
-![image](./assets/image.png)
+![Mix Match Combined Listing Bundle Template](./assets/image.png)
 
-This template is ideal for products where each variant option (such as color) is represented as a separate product. It combines all products from a category into a unified listing, allowing customers to select from multiple products within each category. By default, products are displayed as color swatches using a color metafield, but this can be easily customized to suit your needs. This template is particularly well-suited for fashion and apparel brands.
+The Mix Match Combined Listing template is a fixed-price bundle layout for products where each option, such as color, is represented by a separate Shopify product. It combines products from a category into a unified listing so customers can select between multiple products in the same category.
+
+## Files
+
+| Directory | Files | Purpose |
+| --- | --- | --- |
+| `assets/` | `foxsell.css`, `foxsell.js`, image | Styling, bundle interaction behavior, and README screenshot. |
+| `sections/` | `foxsell-shadow-product-card.liquid` | Main combined listing section. |
+| `snippets/` | `foxsell-mix-match-combined.liquid`, `foxsell-product-options.liquid` | Combined category rendering and variant options. |
 
 ## Features
 
-- Combined listing of products from category
-- Supports multiple products per category
-- Supports native shopify swatches
-- Image updates on variant change
+- Combined listing of products from each category.
+- Multiple products per category.
+- Native Shopify swatch support.
+- Image updates on variant change.
+- Useful for fashion and apparel catalogs where variants are modeled as products.
 
-## Supported configuration
-
-Currently the template only supports the following configuration:
+## Supported Configuration
 
 | Feature | Supported |
-| ------- | --------- |
-| Quantity as option | ❌ |
-| Pricing type | Fixed Pricing Only |
-| Add-Ons | ❌ |
+| --- | --- |
+| Quantity as option | No |
+| Pricing type | Fixed pricing only |
+| Add-ons | No |
+| Products per category | Multiple |
 
-> **Note:** Template supports multiple products per category.
+## Installation
 
-<br>
+1. Copy the files from each directory into the matching Shopify theme directory.
+2. Add the combined listing section in the Shopify Theme Editor.
+3. Configure each bundle category with the products that should appear together.
+4. Adjust swatch or color metafield behavior in the snippets if the theme uses a custom option model.
 
-## Future Scopes
+## Future Scope
 
-- Add support for dynamic bundles
-- Add support for Add-Ons
-- Add support for quantity selection
+- Dynamic bundle support.
+- Add-on support.
+- Quantity selection support.

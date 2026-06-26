@@ -1,34 +1,44 @@
 # Mix Match Fixed Bundle Template
 
-![image](./assets/image.png)
+![Mix Match Fixed Bundle Template](./assets/image.png)
 
-This fixed bundle template supports product cards with variant selection, allowing users to view and interact with product variants directly. Variants are displayed as selectable options, with colour variants shown using images or swatches.
+The Mix Match Fixed template is a fixed-price bundle layout for stores that need one product per category with variant selection. It shows product cards, variant options, native Shopify swatches, and quick product image previews.
 
+## Files
+
+| Directory | Files | Purpose |
+| --- | --- | --- |
+| `assets/` | `foxsell.css`, `foxsell.js`, `foxsell-product-card.css`, images | Styling, bundle interaction behavior, and README screenshots. |
+| `sections/` | `foxsell-mix-match.liquid` | Main bundle section. |
+| `snippets/` | `foxsell-mix-match.liquid`, `foxsell-product-card.liquid`, `foxsell-product-options.liquid` | Bundle category rendering, product cards, and variant options. |
 
 ## Features
 
-- Product cards with variant selection
-- Supports native shopify swatches
-- quick peek product images
+- Fixed-price mix-and-match bundle layout.
+- One product per category.
+- Product cards with variant selection.
+- Native Shopify swatch support.
+- Quick peek product images.
 
-
-## Supported configuration
-
-Currently the template only supports the following configuration:
+## Supported Configuration
 
 | Feature | Supported |
-| ------- | --------- |
-| Quantity as option | ❌ |
-| Pricing type | Fixed Pricing Only |
-| Add-Ons | ❌ |
+| --- | --- |
+| Quantity as option | No |
+| Pricing type | Fixed pricing only |
+| Add-ons | No |
+| Products per category | One |
 
-> **Note:** Template supports only one product per category.
+## Installation
 
-![image2](./assets/image2.png)
+1. Copy the files from each directory into the matching Shopify theme directory.
+2. Add the `FoxSell Mix Match` section in the Shopify Theme Editor.
+3. Configure the section settings, including category title visibility.
+4. Confirm the bundle categories each contain one product.
 
-<br>
+![Mix Match Fixed Bundle Product Options](./assets/image2.png)
 
-## Future Scopes
+## Future Scope
 
-- Add support for dynamic bundles
-- Add support for Add-Ons
+- Dynamic bundle support.
+- Add-on support.
