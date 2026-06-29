@@ -827,6 +827,27 @@ class ShadeFoxSellMixMatch extends FoxSellMixMatch {
       }
     }
   }
+
+  renderPrice() {
+    const priceContainer = this.querySelector('.foxsell-mix-match__price-container');
+    if(!priceContainer) return;
+
+    const { originalTotalPrice, totalPrice, priceStrategy } = this.bundle;
+    const discount = priceStrategy?.value || 0;
+    const discountLabel = this.config?.locale.discountLabel.replaceAll("_discount", String(discount));
+    if (originalTotalPrice > totalPrice) {
+      priceContainer.innerHTML =
+      `<span class="foxsell-sale-price">${window.foxsell?.formatMoney?.(totalPrice)}</span>
+      <span class="foxsell-compare-at-price">${window.foxsell?.formatMoney?.(originalTotalPrice)}</span>
+      ${ priceStrategy?.strategy === "dynamic_pricing" && discount > 0 ?
+        `<span class="foxsell-discount">${discountLabel}</span>`
+        : ''
+      }
+      `;
+    } else {
+      priceContainer.innerHTML = `<span class="foxsell-sale-price">${window.foxsell?.formatMoney?.(totalPrice)}</span>`;
+    }
+  }
 }
 
 class FoxSellCategoryHeader extends HTMLElement {
@@ -1236,20 +1257,47 @@ class FoxSellVariantSelect extends FoxSellVariantRadio {
 }
 
 class ShadeFoxSellProductCard extends FoxSellProductCard {
+  constructor() {
+    super();
+
+    this.addOnCheckbox = this.querySelector('.foxsell-add-on-checkbox');
+    this.boundHandleCheckboxChange = this.handleCheckboxChange.bind(this);
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+    this.addOnCheckbox?.addEventListener('change', this.boundHandleCheckboxChange);
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.addOnCheckbox?.removeEventListener('change', this.boundHandleCheckboxChange);
+  }
+
+  handleCheckboxChange(event) {
+    if ( (event.target).checked) {
+      this.addToBundle();
+    } else {
+      const qty = this.getCurrentQuantity();
+      if (qty > 0 && this.variantSelector?.currentVariant && this.foxsell) {
+        this.foxsell.removeFromAddOns(this.variantSelector.currentVariant, qty);
+      }
+    }
+  }
 
   handleVariantChange() {
     this.updateFeaturedImage();
     this.updatePrice();
     this.updateQuantity(this.getCurrentQuantity());
 
+    //! Sync products with the bundle
+    this.syncProductsWithBundle();
+
     if (!this.variantSelector?.currentVariant) {
       this.disableAddToBundle = true;
       this.toggleAddToBundleButton(true);
       return;
     }
-
-    //! Sync products with the bundle
-    this.syncProductsWithBundle();
 
     let disable;
     if (this.categoryId === '__add_ons__') {
@@ -1271,9 +1319,7 @@ class ShadeFoxSellProductCard extends FoxSellProductCard {
   }
 
   syncProductsWithBundle() {
-    if (!this.variantSelector?.currentVariant || !this.foxsell || !this.categoryId) return;
-    if(this.categoryId === '__add_ons__') return;
-
+    if (!this.foxsell || !this.categoryId) return;
     const category = this.foxsell.getCategory(this.categoryId);
     if (category) {
       for (const item of [...category.items.values()]) {
@@ -1292,6 +1338,8 @@ class ShadeFoxSellProductCard extends FoxSellProductCard {
   }
 
   addToBundle() {
+
+    if (this.isAddOnCard && this.addOnCheckbox && !this.addOnCheckbox.checked) return;
     const quantity = parseInt(this.getAttribute('data-quantity') || '1');
     if (!this.variantSelector || !this.variantSelector.currentVariant || !this.foxsell || !this.categoryId) return;
     if (this.categoryId === '__add_ons__') {

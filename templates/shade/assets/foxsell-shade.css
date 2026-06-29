@@ -20,6 +20,7 @@
 
 foxsell-mix-match fieldset label {
   position: relative;
+  cursor: pointer;
 }
 
 .fieldset--radio label {
@@ -217,6 +218,17 @@ foxsell-mix-match {
     transform: rotate(360deg);
   }
 }
+
+.foxsell-discount {
+  padding: 4px 8px;
+  background: var(--foxsell-color-accent-2);
+  color: var(--foxsell-color-accent-text-2);
+}
+
+.foxsell-category__item-addons {
+  border-top: 1px solid var(--foxsell-color-border);
+  padding-top: var(--foxsell-space-4);
+}
 /* Category header — < .foxsell-category__item gap */
 .foxsell-category__header {
   display: flex;
@@ -237,9 +249,6 @@ foxsell-mix-match {
 }
 
 .foxsell-product-card:not(.foxsell-product-card--modal) {
-  padding: var(--foxsell-space-2);
-  border: 1px solid var(--foxsell-color-border);
-  border-radius: var(--foxsell-radius-card);
   height: 100%;
   background-color: var(--foxsell-color-background);
   display: flex;
@@ -313,8 +322,13 @@ foxsell-mix-match {
   display: flex;
   flex-direction: column;
   gap: var(--foxsell-space-2);
-  width: calc(100% - 80px);
   font-size: var(--foxsell-text-md);
+}
+
+.foxsell-product-card__title-wrapper {
+  display: flex;
+  gap: var(--foxsell-space-2);
+  align-items: center;
 }
 
 .foxsell-product-card__title {
@@ -335,6 +349,7 @@ foxsell-mix-match {
 
 .foxsell-product-card:not(.foxsell-product-card--modal) .foxsell-product-card__image-wrapper {
   width: 80px;
+  flex-shrink: 0;
 }
 
 .foxsell-product-card__image {
@@ -404,6 +419,41 @@ foxsell-mix-match {
   z-index: 1;
   background: var(--foxsell-color-background);
 }
+
+.foxsell--checkbox {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  border-radius: var(--foxsell-radius-card);
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  border: 2px solid var(--foxsell-color-foreground);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.foxsell--checkbox > input, 
+.foxsell--checkbox .check {
+  display: none;
+}
+
+.foxsell--checkbox:has(input:checked) > .check {
+  display: block!important;
+  background: var(--foxsell-color-foreground);
+  width: 12px;
+  height: 12px;
+  border-radius: calc(var(--foxsell-radius-card) * 0.5);
+}
+
+.foxsell-product--quantity {
+  padding: 2px 8px;
+  background: var(--foxsell-color-border);
+  border-radius: 10px;
+  font-size: var(--foxsell-text-sm);
+}
+
 /* Fieldset resets */
 foxsell-mix-match fieldset {
   border: 0;
@@ -433,6 +483,7 @@ foxsell-mix-match select {
   background-color: var(--foxsell-color-background);
   height: max-content;
   align-self: center;
+  cursor: pointer;
 }
 
 foxsell-mix-match select:focus-visible {
