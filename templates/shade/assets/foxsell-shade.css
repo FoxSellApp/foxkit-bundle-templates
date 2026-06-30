@@ -122,7 +122,7 @@ foxsell-mix-match {
 .foxsell-category__list {
   display: flex;
   flex-direction: column;
-  gap: var(--foxsell-space-6);
+  gap: var(--foxsell-space-2);
 }
 
 @media screen and (min-width: 768px) {
@@ -135,7 +135,7 @@ foxsell-mix-match {
 .foxsell-category__item {
   display: flex;
   flex-direction: column;
-  gap: var(--foxsell-space-5);
+  gap: var(--foxsell-space-2);
 }
 
 .foxsell-category__product-grid {
@@ -223,6 +223,7 @@ foxsell-mix-match {
   padding: 4px 8px;
   background: var(--foxsell-color-accent-2);
   color: var(--foxsell-color-accent-text-2);
+  border-radius: var(--foxsell-radius-button);
 }
 
 .foxsell-category__item-addons {
@@ -254,6 +255,7 @@ foxsell-mix-match {
   display: flex;
   flex-direction: row;
   gap: var(--foxsell-space-3);
+  padding: var(--foxsell-space-2);
 }
 
 .foxsell-product-card:not(.foxsell-product-card--modal) .foxsell-product-card__info {
@@ -537,8 +539,8 @@ fieldset.fieldset--color-swatch > legend {
 /* Swatches */
 .foxsell-variant-radio .swatch,
 .foxsell-variant-select .swatch {
-  width: 20px;
-  height: 20px;
+  width: var(--foxsell-swatch-size, 20px);
+  height: var(--foxsell-swatch-size, 20px);
   display: block;
   border-radius: var(--foxsell-radius-button);
 }

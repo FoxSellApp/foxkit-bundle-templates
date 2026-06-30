@@ -70,7 +70,7 @@
       {% if category_title == '__add_ons__' and add_on_strategy != 'automatic_add' %}
         <label class="foxsell--checkbox">
           <div class="check"></div>
-          <input class="foxsell-add-on-checkbox" type="checkbox" name="addon">
+          <input class="foxsell-add-on-checkbox" type="checkbox" name="addon" checked>
         </label>
       {% endif %}
       <div class="foxsell-product-card__image-wrapper" data-open-modal>
@@ -93,14 +93,15 @@
           <div class="js foxsell-product-card__price">{{ product.first_available_variant.price | money }}</div>
         {% endif %}
         <div {% if product.has_only_default_variant %}class="foxsell--hidden"{% endif %}>
-          {% render 'foxsell-shade-product-options', 
-            product: product, 
-            allowed_variants: allowed_variants, 
-            type: type, 
-            show_color_swatches: show_color_swatches, 
-            color_option_name: color_option_name, 
+          {% render 'foxsell-shade-product-options',
+            product: product,
+            allowed_variants: allowed_variants,
+            type: type,
+            show_color_swatches: show_color_swatches,
+            color_option_name: color_option_name,
             manual_color_swatches: manual_color_swatches,
-            section: section
+            section: section,
+            category: category_title
           %}
         </div>
       </div>
