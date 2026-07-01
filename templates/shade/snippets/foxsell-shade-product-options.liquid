@@ -8,7 +8,6 @@
   @param {boolean} [show_color_swatches] - Whether to render color swatches for options that support them
   @param {string} [color_option_name] - The option name to treat as the color swatch option. Defaults to "Color".
   @param {string} [manual_color_swatches] - Comma-separated "OptionValue: #hex" map for manual color swatches
-  @param {string} [category] - Category identifier scoping these inputs, used to avoid name collisions when the same product appears in multiple categories
 
   @example
   {% render 'foxsell-shade-product-options', allowed_variants: allowed_variants, type: 'radio' %}
@@ -152,7 +151,7 @@
       <legend>{{ option.name }}: <span class="js foxsell-variant-radio__option-value">{{ first_available_variant[option_position] }}</span></legend>
       {% for value in option.values %}
         {% liquid
-          assign name = option.name | handleize | append: '-' | append: option.position | append: '-' | append: product.id | append: '-' | append: category
+          assign name = option.name | handleize | append: '-' | append: option.position | append: '-' | append: product.id
           assign is_available = false
           assign is_checked = false
 
@@ -260,7 +259,7 @@
       {% if show_color_swatch %}
         {% for value in option.values %}
           {% liquid
-            assign name = option.name | handleize | append: '-' | append: option.position | append: '-' | append: product.id | append: '-' | append: category
+            assign name = option.name | handleize | append: '-' | append: option.position | append: '-' | append: product.id
             assign is_available = false
             assign is_checked = false
 
@@ -328,10 +327,10 @@
           </label>
         {% endfor %}
       {% else %}
-        <select name="{{ option.name | handleize | append: '-' | append: option.position | append: '-' | append: product.id | append: '-' | append: category }}" id="{{ option.name | handleize | append: '-' | append: option.position | append: '-' | append: product.id | append: '-' | append: category }}">
+        <select name="{{ option.name | handleize | append: '-' | append: option.position | append: '-' | append: product.id }}" id="{{ option.name | handleize | append: '-' | append: option.position | append: '-' | append: product.id }}">
           {% for value in option.values %}
             {% liquid
-              assign name = option.name | handleize | append: '-' | append: option.position | append: '-' | append: product.id | append: '-' | append: category
+              assign name = option.name | handleize | append: '-' | append: option.position | append: '-' | append: product.id
               assign is_available = false
               assign is_checked = false
 

@@ -21,7 +21,6 @@
 
   assign card_border_radius = section.settings.card_border_radius | default: 5
   assign button_border_radius = section.settings.button_border_radius | default: 5
-  assign color_swatch_size = section.settings.color_swatch_size | default: 20
   assign section_base_font_size = section.settings.section_base_font_size | default: 16
 %}
 
@@ -36,7 +35,6 @@
     --foxsell-color-border: {{ color_border }};
     --foxsell-radius-card: {{ card_border_radius }}px;
     --foxsell-radius-button: {{ button_border_radius }}px;
-    --foxsell-swatch-size: {{ color_swatch_size }}px;
     --foxsell-product-grid-columns-mobile: {{ product_grid_columns_mobile }};
     --foxsell-product-grid-columns-desktop: {{ product_grid_columns_desktop }};
     --foxsell-product-grid-column-gap: {{ product_grid_gap }}px;

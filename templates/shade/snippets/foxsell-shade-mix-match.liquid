@@ -46,8 +46,6 @@
 
 <foxsell-mix-match class="foxsell-mix-match" data-bundle-id="{{ bundle_id }}">
   <div class="foxsell-mix-match__container">
-    <div class="foxsell-mix-match__price-container">{{ product.price | money }}</div>
-
     {% comment %} Category list {% endcomment %}
     <div class="foxsell-category__list">
       {% for category in categories %}
@@ -87,8 +85,8 @@
         </div>
       {% endfor %}
   
-      {% if add_on_products.size > 0 %}
-        <div class="foxsell-category__item foxsell-category__item-addons" data-category="__add_ons__">
+      {% if additional_settings.add_on_settings.strategy != 'automatic_add' and add_on_products.size > 0 %}
+        <div class="foxsell-category__item" data-category="__add_ons__">
           <foxsell-category-header data-category-id="__add_ons__" class="foxsell-category__header">
             <div class="foxsell-category__title">{{ section.settings.add_ons_category_title | default: 'Add-ons' }}</div>
           </foxsell-category-header>
@@ -114,8 +112,7 @@
                   show_secondary_image_on_hover: product_card_secondary_image_on_hover,
                   show_color_swatches: product_card_show_color_swatches,
                   color_option_name: color_option_name,
-                  manual_color_swatches: manual_color_swatches,
-                  add_on_strategy: additional_settings.add_on_settings.strategy
+                  manual_color_swatches: manual_color_swatches
                 %}
               {% endif %}
             {% endfor %}
@@ -174,8 +171,9 @@
     {%- endfor -%}],
     "settings": {{ settings | json | replace: 'add_on', 'addOn' }},
     "locale": {
-      "addOnsCategoryTitle": {{ section.settings.add_ons_category_title | default: 'Add-ons' | json }},
-      "discountLabel": {{ section.settings.discount_label | default: 'save _discount%' | json }}
+      "addToCartButtonText": {{ section.settings.button_atc_text | default: 'Add to Cart' | json }},
+      "addToBundleButtonText": {{ section.settings.button_add_to_bundle_text | default: 'Add to bundle' | json }},
+      "addOnsCategoryTitle": {{ section.settings.add_ons_category_title | default: 'Add-ons' | json }}
     },
     "additionalSettings": {{ additional_settings | json }}
   }

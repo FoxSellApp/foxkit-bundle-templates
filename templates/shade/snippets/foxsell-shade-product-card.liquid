@@ -14,7 +14,6 @@
   @param {number} [default_quantity] - The default quantity of the product
   @param {string} [color_option_name] - The option name to treat as the color swatch option. Defaults to "Color".
   @param {string} [manual_color_swatches] - Comma-separated "OptionValue: #hex" map for manual color swatches.
-  @param {string} [add_on_strategy] - AddOn strategy of the bundle
 
   @example
   {% render 'foxsell-shade-product-card', section: section, view: 'card', product: product %}
@@ -32,6 +31,8 @@
     assign category_title = category_title | sha1
   endunless
 
+  assign add_to_bundle_button_text = section.settings.button_add_to_bundle_text | default: 'Add to bundle'
+
   assign secondary_image = blank
   if show_secondary_image_on_hover and product.images.size > 1 and product.featured_image
     for image in product.images
@@ -42,6 +43,14 @@
     endfor
   endif
 %}
+
+{% capture plus_icon_svg %}
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+{% endcapture %}
+
+{% capture minus_icon_svg %}
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14"/></svg>
+{% endcapture %}
 
 {% case view %}
   {% when 'modal' %}
@@ -67,12 +76,6 @@
       data-category="{{ category_title }}"
       data-quantity="{{ quantity }}"
     >
-      {% if category_title == '__add_ons__' and add_on_strategy != 'automatic_add' %}
-        <label class="foxsell--checkbox">
-          <div class="check"></div>
-          <input class="foxsell-add-on-checkbox" type="checkbox" name="addon" checked>
-        </label>
-      {% endif %}
       <div class="foxsell-product-card__image-wrapper" data-open-modal>
         <div class="foxsell-product-card__media">
           {{ product.featured_image | image_url: width: 500 | image_tag: class: image_class }}
@@ -83,27 +86,35 @@
         </div>
       </div>
       <div class="foxsell-product-card__info">
-        <div class="foxsell-product-card__title-wrapper">
-          <div class="foxsell-product-card__title">{{ product.title }}</div>
-          {% if category_title != "__add_ons__" and quantity > 1 %}
-            <div class="foxsell-product--quantity">x{{ quantity }}</div>
-          {% endif %}
-        </div>
+        <div class="foxsell-product-card__title">{{ product.title }}</div>
         {% if show_price %}
           <div class="js foxsell-product-card__price">{{ product.first_available_variant.price | money }}</div>
         {% endif %}
         <div {% if product.has_only_default_variant %}class="foxsell--hidden"{% endif %}>
-          {% render 'foxsell-shade-product-options',
-            product: product,
-            allowed_variants: allowed_variants,
-            type: type,
-            show_color_swatches: show_color_swatches,
-            color_option_name: color_option_name,
+          {% render 'foxsell-shade-product-options', 
+            product: product, 
+            allowed_variants: allowed_variants, 
+            type: type, 
+            show_color_swatches: show_color_swatches, 
+            color_option_name: color_option_name, 
             manual_color_swatches: manual_color_swatches,
-            section: section,
-            category: category_title
+            section: section
           %}
         </div>
+        {% if category_title == '__add_ons__' %}
+          <div class="foxsell-product-card__quantity-wrapper">
+            <div class="foxsell-product-card__quantity">
+              <button class="js foxsell--button remove-from-bundle" aria-label="Remove from bundle">
+                {{ minus_icon_svg }}
+              </button>
+              <span class="foxsell-quantity">0</span>
+              <button class="js foxsell--button add-to-bundle" aria-label="Add to bundle">
+                {{ plus_icon_svg }}
+              </button>
+            </div>
+            <button class="js foxsell--button foxsell--button-full-width add-to-bundle" aria-label="{{ add_to_bundle_button_text | escape }}">{{ add_to_bundle_button_text }}</button>
+          </div>
+        {% endif %}
       </div>
     </foxsell-product-card>
 {% endcase %}
