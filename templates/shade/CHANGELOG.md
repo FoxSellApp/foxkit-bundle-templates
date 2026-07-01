@@ -1,5 +1,11 @@
 # foxkit-bundle-templates
 
+## 1.2.0
+
+### Minor Changes
+
+- 3654a0f: Add-on products now support a default quantity. When a maximum quantity is configured, add-ons will display a quantity badge, matching the behaviour of regular bundle products.
+
 ## 1.1.0
 
 ### Minor Changes

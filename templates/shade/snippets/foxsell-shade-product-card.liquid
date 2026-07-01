@@ -85,7 +85,7 @@
       <div class="foxsell-product-card__info">
         <div class="foxsell-product-card__title-wrapper">
           <div class="foxsell-product-card__title">{{ product.title }}</div>
-          {% if category_title != "__add_ons__" and quantity > 1 %}
+          {% if quantity > 1 %}
             <div class="foxsell-product--quantity">x{{ quantity }}</div>
           {% endif %}
         </div>
