@@ -394,7 +394,7 @@ foxsell-mix-match {
 }
 
 .foxsell--image-original {
-  aspect-ratio: auto;
+  aspect-ratio: var(--foxsell-image-aspect-ratio, auto);
 }
 
 

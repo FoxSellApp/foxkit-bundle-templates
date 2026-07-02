@@ -110,13 +110,13 @@
                   product: add_on,
                   allowed_variants: allowed_variants,
                   type: product_card_options_type,
-                  default_quantity: settings.add_on.maximum,
                   image_aspect_ratio: product_card_image_aspect_ratio,
                   show_secondary_image_on_hover: product_card_secondary_image_on_hover,
                   show_color_swatches: product_card_show_color_swatches,
                   color_option_name: color_option_name,
                   manual_color_swatches: manual_color_swatches,
-                  add_on_strategy: additional_settings.add_on_settings.strategy
+                  add_on_strategy: additional_settings.add_on_settings.strategy,
+                  add_on_selected_by_default: section.settings.add_on_selected_by_default
                 %}
               {% endif %}
             {% endfor %}

@@ -803,10 +803,6 @@ class ShadeFoxSellMixMatch extends FoxSellMixMatch {
             if (variantIdInput) {
               variantIdInput.setAttribute('value', validOption?.variant_id ?? '');
             }
-          } else {
-            if (variantIdInput) {
-              variantIdInput.setAttribute('value', this.config.variants[0].id);
-            }
           }
         }
 

@@ -15,6 +15,7 @@
   @param {string} [color_option_name] - The option name to treat as the color swatch option. Defaults to "Color".
   @param {string} [manual_color_swatches] - Comma-separated "OptionValue: #hex" map for manual color swatches.
   @param {string} [add_on_strategy] - AddOn strategy of the bundle
+  @param {boolean} [add_on_selected_by_default] - Whether the add-on checkbox is checked by default. Defaults to true.
 
   @example
   {% render 'foxsell-shade-product-card', section: section, view: 'card', product: product %}
@@ -25,6 +26,9 @@
     assign show_price = true
   endunless
   assign show_secondary_image_on_hover = show_secondary_image_on_hover | default: false
+  unless add_on_selected_by_default == false
+    assign add_on_selected_by_default = true
+  endunless
   assign quantity = default_quantity | default: 1
   assign image_aspect_ratio = image_aspect_ratio | default: 'original'
   assign image_class = 'js foxsell-product-card__image foxsell--image-' | append: image_aspect_ratio
@@ -41,6 +45,8 @@
       endif
     endfor
   endif
+
+  assign image_aspect_ratio_value = product.featured_image.aspect_ratio | default: 1
 %}
 
 {% case view %}
@@ -49,6 +55,7 @@
       class="foxsell-product-card foxsell-product-card--modal"
       data-product-id="{{ product.id }}"
       data-category="{{ category_title }}"
+      style="--foxsell-image-aspect-ratio: {{ image_aspect_ratio_value }};"
     >
       <div class="foxsell-product-card__image-wrapper">
         {{ product.featured_image | image_url: width: 500 | image_tag: class: image_class }}
@@ -61,16 +68,17 @@
       </div>
     </foxsell-product-card>
   {% else %}
-    <foxsell-product-card 
-      class="foxsell-product-card" 
+    <foxsell-product-card
+      class="foxsell-product-card"
       data-product-id="{{ product.id }}"
       data-category="{{ category_title }}"
+      style="--foxsell-image-aspect-ratio: {{ image_aspect_ratio_value }};"
       data-quantity="{{ quantity }}"
     >
       {% if category_title == '__add_ons__' and add_on_strategy != 'automatic_add' %}
         <label class="foxsell--checkbox">
           <div class="check"></div>
-          <input class="foxsell-add-on-checkbox" type="checkbox" name="addon" checked>
+          <input class="foxsell-add-on-checkbox" type="checkbox" name="addon"{% if add_on_selected_by_default %} checked{% endif %}>
         </label>
       {% endif %}
       <div class="foxsell-product-card__image-wrapper" data-open-modal>
@@ -85,7 +93,7 @@
       <div class="foxsell-product-card__info">
         <div class="foxsell-product-card__title-wrapper">
           <div class="foxsell-product-card__title">{{ product.title }}</div>
-          {% if quantity > 1 %}
+          {% if category_title != "__add_ons__" and quantity > 1 %}
             <div class="foxsell-product--quantity">x{{ quantity }}</div>
           {% endif %}
         </div>
