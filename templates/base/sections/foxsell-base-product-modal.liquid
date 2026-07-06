@@ -36,26 +36,28 @@
       {% endfor %}
     {% endfor %}
 
-    {% for add_on in add_on_products %}
-      {% liquid
-        assign allowed_variants = null
-        for add_on_property in add_on_product_properties
-          if add_on_property[0] contains add_on.id
-            assign allowed_variants = add_on_property[1].variants
-            break
-          endif
-        endfor 
-      %}
-      {% render 'foxsell-base-product-card',
-        section: section,
-        view: 'modal',
-        category_title: '__add_ons__',
-        product: add_on,
-        allowed_variants: allowed_variants,
-        image_aspect_ratio: 'original',
-        type: 'select'
-      %}
-    {% endfor %}
+    {% paginate add_on_products by 128 %}
+      {% for add_on in add_on_products %}
+        {% liquid
+          assign allowed_variants = null
+          for add_on_property in add_on_product_properties
+            if add_on_property[0] contains add_on.id
+              assign allowed_variants = add_on_property[1].variants
+              break
+            endif
+          endfor
+        %}
+        {% render 'foxsell-base-product-card',
+          view: 'modal',
+          category_title: '__add_ons__',
+          product: add_on,
+          allowed_variants: allowed_variants,
+          image_aspect_ratio: 'original',
+          type: 'select',
+          section: section
+        %}
+      {% endfor %}
+    {% endpaginate %}
 </div>
 
 {% schema %}

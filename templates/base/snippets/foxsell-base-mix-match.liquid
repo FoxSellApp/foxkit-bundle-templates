@@ -105,31 +105,33 @@
             <div class="js foxsell-category__quantity">(0/{{ addons_quantity }})</div>
           </foxsell-category-header>
           <div class="foxsell-category__product-grid">
-            {% for add_on in add_on_products %}
-              {% liquid
-                assign allowed_variants = null
-                for add_on_property in add_on_product_properties
-                  if add_on_property[0] contains add_on.id
-                    assign allowed_variants = add_on_property[1].variants
-                    break
-                  endif
-                endfor
-              %}
-              {% if add_on %}
-                {% render 'foxsell-base-product-card',
-                  section: section,
-                  category_title: '__add_ons__',
-                  product: add_on,
-                  allowed_variants: allowed_variants,
-                  type: product_card_options_type,
-                  image_aspect_ratio: product_card_image_aspect_ratio,
-                  show_secondary_image_on_hover: product_card_secondary_image_on_hover,
-                  show_color_swatches: product_card_show_color_swatches,
-                  color_option_name: color_option_name,
-                  manual_color_swatches: manual_color_swatches
+            {% paginate add_on_products by 128 %}
+              {% for add_on in add_on_products %}
+                {% liquid
+                  assign allowed_variants = null
+                  for add_on_property in add_on_product_properties
+                    if add_on_property[0] contains add_on.id
+                      assign allowed_variants = add_on_property[1].variants
+                      break
+                    endif
+                  endfor
                 %}
-              {% endif %}
-            {% endfor %}
+                {% if add_on %}
+                  {% render 'foxsell-base-product-card',
+                    category_title: '__add_ons__',
+                    product: add_on,
+                    allowed_variants: allowed_variants,
+                    type: product_card_options_type,
+                    image_aspect_ratio: product_card_image_aspect_ratio,
+                    show_secondary_image_on_hover: product_card_secondary_image_on_hover,
+                    show_color_swatches: product_card_show_color_swatches,
+                    color_option_name: color_option_name,
+                    manual_color_swatches: manual_color_swatches,
+                    section: section
+                  %}
+                {% endif %}
+              {% endfor %}
+            {% endpaginate %}
           </div>
         </div>
       {% endif %}
