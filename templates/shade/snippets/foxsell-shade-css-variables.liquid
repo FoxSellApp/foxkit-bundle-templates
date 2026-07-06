@@ -9,7 +9,7 @@
 {% liquid
   assign product_grid_columns_mobile = 1
   assign product_grid_columns_desktop = 1
-  assign product_grid_gap = section.settings.product_grid_gap | default: 16
+  assign product_card_gap = section.settings.product_card_gap | default: 16
 
   assign color_background = section.settings.background | default: '#FFFFFF'
   assign color_text = section.settings.text | default: '#000000'
@@ -39,8 +39,8 @@
     --foxsell-swatch-size: {{ color_swatch_size }}px;
     --foxsell-product-grid-columns-mobile: {{ product_grid_columns_mobile }};
     --foxsell-product-grid-columns-desktop: {{ product_grid_columns_desktop }};
-    --foxsell-product-grid-column-gap: {{ product_grid_gap }}px;
-    --foxsell-product-grid-row-gap: {{ product_grid_gap | plus: 8 }}px;
+    --foxsell-product-grid-column-gap: {{ product_card_gap }}px;
+    --foxsell-product-grid-row-gap: {{ product_card_gap }}px;
 
     /* Font size scale (1rem = 16px at browser default) */
     --foxsell-text-xs: {{ section_base_font_size | times: 0.75 }}px;
