@@ -38,6 +38,8 @@
       endif
     endfor
   endif
+
+  assign image_aspect_ratio_value = product.featured_image.aspect_ratio | default: 1
 %}
 
 
@@ -55,6 +57,7 @@
       class="foxsell-product-card foxsell-product-card--modal"
       data-product-id="{{ product.id }}"
       data-category="{{ category_title }}"
+      style="--foxsell-image-aspect-ratio: {{ image_aspect_ratio_value }};"
     >
       <div class="foxsell-product-card__image-wrapper">
         {{ product.featured_image | image_url: width: 100 | image_tag: class: image_class }}
@@ -93,10 +96,11 @@
       </div>
     </foxsell-product-card>
   {% else %}
-    <foxsell-product-card 
-      class="foxsell-product-card" 
+    <foxsell-product-card
+      class="foxsell-product-card"
       data-product-id="{{ product.id }}"
       data-category="{{ category_title }}"
+      style="--foxsell-image-aspect-ratio: {{ image_aspect_ratio_value }};"
     >
       <div class="foxsell-product-card__image-wrapper" data-open-modal>
         <div class="foxsell-product-card__media">
