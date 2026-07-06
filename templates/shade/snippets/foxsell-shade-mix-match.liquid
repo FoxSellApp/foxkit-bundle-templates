@@ -93,33 +93,35 @@
             <div class="foxsell-category__title">{{ section.settings.add_ons_category_title | default: 'Add-ons' }}</div>
           </foxsell-category-header>
           <div class="foxsell-category__product-grid">
-            {% for add_on in add_on_products %}
-              {% liquid
-                assign allowed_variants = null
-                for add_on_property in add_on_product_properties
-                  if add_on_property[0] contains add_on.id
-                    assign allowed_variants = add_on_property[1].variants
-                    break
-                  endif
-                endfor
-              %}
-              {% if add_on %}
-                {% render 'foxsell-shade-product-card',
-                  section: section,
-                  category_title: '__add_ons__',
-                  product: add_on,
-                  allowed_variants: allowed_variants,
-                  type: product_card_options_type,
-                  image_aspect_ratio: product_card_image_aspect_ratio,
-                  show_secondary_image_on_hover: product_card_secondary_image_on_hover,
-                  show_color_swatches: product_card_show_color_swatches,
-                  color_option_name: color_option_name,
-                  manual_color_swatches: manual_color_swatches,
-                  add_on_strategy: additional_settings.add_on_settings.strategy,
-                  add_on_selected_by_default: section.settings.add_on_selected_by_default
+            {% paginate add_on_products by 128 %}
+              {% for add_on in add_on_products %}
+                {% liquid
+                  assign allowed_variants = null
+                  for add_on_property in add_on_product_properties
+                    if add_on_property[0] contains add_on.id
+                      assign allowed_variants = add_on_property[1].variants
+                      break
+                    endif
+                  endfor
                 %}
-              {% endif %}
-            {% endfor %}
+                {% if add_on %}
+                  {% render 'foxsell-shade-product-card',
+                    section: section,
+                    category_title: '__add_ons__',
+                    product: add_on,
+                    allowed_variants: allowed_variants,
+                    type: product_card_options_type,
+                    image_aspect_ratio: product_card_image_aspect_ratio,
+                    show_secondary_image_on_hover: product_card_secondary_image_on_hover,
+                    show_color_swatches: product_card_show_color_swatches,
+                    color_option_name: color_option_name,
+                    manual_color_swatches: manual_color_swatches,
+                    add_on_strategy: additional_settings.add_on_settings.strategy,
+                    add_on_selected_by_default: section.settings.add_on_selected_by_default
+                  %}
+                {% endif %}
+              {% endfor %}
+            {% endpaginate %}
           </div>
         </div>
       {% endif %}
