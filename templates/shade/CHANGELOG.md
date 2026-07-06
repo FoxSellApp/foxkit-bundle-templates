@@ -1,5 +1,11 @@
 # foxkit-bundle-templates
 
+## 1.3.0
+
+### Minor Changes
+
+- 9897961: Simplify Shade product cards by removing padding and background. Add a configurable Gap block setting (default 16px) for product card spacing, align category and add-ons spacing to the same token, soften the add-ons divider with color-mix, and rename the background color setting to Color Mix.
+
 ## 1.2.0
 
 ### Minor Changes
