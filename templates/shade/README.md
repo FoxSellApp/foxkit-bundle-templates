@@ -21,7 +21,7 @@ The Shade template is a FoxSell dynamic add-ons bundle app block. It is designed
 
 ## Demo
 
-[View the cosmetic bundle demo](https://tools.foxsell.app/tools/fox-demo-delight/store?app=foxsell-bundles-plus&path=/products/the-complete-lip-glow-set) to see Shade used for a complete lip glow set with more than three selectable options, 4,000+ variant combinations, and a makeup bag upsell.
+[View the cosmetics bundle demo](https://tools.foxsell.app/tools/fox-demo-delight/store?app=foxsell-bundles-plus&path=/products/the-complete-lip-glow-set) to see the Shade template used for a beauty bundle with more than three selectable options, 4,000+ variant combinations, and a makeup bag upsell.
 
 ## Installation
 
