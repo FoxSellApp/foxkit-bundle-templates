@@ -1,6 +1,12 @@
 # FoxSell Glow Template
 
-The Glow template is a polished FoxSell dynamic add-ons bundle layout with configurable styling, product cards, bundle summary, product modal, progress messages, and a product JSON template for assigning the layout to a bundle product.
+Glow is a ready-to-use FoxSell bundle template for freelancers, developers, and agencies building Shopify bundle experiences for clients. It ships with the Liquid, CSS, and JavaScript needed for a tiered build-your-own-box flow, so you can install it into a theme and customize the merchant-facing settings instead of building a FoxSell-compatible storefront UI from scratch.
+
+## Demo
+
+Demo store: [Build Your Own Cookie Box](https://tools.foxsell.app/tools/fox-demo-delight/store?app=foxsell-bundles-plus&path=/products/build-your-own-cookie-box)
+
+![FoxSell Glow demo store screenshot](docs/demo-store.png)
 
 ## Files
 
@@ -13,12 +19,11 @@ The Glow template is a polished FoxSell dynamic add-ons bundle layout with confi
 
 ## Features
 
-- Dynamic add-ons bundle rendering from the selected bundle product.
-- Configurable section padding, wrapper classes, colors, radius, and product grid.
-- Product cards with variant selectors and swatch support.
-- Bundle summary with configurable labels and add-to-cart text.
-- Progress message settings for bundle quantity requirements.
-- Product modal for item details.
+- FoxSell-compatible dynamic add-ons bundle rendering from the selected bundle product.
+- Tiered price cards for fixed-price or quantity-based bundle offers.
+- Product cards with variant selectors, swatch support, and a product details modal.
+- Bundle summary with configurable labels, add-to-cart text, and progress messaging.
+- Theme Editor settings for colors, spacing, radius, product grid, and locale text.
 
 ## Installation
 
@@ -30,4 +35,4 @@ The Glow template is a polished FoxSell dynamic add-ons bundle layout with confi
 ## Notes
 
 - The section renders only when the selected product has FoxSell dynamic add-ons bundle configuration.
-- Use this template when the store needs a ready-made visual treatment with broad Theme Editor controls.
+- Use this template when a client needs a polished, pre-built bundle page with broad Theme Editor controls.
