@@ -737,6 +737,8 @@ class GlowMixMatch extends FoxSellMixMatch {
     super();
     this.currentView = 'items';
 
+    this._lastValidOptionId = null;
+
     this.boundToggleToItems = this.toggleToItems.bind(this);
     this.boundToggleToAddOns = this.toggleToAddOns.bind(this);
 
@@ -766,6 +768,105 @@ class GlowMixMatch extends FoxSellMixMatch {
     super.validateBundle();
     if(this.continueButton && this.returnButton) {
       this.toggleContinueButton();
+    }
+  }
+
+  validateAddOns(isItemsValid) {
+    const qaoEnabled = (this.config?.options?.length ?? 0) > 0;
+    if (qaoEnabled) {
+      const currentOption = this.getCurrentValidOption();
+      const currentOptionId = currentOption?.variant_id ?? null;
+
+      if (
+        this._lastValidOptionId != null &&
+        currentOptionId !== this._lastValidOptionId &&
+        this.getSelectedAddOns().length > 0
+      ) {
+        this.clearAddOns(false);
+      }
+      this._lastValidOptionId = currentOptionId;
+    }
+    return super.validateAddOns(isItemsValid);
+  }
+
+  getAddOnPriceForCurrentTier(productId, variantId) {
+    if (!this.config) return 0;
+
+    if ((this.config.options?.length ?? 0) > 0) {
+      const option = this.getCurrentValidOption();
+      const tierAddon = option?.add_on_products?.find(
+        (addon) => addon.id === String(productId)
+      );
+      const variants = tierAddon?.variants;
+      if (!variants) return 0;
+
+      const dollars =
+        variants[variantId] ??
+        variants[`gid://shopify/ProductVariant/${variantId}`];
+
+      return dollars != null ? dollars * 100 : 0;
+    }
+
+    return getAddOnPrice(productId, variantId, this.config.addOnProductProperties);
+  }
+
+  getAutoAddOnVariant(allowedId, item) {
+    if (!this.config) return undefined;
+
+    if ((this.config.options?.length ?? 0) > 0) {
+      const option = this.getCurrentValidOption();
+      const tierAddon = option?.add_on_products?.find(
+        (addon) => addon.id === String(allowedId)
+      );
+      if (tierAddon?.variants) {
+        const tierVariantIds = Object.keys(tierAddon.variants).map((key) => {
+          if (key.includes('ProductVariant/')) {
+            return parseInt(key.split('/').pop() ?? '0', 10);
+          }
+          return parseInt(key, 10);
+        });
+        const variant = item.variants.find((v) => tierVariantIds.includes(v.id));
+        if (variant) return variant;
+      }
+    }
+
+    const productGid = `gid://shopify/Product/${allowedId}`;
+    const configuredVariantGids = Object.keys(
+      this.config.addOnProductProperties[productGid]?.variants ?? {}
+    );
+    return item.variants.find((v) =>
+      configuredVariantGids.includes(`gid://shopify/ProductVariant/${v.id}`)
+    ) ?? item.variants[0];
+  }
+
+  autoAddAddOns() {
+    if (!this.config) return;
+    const { allowedIds, maximum } = this.getAddOnsConfig();
+
+    this.clearAddOns(false);
+
+    let selectedQuantity = 0;
+    for (const allowedId of allowedIds) {
+      const item = this.config.addOnProducts.find((product) => product.id === allowedId);
+      if (!item) continue;
+
+      const variant = this.getAutoAddOnVariant(allowedId, item);
+      if (!variant) continue;
+
+      this.selectedAddOns.set(variant.id, {
+        ...variant,
+        foxsell_price: this.getAddOnPriceForCurrentTier(item.id, variant.id),
+        product: {
+          ...item,
+          featured_image: {
+            src: item.featured_image,
+            alt: item.title,
+          },
+        },
+        quantity: 1,
+      });
+      selectedQuantity += 1;
+      if (selectedQuantity >= maximum) break;
     }
   }
 
@@ -1059,6 +1160,7 @@ class FoxSellProductCard extends HTMLElement {
     }
 
     if (action === 'refresh') {
+      this.updatePrice();
       this.updateQuantity(this.getCurrentQuantity());
       return;
     }
@@ -1080,6 +1182,7 @@ class FoxSellProductCard extends HTMLElement {
 
     this.disableAddToBundle = disableAddToBundle || this.isCurrentVariantAtInventoryLimit();
     this.toggleAddToBundleButton(this.disableAddToBundle);
+    this.updatePrice();
     this.updateQuantity(this.getCurrentQuantity());
   }
 
@@ -1111,6 +1214,12 @@ class FoxSellProductCard extends HTMLElement {
     if (!this.variantSelector || !this.foxsell || !this.foxsell.bundle) return;
     const priceEl = this.querySelector('.foxsell-product-card__price');
     if (!priceEl) return;
+
+    if(this.isAddOnCard) {
+      this.variantSelector.variantData = undefined;
+      this.variantSelector.getVariantData();
+      this.variantSelector.updateMasterId();
+    }
 
     const { currentVariant, product } = this.variantSelector;
     let price = currentVariant?.foxsell_price ?? currentVariant?.product?.price ?? product?.price ?? 0;
@@ -1184,6 +1293,10 @@ class FoxSellVariantRadio extends HTMLElement {
     super();
 
     this.productCard = null;
+
+    this.foxsell = this.closest('foxsell-mix-match');
+
+    this.isAddOnCard = this.getAttribute('data-add-on-product') === 'true';
     this.boundOnVariantChange = this.onVariantChange.bind(this);
   }
 
@@ -1232,10 +1345,21 @@ class FoxSellVariantRadio extends HTMLElement {
 
       const raw = Array.isArray(parsed.available_variants) ? parsed.available_variants : (Array.isArray(parsed) ? parsed : []);
 
+      let allowed_variants = parsed.allowed_variants;
+      if(this.foxsell && this.isAddOnCard) {
+        const currentValidOption = this.foxsell.getCurrentValidOption();
+        if(currentValidOption) {
+          const currentValidAddon = currentValidOption.add_on_products.find(addon => addon.id === String(parsed.product.id));
+          if(currentValidAddon) {
+            allowed_variants = currentValidAddon.variants;
+          }
+        }
+      }
+
       this.variantData = raw.map(v => ({
         ...v,
         product: parsed.product ?? null,
-        foxsell_price: this.getFoxSellPrice(parsed.allowed_variants, v.id)
+        foxsell_price: this.getFoxSellPrice(allowed_variants, v.id)
       }));
 
       this.product = parsed.product ?? null;

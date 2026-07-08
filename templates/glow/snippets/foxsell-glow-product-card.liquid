@@ -40,6 +40,10 @@
   endif
 
   assign image_aspect_ratio_value = product.featured_image.aspect_ratio | default: 1
+  assign add_on_product = false
+  if category_title == '__add_ons__'
+    assign add_on_product = true
+  endif
 %}
 
 
@@ -68,14 +72,15 @@
           <div class="js foxsell-product-card__price">{{ product.first_available_variant.price | money }}</div>
         {% endif %}
         <div {% if product.has_only_default_variant %}class="foxsell--hidden"{% endif %}>
-          {% render 'foxsell-glow-product-options', 
-            product: product, 
-            allowed_variants: allowed_variants, 
-            type: type, 
-            show_color_swatches: show_color_swatches, 
-            color_option_name: color_option_name, 
+          {% render 'foxsell-glow-product-options',
+            product: product,
+            allowed_variants: allowed_variants,
+            type: type,
+            show_color_swatches: show_color_swatches,
+            color_option_name: color_option_name,
             manual_color_swatches: manual_color_swatches,
-            section: section
+            section: section,
+            add_on_product: add_on_product
           %}
         </div>
         <div>
@@ -117,14 +122,15 @@
           <div class="js foxsell-product-card__price">{{ product.first_available_variant.price | money }}</div>
         {% endif %}
         <div {% if product.has_only_default_variant %}class="foxsell--hidden"{% endif %}>
-          {% render 'foxsell-glow-product-options', 
-            product: product, 
-            allowed_variants: allowed_variants, 
-            type: type, 
-            show_color_swatches: show_color_swatches, 
-            color_option_name: color_option_name, 
+          {% render 'foxsell-glow-product-options',
+            product: product,
+            allowed_variants: allowed_variants,
+            type: type,
+            show_color_swatches: show_color_swatches,
+            color_option_name: color_option_name,
             manual_color_swatches: manual_color_swatches,
-            section: section
+            section: section,
+            add_on_product: add_on_product
           %}
         </div>
         <div class="foxsell-product-card__quantity-wrapper">
