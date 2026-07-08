@@ -789,6 +789,87 @@ class GlowMixMatch extends FoxSellMixMatch {
     return super.validateAddOns(isItemsValid);
   }
 
+  getAddOnPriceForCurrentTier(productId, variantId) {
+    if (!this.config) return 0;
+
+    if ((this.config.options?.length ?? 0) > 0) {
+      const option = this.getCurrentValidOption();
+      const tierAddon = option?.add_on_products?.find(
+        (addon) => addon.id === String(productId)
+      );
+      const variants = tierAddon?.variants;
+      if (!variants) return 0;
+
+      const dollars =
+        variants[variantId] ??
+        variants[`gid://shopify/ProductVariant/${variantId}`];
+
+      return dollars != null ? dollars * 100 : 0;
+    }
+
+    return getAddOnPrice(productId, variantId, this.config.addOnProductProperties);
+  }
+
+  getAutoAddOnVariant(allowedId, item) {
+    if (!this.config) return undefined;
+
+    if ((this.config.options?.length ?? 0) > 0) {
+      const option = this.getCurrentValidOption();
+      const tierAddon = option?.add_on_products?.find(
+        (addon) => addon.id === String(allowedId)
+      );
+      if (tierAddon?.variants) {
+        const tierVariantIds = Object.keys(tierAddon.variants).map((key) => {
+          if (key.includes('ProductVariant/')) {
+            return parseInt(key.split('/').pop() ?? '0', 10);
+          }
+          return parseInt(key, 10);
+        });
+        const variant = item.variants.find((v) => tierVariantIds.includes(v.id));
+        if (variant) return variant;
+      }
+    }
+
+    const productGid = `gid://shopify/Product/${allowedId}`;
+    const configuredVariantGids = Object.keys(
+      this.config.addOnProductProperties[productGid]?.variants ?? {}
+    );
+    return item.variants.find((v) =>
+      configuredVariantGids.includes(`gid://shopify/ProductVariant/${v.id}`)
+    ) ?? item.variants[0];
+  }
+
+  autoAddAddOns() {
+    if (!this.config) return;
+    const { allowedIds, maximum } = this.getAddOnsConfig();
+
+    this.clearAddOns(false);
+
+    let selectedQuantity = 0;
+    for (const allowedId of allowedIds) {
+      const item = this.config.addOnProducts.find((product) => product.id === allowedId);
+      if (!item) continue;
+
+      const variant = this.getAutoAddOnVariant(allowedId, item);
+      if (!variant) continue;
+
+      this.selectedAddOns.set(variant.id, {
+        ...variant,
+        foxsell_price: this.getAddOnPriceForCurrentTier(item.id, variant.id),
+        product: {
+          ...item,
+          featured_image: {
+            src: item.featured_image,
+            alt: item.title,
+          },
+        },
+        quantity: 1,
+      });
+      selectedQuantity += 1;
+      if (selectedQuantity >= maximum) break;
+    }
+  }
+
   toggleContinueButton() {
     if(!this.config) return;
 
