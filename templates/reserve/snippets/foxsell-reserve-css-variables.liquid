@@ -1,0 +1,48 @@
+{% doc %}
+  Renders the FoxSell CSS Variables component.
+
+  @param {section} section - The section to be rendered
+    @example
+    {% render 'foxsell-reserve-css-variables', section: section %}
+{% enddoc %}
+
+{% liquid
+  assign color_background = section.settings.background | default: '#FFFFFF'
+  assign color_text = section.settings.text | default: '#000000'
+  assign color_accent_1 = section.settings.accent_1 | default: '#FFE000'
+  assign color_accent_text_1 = section.settings.accent_text_1 | default: '#000000'
+  assign color_accent_2 = section.settings.accent_2 | default: '#000000'
+  assign color_accent_text_2 = section.settings.accent_text_2 | default: '#FFFFFF'
+  assign color_border = section.settings.border | default: '#E0E0E0'
+
+  assign card_border_radius = section.settings.card_border_radius | default: 5
+  assign button_border_radius = section.settings.button_border_radius | default: 5
+  assign section_base_font_size = section.settings.section_base_font_size | default: 16
+%}
+
+{% style %}
+  .foxsell-mix-match--{{ section.id }} {
+    --foxsell-color-background: {{ color_background }};
+    --foxsell-color-foreground: {{ color_text }};
+    --foxsell-color-accent-1: {{ color_accent_1 }};
+    --foxsell-color-accent-text-1: {{ color_accent_text_1 }};
+    --foxsell-color-accent-2: {{ color_accent_2 }};
+    --foxsell-color-accent-text-2: {{ color_accent_text_2 }};
+    --foxsell-color-border: {{ color_border }};
+    --foxsell-radius-card: {{ card_border_radius }}px;
+    --foxsell-radius-button: {{ button_border_radius }}px;
+    
+    --foxsell-product-grid-columns-mobile: 1;
+    --foxsell-product-grid-columns-desktop: 1;
+    --foxsell-product-grid-column-gap: 8px;
+    --foxsell-product-grid-row-gap: 16px;
+
+    /* Font size scale (1rem = 16px at browser default) */
+    --foxsell-text-xs: {{ section_base_font_size | times: 0.75 }}px;
+    --foxsell-text-sm: {{ section_base_font_size | times: 0.875 }}px;
+    --foxsell-text-md: {{ section_base_font_size | times: 0.9375 }}px;
+    --foxsell-text-base: {{ section_base_font_size }}px;
+    --foxsell-text-lg: {{ section_base_font_size | times: 1.125 }}px;
+    --foxsell-text-xl: {{ section_base_font_size | times: 1.25 }}px;
+  }
+{% endstyle %}
