@@ -1,6 +1,12 @@
 # FoxSell Shade Template
 
-The Shade template is a FoxSell dynamic add-ons bundle app block. It is designed for themes that support product page blocks and need bundle placement inside an existing product template instead of a separate product JSON template.
+Shade is a ready-to-use FoxSell bundle template for freelancers, developers, and agencies building PDP-first bundle experiences for Shopify clients. It ships as a theme app block, making it a good fit when the bundle UI needs to sit inside an existing product page instead of using a separate product JSON template.
+
+## Demo
+
+Demo store: [The Complete Lip & Glow Set](https://tools.foxsell.app/tools/fox-demo-delight/store?app=foxsell-bundles-plus&path=/products/the-complete-lip-glow-set)
+
+![FoxSell Shade demo store screenshot](docs/demo-store.png)
 
 ## Files
 
@@ -14,14 +20,11 @@ The Shade template is a FoxSell dynamic add-ons bundle app block. It is designed
 ## Features
 
 - App block placement for product pages.
-- Dynamic add-ons bundle rendering from the current product or selected bundle product.
+- FoxSell-compatible dynamic add-ons bundle rendering from the current product or selected bundle product.
+- Variant-heavy fixed-set bundle UI for cosmetics, beauty, and similar curated product sets.
 - Configurable product cards, variant style, swatches, colors, radius, and button text.
 - Product modal for item details.
 - Works without adding a dedicated product JSON template.
-
-## Demo
-
-[View the cosmetics bundle demo](https://tools.foxsell.app/tools/fox-demo-delight/store?app=foxsell-bundles-plus&path=/products/the-complete-lip-glow-set) to see the Shade template used for a beauty bundle with more than three selectable options, 4,000+ variant combinations, and a makeup bag upsell.
 
 ## Installation
 
@@ -33,4 +36,4 @@ The Shade template is a FoxSell dynamic add-ons bundle app block. It is designed
 ## Notes
 
 - The block renders only when the resolved product has FoxSell dynamic add-ons bundle configuration.
-- Use this template when bundle placement should live inside an existing product page layout.
+- Use this template when a client needs a pre-built FoxSell bundle block embedded in an existing product page layout.
