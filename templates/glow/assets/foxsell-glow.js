@@ -737,6 +737,8 @@ class GlowMixMatch extends FoxSellMixMatch {
     super();
     this.currentView = 'items';
 
+    this._lastValidOptionId = null;
+
     this.boundToggleToItems = this.toggleToItems.bind(this);
     this.boundToggleToAddOns = this.toggleToAddOns.bind(this);
 
@@ -767,6 +769,24 @@ class GlowMixMatch extends FoxSellMixMatch {
     if(this.continueButton && this.returnButton) {
       this.toggleContinueButton();
     }
+  }
+
+  validateAddOns(isItemsValid) {
+    const qaoEnabled = (this.config?.options?.length ?? 0) > 0;
+    if (qaoEnabled) {
+      const currentOption = this.getCurrentValidOption();
+      const currentOptionId = currentOption?.variant_id ?? null;
+
+      if (
+        this._lastValidOptionId != null &&
+        currentOptionId !== this._lastValidOptionId &&
+        this.getSelectedAddOns().length > 0
+      ) {
+        this.clearAddOns(false);
+      }
+      this._lastValidOptionId = currentOptionId;
+    }
+    return super.validateAddOns(isItemsValid);
   }
 
   toggleContinueButton() {
@@ -1059,6 +1079,7 @@ class FoxSellProductCard extends HTMLElement {
     }
 
     if (action === 'refresh') {
+      this.updatePrice();
       this.updateQuantity(this.getCurrentQuantity());
       return;
     }
@@ -1080,6 +1101,7 @@ class FoxSellProductCard extends HTMLElement {
 
     this.disableAddToBundle = disableAddToBundle || this.isCurrentVariantAtInventoryLimit();
     this.toggleAddToBundleButton(this.disableAddToBundle);
+    this.updatePrice();
     this.updateQuantity(this.getCurrentQuantity());
   }
 
@@ -1111,6 +1133,12 @@ class FoxSellProductCard extends HTMLElement {
     if (!this.variantSelector || !this.foxsell || !this.foxsell.bundle) return;
     const priceEl = this.querySelector('.foxsell-product-card__price');
     if (!priceEl) return;
+
+    if(this.isAddOnCard) {
+      this.variantSelector.variantData = undefined;
+      this.variantSelector.getVariantData();
+      this.variantSelector.updateMasterId();
+    }
 
     const { currentVariant, product } = this.variantSelector;
     let price = currentVariant?.foxsell_price ?? currentVariant?.product?.price ?? product?.price ?? 0;
@@ -1184,6 +1212,10 @@ class FoxSellVariantRadio extends HTMLElement {
     super();
 
     this.productCard = null;
+
+    this.foxsell = this.closest('foxsell-mix-match');
+
+    this.isAddOnCard = this.getAttribute('data-add-on-product') === 'true';
     this.boundOnVariantChange = this.onVariantChange.bind(this);
   }
 
@@ -1232,10 +1264,21 @@ class FoxSellVariantRadio extends HTMLElement {
 
       const raw = Array.isArray(parsed.available_variants) ? parsed.available_variants : (Array.isArray(parsed) ? parsed : []);
 
+      let allowed_variants = parsed.allowed_variants;
+      if(this.foxsell && this.isAddOnCard) {
+        const currentValidOption = this.foxsell.getCurrentValidOption();
+        if(currentValidOption) {
+          const currentValidAddon = currentValidOption.add_on_products.find(addon => addon.id === String(parsed.product.id));
+          if(currentValidAddon) {
+            allowed_variants = currentValidAddon.variants;
+          }
+        }
+      }
+
       this.variantData = raw.map(v => ({
         ...v,
         product: parsed.product ?? null,
-        foxsell_price: this.getFoxSellPrice(parsed.allowed_variants, v.id)
+        foxsell_price: this.getFoxSellPrice(allowed_variants, v.id)
       }));
 
       this.product = parsed.product ?? null;
