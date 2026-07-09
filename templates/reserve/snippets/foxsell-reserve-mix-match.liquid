@@ -55,7 +55,17 @@
       {{ section.settings.category_preview_placeholder_image | image_url: width: 150 | image_tag }}
     {% endif %}
   </div>
-  <div class="foxsell-category__preview-info">Select Item</div>
+  <div class="foxsell-category__preview-info">{{ section.settings.select_item_label | default: 'Select Item' }}</div>
+  {{ chevron_down_icon }}
+{% endcapture %}
+
+{% capture add_on_preview_content %}
+  <div class="foxsell-category__preview-image" style="--foxsell-image-aspect-ratio: {{ image_aspect_ratio }};">
+    {% if section.settings.category_preview_placeholder_image %}
+      {{ section.settings.category_preview_placeholder_image | image_url: width: 150 | image_tag }}
+    {% endif %}
+  </div>
+  <div class="foxsell-category__preview-info">{{ section.settings.select_add_on_label | default: 'Select Item' }}</div>
   {{ chevron_down_icon }}
 {% endcapture %}
 
@@ -153,7 +163,7 @@
           <details class="foxsell-category__dropdown">
             <summary>
               <foxsell-category-preview data-category-id="__add_ons__" class="foxsell-category__preview">
-                {{ category_preview_content }}
+                {{ add_on_preview_content }}
               </foxsell-category-preview>
             </summary>
             <div class="foxsell-category__product-grid foxsell-category__dropdown-content">
