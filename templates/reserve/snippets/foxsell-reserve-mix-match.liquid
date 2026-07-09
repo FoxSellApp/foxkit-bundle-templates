@@ -73,7 +73,7 @@
 <link rel="stylesheet" href="{{ 'foxsell-reserve.css' | asset_url }}">
 {% # theme-check-enable %}
 
-<foxsell-mix-match class="foxsell-mix-match foxsell-mix-match--{{ section.id }}" data-bundle-id="{{ bundle_id }}">
+<foxsell-mix-match id="foxsell-mix-match--{{ section.id }}" class="foxsell-mix-match" data-bundle-id="{{ bundle_id }}">
   <div class="foxsell-mix-match__container">
     <div class="foxsell-mix-match__price-container">{{ 0 | money }}</div>
     
