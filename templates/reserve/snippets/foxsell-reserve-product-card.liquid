@@ -55,7 +55,21 @@
   {% for variant in product.variants %}
     {% assign current_variant_id = variant.id | append: '' %}
     {% if allowed_ids_array contains current_variant_id %}
-      {% if variant.available and variant.inventory_quantity > quantity %}
+      {% liquid
+        assign has_inventory = true
+      
+        if variant.inventory_management == 'shopify'
+          if variant.inventory_policy == 'deny'
+            if variant.inventory_quantity > quantity
+              assign has_inventory = true
+            else
+              assign has_inventory = false
+            endif
+          endif
+        endif
+      %}
+      
+      {% if has_inventory %}
         <foxsell-variant-card
           class="foxsell-product-card"
           data-product-id="{{ product.id }}"
