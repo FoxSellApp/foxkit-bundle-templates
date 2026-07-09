@@ -135,7 +135,11 @@ foxsell-mix-match {
 
 .foxsell-category__product-grid.foxsell-category__dropdown-content {
   border: 1px solid var(--foxsell-color-border);
+  background: var(--foxsell-color-background);
   border-top: none;
+  position: absolute;
+  width: 100%;
+  z-index: 10;
 }
 
 .foxsell-category__product-grid.foxsell-category__dropdown-content > .foxsell-product-card:not(:last-child) {
@@ -216,6 +220,7 @@ foxsell-mix-match {
 
 .foxsell-category__dropdown {
   user-select: none;
+  position: relative;
 }
 
 .foxsell-category__dropdown:open .foxsell-category__preview {
