@@ -49,7 +49,7 @@
 <link rel="stylesheet" href="{{ 'foxsell-base.css' | asset_url }}">
 {% # theme-check-enable %}
 
-<foxsell-mix-match class="foxsell-mix-match" data-bundle-id="{{ bundle_id }}">
+<foxsell-mix-match id="foxsell-mix-match--{{ section.id }}" class="foxsell-mix-match" data-bundle-id="{{ bundle_id }}">
   <div class="foxsell-mix-match__container">
     {% comment %} Bundle summary header {% endcomment %}
     {% render 'foxsell-base-bundle-summary', section: section, options: options, view: 'header', header_class: 'foxsell-mobile-header' %}
@@ -147,6 +147,7 @@
             <input type="hidden" name="properties[__foxsell:dynamic_add_on_bundle_id]" value="{{ bundle_id }}">
             <input type="hidden" name="properties[__foxsell:dynamic_add_on_bundle_items]" value="">
             <input type="hidden" name="properties[__foxsell:dynamic_add_on_bundle_savings]" value="">
+            <span class="foxsell-product-form__error" role="alert"></span>
             <button type="submit" class="foxsell--button foxsell--button-full-width" disabled>{{ section.settings.button_atc_text | default: 'Add to Cart' }}</button>
           {% endform %}
         </foxsell-product-form>
