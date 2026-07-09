@@ -1,0 +1,104 @@
+{% doc %}
+  Renders a product card for the FoxSell Mix Match.
+  @param {product} product - The product to be rendered
+  @param {string} category_title - The category title of the product to be rendered
+  @param {object} allowed_variants - The allowed variants for the product
+  @param {string} image_aspect_ratio - The aspect ratio of the image, either 'original' or 'square'
+  @param {number} quantity - The quantity of the product to be rendered
+  @param {number} [category_products_count] - Total products in the category (for auto-add)
+  @param {string} [add_on_strategy] - The add-on strategy to be used, either 'automatic_add' or 'manual_add'
+
+  @param {boolean} [show_price] - Whether to show the price of the product
+  @param {boolean} [show_secondary_image_on_hover] - Defaults to false unless passed.
+
+  @example
+  {% render 'foxsell-reserve-product-card', section: section, product: product %}
+{% enddoc %}
+
+{% liquid
+  assign show_secondary_image_on_hover = show_secondary_image_on_hover | default: false
+  assign image_aspect_ratio = image_aspect_ratio | default: 'original'
+  assign image_class = 'js foxsell-product-card__image foxsell--image-' | append: image_aspect_ratio
+  unless category_title == '__add_ons__'
+    assign category_title = category_title | sha1
+  endunless
+
+  assign secondary_image = blank
+  if show_secondary_image_on_hover and product.images.size > 1 and product.featured_image
+    for image in product.images
+      if image.id != product.featured_image.id
+        assign secondary_image = image
+        break
+      endif
+    endfor
+  endif
+
+  assign allowed_ids = ''
+  for allowed_variant in allowed_variants
+    assign variant_id = allowed_variant[0] | split: 'ProductVariant/' | last | times: 1
+    unless allowed_ids == blank
+      assign allowed_ids = allowed_ids | append: ','
+    endunless
+    assign allowed_ids = allowed_ids | append: variant_id
+  endfor
+  assign allowed_ids_array = allowed_ids | split: ','
+
+  assign image_aspect_ratio_value = product.featured_image.aspect_ratio | default: 1
+
+  assign auto_add = false
+  if category_products_count == 1 and allowed_variants.size == 1
+    assign auto_add = true
+  endif
+%}
+
+{% paginate product.variants by 250 %}
+  {% for variant in product.variants %}
+    {% assign current_variant_id = variant.id | append: '' %}
+    {% if allowed_ids_array contains current_variant_id %}
+      {% if variant.available and variant.inventory_quantity > quantity %}
+        <foxsell-variant-card
+          class="foxsell-product-card"
+          data-product-id="{{ product.id }}"
+          data-variant-id="{{ variant.id }}"
+          data-quantity="{{ quantity }}"
+          data-category="{{ category_title }}"
+          {% if auto_add %}data-auto-add="true"{% endif %}
+          style="--foxsell-image-aspect-ratio: {{ image_aspect_ratio_value }};"
+        >
+          <div class="foxsell-product-card__image-wrapper">
+            <div class="foxsell-product-card__media">
+              {{ variant.featured_image | default: product.featured_image | image_url: width: 150 | image_tag: class: image_class }}
+              {% if secondary_image != blank %}
+                {% assign secondary_image_class = image_class | append: ' foxsell-product-card__image--secondary' %}
+                {{ secondary_image | image_url: width: 150 | image_tag: class: secondary_image_class }}
+              {% endif %}
+            </div>
+          </div>
+          <div class="foxsell-product-card__info">
+            <div class="foxsell-product-card__title">{{ product.title }}</div>
+            {% unless product.has_only_default_variant %}
+              <div class="foxsell-product-card__variant-title">{{ variant.title }}</div>
+            {% endunless %}
+            {% if add_on_strategy == 'automatic_add' and category_title == '__add_ons__' %}
+              <div class="js foxsell-product-card__price">{{ variant.price | money }}</div>
+            {% endif %}
+          </div>
+          
+          {% unless add_on_strategy == 'automatic_add' and category_title == '__add_ons__' %}
+            {% if show_price %}
+            <div class="js foxsell-product-card__price">{{ variant.price | money }}</div>
+            {% endif %}
+          {% endunless %}
+  
+          <script type="application/json">
+            {
+              "allowed_variants": {{ allowed_variants | json }},
+              "product": {{ product | json }},
+              "variant": {{ variant | json }}
+            }
+          </script>
+        </foxsell-variant-card>
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+{% endpaginate %}

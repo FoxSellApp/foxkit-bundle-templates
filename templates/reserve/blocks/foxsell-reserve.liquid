@@ -1,0 +1,146 @@
+{% liquid
+  assign app_namespace = 'app--67872686081'
+  assign bundle_product = block.settings.bundle_product
+  assign dynamic_add_ons_bundle_config = bundle_product.metafields[app_namespace].dynamic_add_ons_bundle.value
+%}
+
+{% if dynamic_add_ons_bundle_config %}
+  <div class="foxsell-mix-match-section foxsell-mix-match-wrapper" {{ block.shopify_attributes }}>
+    {% render 'foxsell-reserve-mix-match', product: bundle_product, section: block %}
+  </div>
+{% endif %}
+
+{% schema %}
+{
+  "name": "FoxSell Reserve",
+  "settings": [
+    {
+      "type": "product",
+      "id": "bundle_product",
+      "label": "Bundle product"
+    },
+    {
+      "type": "number",
+      "id": "section_base_font_size",
+      "label": "Base font size",
+      "default": 16
+    },
+    {
+      "type": "header",
+      "content": "Color scheme"
+    },
+    {
+      "type": "color",
+      "id": "background",
+      "label": "Background",
+      "default": "#FFFFFF",
+      "info": "Product cards and bundle summary"
+    },
+    {
+      "type": "color",
+      "id": "text",
+      "label": "Text",
+      "default": "#000000"
+    },
+    {
+      "type": "color",
+      "id": "accent_1",
+      "label": "Accent 1",
+      "default": "#FFE000"
+    },
+    {
+      "type": "color",
+      "id": "accent_text_1",
+      "label": "Accent 1 text",
+      "default": "#000000"
+    },
+    {
+      "type": "color",
+      "id": "border",
+      "label": "Border",
+      "default": "#E0E0E0"
+    },
+    {
+      "type": "header",
+      "content": "Border radius"
+    },
+    {
+      "type": "range",
+      "id": "card_border_radius",
+      "label": "Card",
+      "default": 5,
+      "min": 0,
+      "max": 25,
+      "step": 1,
+      "unit": "px"
+    },
+    {
+      "type": "range",
+      "id": "button_border_radius",
+      "label": "Button",
+      "default": 5,
+      "min": 0,
+      "max": 50,
+      "step": 1,
+      "unit": "px"
+    },
+    {
+      "type": "header",
+      "content": "Product card"
+    },
+    {
+      "type": "select",
+      "id": "product_card_image_aspect_ratio",
+      "label": "Image size",
+      "options": [
+        {
+          "value": "original",
+          "label": "Original"
+        },
+        {
+          "value": "square",
+          "label": "Square"
+        }
+      ],
+      "default": "original"
+    },
+    {
+      "type": "checkbox",
+      "id": "product_card_secondary_image_on_hover",
+      "label": "Show secondary image on hover",
+      "default": false
+    },
+    {
+      "type": "header",
+      "content": "Category preview"
+    },
+    {
+      "type": "image_picker",
+      "id": "category_preview_placeholder_image",
+      "label": "Placeholder image",
+      "info": "Shown before an item is selected for the category."
+    },
+    {
+      "type": "header",
+      "content": "Locale settings"
+    },
+    {
+      "type": "text",
+      "id": "add_ons_category_title",
+      "label": "Add-ons category title",
+      "default": "Add-ons"
+    },
+    {
+      "type": "text",
+      "id": "discount_label",
+      "label": "Discount label",
+      "default": "save _discount%"
+    }
+  ],
+  "presets": [
+    {
+      "name": "FoxSell Reserve"
+    }
+  ]
+}
+{% endschema %}
