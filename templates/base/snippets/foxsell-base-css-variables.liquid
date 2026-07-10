@@ -10,6 +10,7 @@
   assign product_grid_columns_mobile = section.settings.product_grid_columns_mobile
   assign product_grid_columns_desktop = section.settings.product_grid_columns_desktop
   assign product_grid_gap = section.settings.product_grid_gap | default: 16
+  assign summary_sticky_top_desktop = section.settings.summary_sticky_top_desktop | default: 50
 
   assign color_background = section.settings.background | default: '#FFFFFF'
   assign color_text = section.settings.text | default: '#000000'
@@ -39,6 +40,7 @@
     --foxsell-product-grid-columns-desktop: {{ product_grid_columns_desktop }};
     --foxsell-product-grid-column-gap: {{ product_grid_gap }}px;
     --foxsell-product-grid-row-gap: {{ product_grid_gap | plus: 8 }}px;
+    --foxsell-summary-sticky-top-desktop: {{ summary_sticky_top_desktop }}px;
 
     /* Font size scale (1rem = 16px at browser default) */
     --foxsell-text-xs: {{ section_base_font_size | times: 0.75 }}px;
