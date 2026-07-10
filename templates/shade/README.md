@@ -19,10 +19,6 @@ The Shade template is a FoxSell dynamic add-ons bundle app block. It is designed
 - Product modal for item details.
 - Works without adding a dedicated product JSON template.
 
-## Demo
-
-[View the cosmetics bundle demo](https://tools.foxsell.app/tools/fox-demo-delight/store?app=foxsell-bundles-plus&path=/products/the-complete-lip-glow-set) to see the Shade template used for a beauty bundle with more than three selectable options, 4,000+ variant combinations, and a makeup bag upsell.
-
 ## Installation
 
 1. Copy the files from each directory into the matching Shopify theme directory.
