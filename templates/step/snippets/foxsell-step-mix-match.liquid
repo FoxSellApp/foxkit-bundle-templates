@@ -56,7 +56,7 @@
 <link rel="stylesheet" href="{{ 'foxsell-step.css' | asset_url }}">
 {% # theme-check-enable %}
 
-<foxsell-mix-match class="foxsell-mix-match" data-bundle-id="{{ bundle_id }}">
+<foxsell-mix-match id="foxsell-mix-match--{{ section.id }}" class="foxsell-mix-match" data-bundle-id="{{ bundle_id }}">
   <div class="foxsell-mix-match__container">
     {% comment %} Category table {% endcomment %}
     <div class="foxsell-category__table">
@@ -225,6 +225,7 @@
             <input type="hidden" name="properties[__foxsell:dynamic_add_on_bundle_id]" value="{{ bundle_id }}">
             <input type="hidden" name="properties[__foxsell:dynamic_add_on_bundle_items]" value="">
             <input type="hidden" name="properties[__foxsell:dynamic_add_on_bundle_savings]" value="">
+            <span class="foxsell-product-form__error" role="alert"></span>
             <div class="foxsell-mix-match__step-navigation-wrapper">
               <button type="button" data-direction="previous" class="foxsell--button foxsell--button-ghost foxsell-step-navigation-button--previous">
                 {{ arrow_left_svg }} <span>{{ section.settings.button_back_text | default: 'Back' }}</span>
