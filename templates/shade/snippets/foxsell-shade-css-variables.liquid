@@ -9,6 +9,7 @@
 {% liquid
   assign product_grid_columns_mobile = 1
   assign product_grid_columns_desktop = 1
+  assign summary_sticky_top_desktop = section.settings.summary_sticky_top_desktop | default: 50
   assign product_card_gap = section.settings.product_card_gap | default: 16
 
   assign color_background = section.settings.background | default: '#FFFFFF'
@@ -26,7 +27,7 @@
 %}
 
 {% style %}
-  #shopify-block-{{ section.id }} {
+  #foxsell-mix-match--{{ section.id }} {
     --foxsell-color-background: {{ color_background }};
     --foxsell-color-foreground: {{ color_text }};
     --foxsell-color-accent-1: {{ color_accent_1 }};
@@ -41,6 +42,7 @@
     --foxsell-product-grid-columns-desktop: {{ product_grid_columns_desktop }};
     --foxsell-product-grid-column-gap: {{ product_card_gap }}px;
     --foxsell-product-grid-row-gap: {{ product_card_gap }}px;
+    --foxsell-summary-sticky-top-desktop: {{ summary_sticky_top_desktop }}px;
 
     /* Font size scale (1rem = 16px at browser default) */
     --foxsell-text-xs: {{ section_base_font_size | times: 0.75 }}px;
