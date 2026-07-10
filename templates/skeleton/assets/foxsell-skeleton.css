@@ -19,9 +19,15 @@ foxsell-mix-match fieldset label {
 }
 
 .fieldset--radio label {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
   padding-block: var(--foxsell-space-1);
   padding-inline: var(--foxsell-space-2);
   border: 1px solid black;
+  line-height: 1;
 }
 
 .fieldset--radio label:has(input:checked) {
@@ -55,6 +61,18 @@ foxsell-mix-match img {
   display: block;
 }
 
+.foxsell-product-form__error {
+  color: #b42318;
+  display: block;
+  line-height: 1.4;
+  font-size: var(--foxsell-text-xs);
+  padding-bottom: var(--foxsell-space-2);
+  display: none!important;
+}
+
+.foxsell-product-form__error.active {
+  display: block!important;
+}
 
 .foxsell-mix-match__container {
   display: grid;
@@ -544,7 +562,7 @@ foxsell-bundle-progress.foxsell-desktop-header {
 
   .foxsell-mix-match__summary {
     position: sticky;
-    top: 1rem;
+    top: var(--foxsell-summary-sticky-top-desktop, 50px);
     padding: 0;
   }
 }
