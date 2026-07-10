@@ -2077,6 +2077,15 @@ class StepFoxSellProductModal extends FoxSellProductModal {
 }
 
 class FoxSellProductForm extends HTMLElement {
+
+  constructor() {
+    super();
+    this.errorMessages = {
+      cartAddFailed: "There was an error adding the item to the cart",
+      outOfStock: "Some of the items are out of stock",
+    };
+  }
+
   connectedCallback() {
     this.addEventListener('submit', this.handleSubmit);
   }
@@ -2096,8 +2105,25 @@ class FoxSellProductForm extends HTMLElement {
     return attributes;
   }
 
+  showError(error) {
+    const errorElement =  (this.querySelector('.foxsell-product-form__error'));
+    if (errorElement) {
+      errorElement.textContent = error.message;
+      errorElement.classList.add('active');
+    }
+  }
+
+  clearError() {
+    const errorElement =  (this.querySelector('.foxsell-product-form__error'));
+    if (errorElement) {
+      errorElement.textContent = '';
+      errorElement.classList.remove('active');
+    }
+  }
+
   async handleSubmit(event) {
     event.preventDefault();
+    this.clearError();
 
     const form = event.target;
     if(!(form instanceof HTMLFormElement)) return;
@@ -2106,24 +2132,42 @@ class FoxSellProductForm extends HTMLElement {
     if (submitButton) submitButton.disabled = true;
 
     const formData = new FormData( (form));
-    try {
-      const result = await window.Shopify.actions.updateCart({
-        lines: [{
-          merchandiseId: `gid://shopify/ProductVariant/${formData.get("id")}`,
-          quantity: parseInt(String(formData.get('quantity') ?? '1'), 10),
-          attributes: this.getLineAttributes(formData)
-        }]
-      });
 
-      if(result.userErrors?.length) {
-        throw new Error("There was a error adding items to cart");
+    if (!window.Shopify.actions.updateCart.isDefault()) {
+      try {
+        const result = await window.Shopify.actions.updateCart({
+          lines: [{
+            merchandiseId: `gid://shopify/ProductVariant/${formData.get("id")}`,
+            quantity: parseInt(String(formData.get('quantity') ?? '1'), 10),
+            attributes: this.getLineAttributes(formData)
+          }]
+        });
+
+        if(result.warnings?.length || result.userErrors?.length) {
+          const warnings =  (result.warnings) || [];
+          const userErrors =  (result.userErrors) || [];
+
+          if(userErrors.length) {
+            throw new Error(this.errorMessages.cartAddFailed);
+          }
+
+          const warning = warnings.find((warning) => {
+            return (warning.code === "MERCHANDISE_OUT_OF_STOCK" || warning.code === "MERCHANDISE_NOT_ENOUGH_STOCK");
+          });
+
+          if (warning) {
+            throw new Error(this.errorMessages.outOfStock);
+          }
+        }
+        await window.Shopify.actions.openCart();
+      } catch (error) {
+        this.showError(error);
       }
-
-      await window.Shopify.actions.openCart();
-    } catch (error) {
+      finally {
+        if (submitButton) submitButton.disabled = false;
+      }
+    } else {
       form.submit();
-    } finally {
-      if (submitButton) submitButton.disabled = false;
     }
   }
 }
