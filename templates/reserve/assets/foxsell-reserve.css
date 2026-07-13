@@ -270,6 +270,10 @@ foxsell-mix-match {
   border-bottom-left-radius: var(--foxsell-radius-card);
   border-bottom-right-radius: var(--foxsell-radius-card);
 }
+
+.foxsell-mix-match__price-container {
+  padding-block: var(--foxsell-space-2);
+}
 /* Category header — < .foxsell-category__item gap */
 .foxsell-category__header {
   display: flex;

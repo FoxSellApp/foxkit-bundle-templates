@@ -80,46 +80,14 @@
     {% comment %} Category list {% endcomment %}
     <div class="foxsell-category__list">
       {% for category in categories %}
-        <div class="foxsell-category__item" data-category="{{ category.title | sha1 }}">
-          <div data-category-id="{{ category.title | sha1 }}" class="foxsell-category__header">
-            <div class="foxsell-category__title">{{ category.title }}</div>
-          </div>
-          <details class="foxsell-category__dropdown">
-            <summary>
-              <foxsell-category-preview data-category-id="{{ category.title | sha1 }}" class="foxsell-category__preview">
-                {{ category_preview_content }}
-              </foxsell-category-preview>
-            </summary>
-            <div class="foxsell-category__product-grid foxsell-category__dropdown-content">
-              {% for p in category.products %}
-                {% liquid
-                  assign int_product_id = p.id | times: 1
-                  assign product_ref = null
-                  paginate products by 128
-                    for ref in products
-                      if ref.id == int_product_id
-                        assign product_ref = ref
-                        break
-                      endif
-                    endfor
-                  endpaginate
-                %}
-                {% if product_ref %}
-                  {% render 'foxsell-reserve-product-card',
-                    category_title: category.title,
-                    product: product_ref,
-                    allowed_variants: p.variants,
-                    category_products_count: category.products.size,
-                    show_price: product_card_show_price,
-                    image_aspect_ratio: product_card_image_aspect_ratio,
-                    show_secondary_image_on_hover: product_card_secondary_image_on_hover,
-                    quantity: category.quantity
-                  %}
-                {% endif %}
-              {% endfor %}
-            </div>
-          </details>
-        </div>
+        {% render 'foxsell-reserve-category', 
+          category: category, 
+          products: products, 
+          product_card_show_price: product_card_show_price, 
+          product_card_image_aspect_ratio: product_card_image_aspect_ratio, 
+          product_card_secondary_image_on_hover: product_card_secondary_image_on_hover, 
+          category_preview_content: category_preview_content 
+        %}
       {% endfor %}
   
       {% if additional_settings.add_on_settings.strategy == 'automatic_add' and add_on_products.size > 0 %}
