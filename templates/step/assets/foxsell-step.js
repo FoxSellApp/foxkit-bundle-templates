@@ -2161,13 +2161,47 @@ class FoxSellProductForm extends HTMLElement {
         }
         await window.Shopify.actions.openCart();
       } catch (error) {
-        this.showError(error);
+        this.showError( (error));
       }
       finally {
         if (submitButton) submitButton.disabled = false;
       }
     } else {
-      form.submit();
+      this.formSubmit(formData);
+    }
+  }
+
+  async formSubmit(formData) {
+    const properties = Object.fromEntries(
+      this.getLineAttributes(formData).map(({ key, value }) => [key, value])
+    );
+
+    const body = {
+      items: [{
+        id: formData.get("id"),
+        quantity: parseInt(String(formData.get('quantity') ?? '1'), 10),
+        properties,
+      }]
+    };
+
+    try {
+      const result = await fetch(window.Shopify.routes.root + 'cart/add.js', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if(result.ok) {
+        window.location.href = window.Shopify.routes.root + 'cart';
+      } else {
+        const data = await result.json();
+        if(data.status === 422) {
+          throw new Error(this.errorMessages.outOfStock);
+        }
+        throw new Error(data.message);
+      }
+    } catch (error) {
+      this.showError( (error));
     }
   }
 }
