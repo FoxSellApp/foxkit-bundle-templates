@@ -1,0 +1,405 @@
+{% liquid
+  assign app_namespace = 'app--67872686081'
+  assign bundle_product = section.settings.bundle_product
+  assign dynamic_add_ons_bundle_config = bundle_product.metafields[app_namespace].dynamic_add_ons_bundle.value
+  assign use_wrapper_class = section.settings.section_padding_use_wrapper_class | default: false
+%}
+
+{% if dynamic_add_ons_bundle_config %}
+  {% style %}
+    .foxsell-mix-match-section {
+      background-color: {{ section.settings.section_background | default: '#F5F5F5' }};
+      padding-top: {{ section.settings.section_padding_top | default: 28 }}px;
+      padding-bottom: {{ section.settings.section_padding_bottom | default: 28 }}px;
+      {% unless use_wrapper_class %}padding-inline: {{ section.settings.section_padding_sides_mobile | default: 16 }}px;{% endunless %}
+    }
+
+    @media screen and (min-width: 768px) {
+      .foxsell-mix-match-section {
+        padding-top: calc({{ section.settings.section_padding_top | default: 28 }}px * 1.5);
+        padding-bottom: calc({{ section.settings.section_padding_bottom | default: 28 }}px * 1.5);
+        {% unless use_wrapper_class %}padding-inline: {{ section.settings.section_padding_sides_desktop | default: 40 }}px;{% endunless %}
+      }
+    }
+  {% endstyle %}
+
+  {% liquid
+    assign wrapper_classes = 'foxsell-mix-match-wrapper'
+    if use_wrapper_class and section.settings.wrapper_custom_classes != blank
+      assign wrapper_classes = wrapper_classes | append: ' ' | append: section.settings.wrapper_custom_classes | strip
+    endif
+  %}
+  <div class="{{ wrapper_classes }}">
+    {% render 'foxsell-lore-mix-match', product: bundle_product, section: section %}
+  </div>
+{% endif %}
+
+{% schema %}
+{
+  "name": "FoxSell Lore",
+  "class": "foxsell-mix-match-section",
+  "settings": [
+    {
+      "type": "product",
+      "id": "bundle_product",
+      "label": "Bundle product"
+    },
+    {
+      "type": "color",
+      "id": "section_background",
+      "label": "Background",
+      "default": "#F5F5F5"
+    },
+    {
+      "type": "number",
+      "id": "section_base_font_size",
+      "label": "Base font size",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "section_padding_top",
+      "label": "Padding top",
+      "default": 28,
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "type": "range",
+      "id": "section_padding_bottom",
+      "label": "Padding bottom",
+      "default": 28,
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "type": "range",
+      "id": "section_padding_sides_mobile",
+      "label": "Padding sides (mobile)",
+      "default": 16,
+      "min": 0,
+      "max": 60,
+      "step": 2,
+      "unit": "px"
+    },
+    {
+      "type": "range",
+      "id": "section_padding_sides_desktop",
+      "label": "Padding sides (desktop)",
+      "default": 40,
+      "min": 0,
+      "max": 100,
+      "step": 2,
+      "unit": "px"
+    },
+    {
+      "type": "checkbox",
+      "id": "section_padding_use_wrapper_class",
+      "label": "Use wrapper class instead",
+      "default": false
+    },
+    {
+      "type": "text",
+      "id": "wrapper_custom_classes",
+      "label": "Wrapper CSS classes",
+      "info": "Add custom classes to the wrapper"
+    },
+    {
+      "type": "range",
+      "id": "scroll_offset",
+      "label": "Scroll offset",
+      "info": "Pixels to offset when scrolling to the bundle block (e.g. to clear a sticky header)",
+      "default": 85,
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px"
+    },
+    {
+      "type": "header",
+      "content": "Color scheme"
+    },
+    {
+      "type": "color",
+      "id": "background",
+      "label": "Background",
+      "default": "#FFFFFF",
+      "info": "Product cards and bundle summary"
+    },
+    {
+      "type": "color",
+      "id": "text",
+      "label": "Text",
+      "default": "#000000"
+    },
+    {
+      "type": "color",
+      "id": "accent_1",
+      "label": "Accent 1",
+      "default": "#000000"
+    },
+    {
+      "type": "color",
+      "id": "accent_text_1",
+      "label": "Accent 1 text",
+      "default": "#FFFFFF"
+    },
+    {
+      "type": "color",
+      "id": "accent_2",
+      "label": "Accent 2",
+      "default": "#000000"
+    },
+    {
+      "type": "color",
+      "id": "accent_text_2",
+      "label": "Accent 2 text",
+      "default": "#FFFFFF"
+    },
+    {
+      "type": "color",
+      "id": "border",
+      "label": "Border",
+      "default": "#E0E0E0"
+    },
+    {
+      "type": "header",
+      "content": "Border radius"
+    },
+    {
+      "type": "range",
+      "id": "card_border_radius",
+      "label": "Card",
+      "default": 0,
+      "min": 0,
+      "max": 25,
+      "step": 1,
+      "unit": "px"
+    },
+    {
+      "type": "range",
+      "id": "button_border_radius",
+      "label": "Button",
+      "default": 0,
+      "min": 0,
+      "max": 50,
+      "step": 1,
+      "unit": "px"
+    },
+    {
+      "type": "header",
+      "content": "Product grid"
+    },
+    {
+      "type": "select",
+      "id": "product_grid_columns_mobile",
+      "label": "Mobile",
+      "options": [
+        { 
+          "value": "1", 
+          "label": "1" 
+        },
+        { 
+          "value": "2", 
+          "label": "2" 
+        }
+      ],
+      "default": "2"
+    },
+    {
+      "type": "range",
+      "id": "product_grid_columns_desktop",
+      "label": "Desktop",
+      "default": 3,
+      "min": 1,
+      "max": 5,
+      "step": 1
+    },
+    {
+      "type": "range",
+      "id": "product_grid_gap",
+      "label": "Grid gap",
+      "default": 8,
+      "min": 0,
+      "max": 16,
+      "step": 2,
+      "unit": "px"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_category_navigation",
+      "label": "Show category navigation",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "hide_category_title",
+      "label": "Hide category titles",
+      "default": false,
+      "info": "Only applies when quantity options (QAO) are enabled."
+    },
+    {
+      "type": "header",
+      "content": "Product card"
+    },
+    {
+      "type": "select",
+      "id": "product_card_image_aspect_ratio",
+      "label": "Image size",
+      "options": [
+        {
+          "value": "original",
+          "label": "Original"
+        },
+        {
+          "value": "square",
+          "label": "Square"
+        }
+      ],
+      "default": "original"
+    },
+    {
+      "type": "checkbox",
+      "id": "product_card_secondary_image_on_hover",
+      "label": "Show secondary image on hover",
+      "default": false
+    },
+    {
+      "type": "select",
+      "id": "product_card_options_type",
+      "label": "Variant style",
+      "options": [
+        {
+          "value": "radio",
+          "label": "Radio"
+        },
+        {
+          "value": "select",
+          "label": "Select"
+        }
+      ],
+      "default": "select"
+    },
+    {
+      "type": "checkbox",
+      "id": "product_card_show_color_swatches",
+      "label": "Show color swatches",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "color_option_name",
+      "label": "Color option name",
+      "default": "Color",
+      "info": "The product option name to treat as a color swatch option."
+    },
+    {
+      "type": "textarea",
+      "id": "manual_color_swatches",
+      "label": "Manual color swatches",
+      "info": "Comma-separated option value to hex map. Example: Red: #FF0000, Blue: #0000FF"
+    },
+    {
+      "type": "header",
+      "content": "Bundle Summary"
+    },
+    {
+      "type": "text",
+      "id": "summary_title",
+      "label": "Title",
+      "default": "My Kit"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "summary_empty_state_text",
+      "label": "Empty state text",
+      "default": "No items in the bundle yet",
+      "info": "Formatting options [Learn more](https://foxsell.notion.site/progress-message-formatting-options)"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "summary_empty_state_body_text",
+      "label": "Empty state body text",
+      "default": "No items in bundle. Add items to your bundle to see the summary here.",
+      "info": "Shown in the summary panel when no items are added."
+    },
+    {
+      "type": "inline_richtext",
+      "id": "summary_progress_state_text",
+      "label": "Progress state text",
+      "default": "Select <strong>_remainingQuantity</strong> more item(s) to get <strong>_discount</strong> off.",
+      "info": "Use _currentQuantity for the current quantity and _requiredQuantity for the required quantity [Learn more](https://foxsell.notion.site/progress-message-formatting-options)"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "summary_end_state_text",
+      "label": "End state text",
+      "default": "Yay! bundle complete",
+      "info": "Formatting options [Learn more](https://foxsell.notion.site/progress-message-formatting-options)"
+    },
+    {
+      "type": "number",
+      "id": "summary_sticky_top_desktop",
+      "label": "Sticky offset",
+      "default": 50
+    },
+    {
+      "type": "header",
+      "content": "Locale settings"
+    },
+    {
+      "type": "text",
+      "id": "category_navigation_all_label",
+      "label": "Category navigation 'All' label",
+      "default": "All"
+    },
+    {
+      "type": "text",
+      "id": "button_atc_text",
+      "label": "Add to cart button text",
+      "default": "Add to Cart"
+    },
+    {
+      "type": "text",
+      "id": "button_add_to_bundle_text",
+      "label": "Add to bundle button text",
+      "default": "Add"
+    },
+    {
+      "type": "text",
+      "id": "add_ons_category_title",
+      "label": "Add-ons category title",
+      "default": "Add-ons"
+    },
+    {
+      "type": "text",
+      "id": "add_ons_line_item_label",
+      "label": "Add-on line item tag",
+      "default": "Add-On",
+      "info": "Tag shown on add-on items in the bundle summary."
+    },
+    {
+      "type": "text",
+      "id": "button_continue_text",
+      "label": "Continue button text",
+      "default": "Continue"
+    },
+    {
+      "type": "text",
+      "id": "button_return_text",
+      "label": "Return button text",
+      "default": "Return"
+    }
+  ],
+  "presets": [
+    {
+      "name": "FoxSell Lore",
+      "settings": {
+        "bundle_product": "{{ product }}"
+      }
+    }
+  ]
+}
+{% endschema %}
