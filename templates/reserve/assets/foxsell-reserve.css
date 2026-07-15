@@ -147,7 +147,7 @@ foxsell-mix-match {
 .foxsell-category__product-grid {
   display: grid;
   grid-template-columns: repeat(var(--foxsell-product-grid-columns-mobile, 1), 1fr);
-  max-height: 325px;
+  max-height: 200px;
   overflow-y: auto;
   overflow-x: hidden;
 }
