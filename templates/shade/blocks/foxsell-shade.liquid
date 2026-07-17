@@ -1,6 +1,6 @@
 {% liquid
   assign app_namespace = 'app--67872686081'
-  assign bundle_product = block.settings.bundle_product | default: product
+  assign bundle_product = block.settings.bundle_product | default: closest.product
   assign dynamic_add_ons_bundle_config = bundle_product.metafields[app_namespace].dynamic_add_ons_bundle.value
 %}
 
@@ -23,7 +23,7 @@
 
 {% schema %}
 {
-  "name": "FoxSell Shade",
+  "name": "FoxSell Shade Block",
   "settings": [
     {
       "type": "product",
@@ -232,11 +232,20 @@
       "id": "discount_label",
       "label": "Discount label",
       "default": "save _discount%"
+    },
+    {
+      "type": "text",
+      "id": "free_label",
+      "label": "Free label",
+      "default": "Free"
     }
   ],
   "presets": [
     {
-      "name": "FoxSell Shade"
+      "name": "FoxSell Shade Block",
+      "settings": {
+        "bundle_product": "{{ closest.product }}"
+      }
     }
   ]
 }
