@@ -1,30 +1,21 @@
 {% liquid
   assign app_namespace = 'app--67872686081'
-  assign bundle_product = section.settings.bundle_product
+  assign bundle_product = block.settings.bundle_product | default: closest.product
   assign dynamic_add_ons_bundle_config = bundle_product.metafields[app_namespace].dynamic_add_ons_bundle.value
 %}
 
 {% if dynamic_add_ons_bundle_config %}
-  <div class="{{ section.settings.wrapper_classes }}">
-    {% render 'foxsell-skeleton-mix-match', product: bundle_product, section: section %}
-  </div>
+  {% render 'foxsell-skeleton-mix-match', product: bundle_product, section: block %}
 {% endif %}
 
 {% schema %}
 {
-  "name": "FoxSell Skeleton",
+  "name": "FoxSell Skeleton Block",
   "settings": [
     {
       "type": "product",
       "id": "bundle_product",
       "label": "Bundle product"
-    },
-    {
-      "type": "text",
-      "id": "wrapper_classes",
-      "label": "Wrapper CSS classes",
-      "default": "section section--width",
-      "info": "Add custom classes to the wrapper"
     },
     {
       "type": "header",
@@ -168,14 +159,14 @@
       "type": "number",
       "id": "summary_sticky_top_desktop",
       "label": "Sticky offset",
-      "default": 50
+      "default": 75
     }
   ],
   "presets": [
     {
-      "name": "FoxSell Skeleton",
+      "name": "FoxSell Skeleton Block",
       "settings": {
-        "bundle_product": "{{ product }}"
+        "bundle_product": "{{ closest.product }}"
       }
     }
   ]
