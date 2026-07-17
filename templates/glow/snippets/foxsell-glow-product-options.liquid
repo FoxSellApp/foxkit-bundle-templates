@@ -4,7 +4,6 @@
   @param {product} product - The product to be rendered
   @param {object} allowed_variants - The allowed variants for the product
   @param {object} section - The section to be rendered
-  @param {boolean} add_on_product - Whether the product is an add-on product
   @param {string} [type] - The type of options to render, either 'radio' or 'select'
   @param {boolean} [show_color_swatches] - Whether to render color swatches for options that support them
   @param {string} [color_option_name] - The option name to treat as the color swatch option. Defaults to "Color".
@@ -124,7 +123,7 @@
 {% endcapture %}
 
 {% if type == 'radio' %}
-<foxsell-variant-radio class="foxsell-variant-radio" data-product-id="{{ product.id }}" data-add-on-product="{{ add_on_product }}">
+<foxsell-variant-radio class="foxsell-variant-radio" data-product-id="{{ product.id }}">
   {% for option in product.options_with_values %}
     {% liquid
       assign swatch_count = option.values | map: 'swatch' | compact | size
@@ -231,7 +230,7 @@
 {% endif %}
 
 {% if type == 'select' %}
-<foxsell-variant-select class="foxsell-variant-select" data-product-id="{{ product.id }}" data-first-variant-id="{{ first_available_variant.id }}" data-add-on-product="{{ add_on_product }}">
+<foxsell-variant-select class="foxsell-variant-select" data-product-id="{{ product.id }}" data-first-variant-id="{{ first_available_variant.id }}">
   {% for option in product.options_with_values %}
     {% liquid
       assign swatch_count = option.values | map: 'swatch' | compact | size

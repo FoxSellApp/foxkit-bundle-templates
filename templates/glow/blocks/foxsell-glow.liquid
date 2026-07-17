@@ -1,43 +1,16 @@
 {% liquid
   assign app_namespace = 'app--67872686081'
-  assign bundle_product = section.settings.bundle_product
+  assign bundle_product = block.settings.bundle_product | default: closest.product
   assign dynamic_add_ons_bundle_config = bundle_product.metafields[app_namespace].dynamic_add_ons_bundle.value
-  assign use_wrapper_class = section.settings.section_padding_use_wrapper_class | default: false
 %}
 
 {% if dynamic_add_ons_bundle_config %}
-  {% style %}
-    .foxsell-mix-match-section {
-      background-color: {{ section.settings.section_background | default: '#F5F5F5' }};
-      padding-top: {{ section.settings.section_padding_top | default: 28 }}px;
-      padding-bottom: {{ section.settings.section_padding_bottom | default: 28 }}px;
-      {% unless use_wrapper_class %}padding-inline: {{ section.settings.section_padding_sides_mobile | default: 16 }}px;{% endunless %}
-    }
-
-    @media screen and (min-width: 768px) {
-      .foxsell-mix-match-section {
-        padding-top: calc({{ section.settings.section_padding_top | default: 28 }}px * 1.5);
-        padding-bottom: calc({{ section.settings.section_padding_bottom | default: 28 }}px * 1.5);
-        {% unless use_wrapper_class %}padding-inline: {{ section.settings.section_padding_sides_desktop | default: 40 }}px;{% endunless %}
-      }
-    }
-  {% endstyle %}
-
-  {% liquid
-    assign wrapper_classes = 'foxsell-mix-match-wrapper'
-    if use_wrapper_class and section.settings.wrapper_custom_classes != blank
-      assign wrapper_classes = wrapper_classes | append: ' ' | append: section.settings.wrapper_custom_classes | strip
-    endif
-  %}
-  <div class="{{ wrapper_classes }}">
-    {% render 'foxsell-glow-mix-match', product: bundle_product, section: section %}
-  </div>
+  {% render 'foxsell-glow-mix-match', product: bundle_product, section: block %}
 {% endif %}
 
 {% schema %}
 {
-  "name": "FoxSell Glow",
-  "class": "foxsell-mix-match-section",
+  "name": "FoxSell Glow Block",
   "settings": [
     {
       "type": "product",
@@ -45,66 +18,10 @@
       "label": "Bundle product"
     },
     {
-      "type": "color",
-      "id": "section_background",
-      "label": "Background",
-      "default": "#F5F5F5"
-    },
-    {
       "type": "number",
       "id": "section_base_font_size",
       "label": "Base font size",
       "default": 16
-    },
-    {
-      "type": "range",
-      "id": "section_padding_top",
-      "label": "Padding top",
-      "default": 28,
-      "min": 0,
-      "max": 100,
-      "step": 1
-    },
-    {
-      "type": "range",
-      "id": "section_padding_bottom",
-      "label": "Padding bottom",
-      "default": 28,
-      "min": 0,
-      "max": 100,
-      "step": 1
-    },
-    {
-      "type": "range",
-      "id": "section_padding_sides_mobile",
-      "label": "Padding sides (mobile)",
-      "default": 16,
-      "min": 0,
-      "max": 60,
-      "step": 2,
-      "unit": "px"
-    },
-    {
-      "type": "range",
-      "id": "section_padding_sides_desktop",
-      "label": "Padding sides (desktop)",
-      "default": 40,
-      "min": 0,
-      "max": 100,
-      "step": 2,
-      "unit": "px"
-    },
-    {
-      "type": "checkbox",
-      "id": "section_padding_use_wrapper_class",
-      "label": "Use wrapper class instead",
-      "default": false
-    },
-    {
-      "type": "text",
-      "id": "wrapper_custom_classes",
-      "label": "Wrapper CSS classes",
-      "info": "Add custom classes to the wrapper"
     },
     {
       "type": "range",
@@ -408,9 +325,9 @@
   ],
   "presets": [
     {
-      "name": "FoxSell Glow",
+      "name": "FoxSell Glow Block",
       "settings": {
-        "bundle_product": "{{ product }}"
+        "bundle_product": "{{ closest.product }}"
       }
     }
   ]

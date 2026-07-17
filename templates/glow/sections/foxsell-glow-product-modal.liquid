@@ -7,12 +7,6 @@
   assign add_on_products = dynamic_add_ons_bundle_config.add_on_products.value
   assign add_on_product_properties = dynamic_add_ons_bundle_config.add_on_product_properties.value
   assign categories = dynamic_add_ons_bundle_config.categories.value
-  assign settings = dynamic_add_ons_bundle_config.settings.value
-
-  assign product_card_show_price = true
-  if settings.price.strategy == "fixed_pricing"
-    assign product_card_show_price = false
-  endif
 %}
  
 <div class="foxsell-mix-match" data-bundle-id="{{ bundle_id }}">
@@ -37,7 +31,6 @@
           product: product_ref,
           allowed_variants: p.variants,
           image_aspect_ratio: 'original',
-          show_price: product_card_show_price,
           type: 'select'
         %}
       {% endfor %}
@@ -61,7 +54,6 @@
           product: add_on,
           allowed_variants: allowed_variants,
           image_aspect_ratio: 'original',
-          show_price: true,
           type: 'select'
         %}
       {% endfor %}
