@@ -178,7 +178,8 @@
     "settings": {{ settings | json | replace: 'add_on', 'addOn' }},
     "locale": {
       "addOnsCategoryTitle": {{ section.settings.add_ons_category_title | default: 'Add-ons' | json }},
-      "discountLabel": {{ section.settings.discount_label | default: 'save _discount%' | json }}
+      "discountLabel": {{ section.settings.discount_label | default: 'save _discount%' | json }},
+      "freeLabel": {{ section.settings.free_label | default: 'Free' | json }}
     },
     "additionalSettings": {{ additional_settings | json }}
   }
