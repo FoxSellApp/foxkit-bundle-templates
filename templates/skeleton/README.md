@@ -80,6 +80,37 @@ Template source files use `default-template` as a placeholder, which the build r
 | --- | --- |
 | `product.default-template.json` | `product.foxsell-skeleton.json` |
 
+### Available Placeholders
+
+Use these placeholders in Liquid source files (snippets, sections, blocks, templates) — `build-utils.js` replaces them at build time with values derived from `foxkit.config.js`'s `name`.
+
+| Placeholder | Replaced with (example: `name: "Skeleton"`) | Typical use |
+| --- | --- | --- |
+| `<<foxkit-template-name>>` | `FoxSell Skeleton` | `{% schema %}` `"name"` / preset `"name"` fields |
+| `<<foxkit-template-slug>>` | `foxsell-skeleton` | Any other slug-style reference in Liquid content |
+| `<<foxkit-template-handle>>` | `skeleton` | Raw kebab-case handle, unprefixed |
+| `<<foxkit-default-block-slug>>` | `foxsell-skeleton` | `{% schema %}` block `"type"` referencing the renamed `default-block.liquid` (e.g. in a section's preset `"blocks"`) |
+| `foxsell.css` / `foxsell.js` | `foxsell-skeleton.css` / `foxsell-skeleton.js` | Liquid asset tag references (`{{ 'foxsell.css' \| asset_url }}`, etc.) |
+| `default-block.liquid` (filename) | `foxsell-skeleton.liquid` | Block **filenames** in `src/blocks/` (see [Blocks](#blocks-srcblocks)) |
+| `default-template` (filename segment) | `foxsell-skeleton` | Template **filenames** in `src/templates/` (see [Templates](#templates-srctemplates)) |
+
+> `{% render 'name' %}` references don't use a placeholder — any short snippet name is automatically prefixed to `foxsell-{template-name}-name` by the build.
+
+### Available Formatters (`build-utils.js`)
+
+Helper functions that implement the renaming/transform logic described above. Useful if you need to customize the build (e.g. in `rollup.config.js` / `rollup.dist.js`).
+
+| Function | Purpose |
+| --- | --- |
+| `toKebabCase(name)` | Converts a PascalCase/camelCase name (e.g. `MixMatch`) to kebab-case (e.g. `mix-match`) |
+| `createBlockRename(kebabCaseName)` | Returns a `(name, extension) => string` renamer for block files: `default-block` → `foxsell-{kebabCaseName}`, all other block files → `foxsell-{kebabCaseName}-{name}` |
+| `createTemplateRename(kebabCaseName)` | Returns a `(name, extension) => string` renamer for template files: `default-template` → `foxsell-{kebabCaseName}` |
+| `createLiquidRename(kebabCaseName)` | Returns a `(name, extension) => string` renamer for snippet/section files: prefixes `foxsell-{kebabCaseName}-` |
+| `createLiquidTransform(kebabCaseName, name)` | Returns a `(contents, filename) => string` content transform: replaces placeholder tokens, rewrites `{% render %}` references, and updates `foxsell.css`/`foxsell.js` asset refs |
+| `createTemplateTokenTransform(kebabCaseName, name)` | Returns a `(contents, filename) => string` content transform for non-Liquid text assets (e.g. compiled JS/CSS) — replaces only the placeholder tokens |
+| `removeStaleLiquidOutputs(...)` | Deletes previously-generated Liquid output files whose source no longer exists |
+| `staleLiquidOutputsThemePlugin(...)` / `staleLiquidOutputsDistPlugin(...)` | Rollup plugins wrapping `removeStaleLiquidOutputs` for `theme/` and `dist/<template>/` respectively |
+
 ## Development
 
 Start the development server for the Shopify theme and the bundle templates:
