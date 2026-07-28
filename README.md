@@ -55,7 +55,8 @@ Each template mirrors Shopify theme directories:
 
 ## Contributing
 
-1. Create a branch for your change.
-2. Update the template files and README together.
-3. Verify the file mapping still matches Shopify theme directories.
-4. Open a pull request with a summary and testing notes.
+Contributions are welcome. See [CONTRIBUTING.md](./CONTRIBUTING.md) for setup, guidelines, testing expectations, and pull request instructions.
+
+## License
+
+This project is licensed under the [MIT License](./LICENSE).
