@@ -1,32 +1,54 @@
-# FoxSell Shade Template
+<img src="https://cdn.shopify.com/s/files/1/0753/6957/8736/files/shade_banner.jpg?v=1785479496" alt="Shade preview" />
 
-The Shade template is a FoxSell dynamic add-ons bundle app block. It is designed for themes that support product page blocks and need bundle placement inside an existing product template instead of a separate product JSON template.
+**[View demo](https://tools.foxsell.app/tools/fox-demo-delight/store?app=foxsell-bundles-plus&path=/products/the-complete-lip-glow-set)**
 
-## Files
+---
 
-| Directory | Files | Purpose |
-| --- | --- | --- |
-| `assets/` | `foxsell-shade.css`, `foxsell-shade.js` | Styling and bundle interaction behavior. |
-| `blocks/` | `foxsell-shade.liquid` | Theme app block used to place the bundle in the Theme Editor. |
-| `sections/` | `foxsell-shade-product-modal.liquid` | Product modal section. |
-| `snippets/` | `foxsell-shade-*.liquid` | Product cards, options, CSS variables, overrides, and main bundle rendering. |
+## Overview
 
-## Features
+Shade folds the Mix & Match bundle builder directly into the product page instead of adding a separate summary panel — shoppers pick items from each category on the page itself, and their selections feed straight into the store's existing Add to Cart form. Product cards highlight as items are added, variants are picked via dropdowns or radios with color swatches, and an optional add-ons row lets shoppers extend their bundle before checkout. Built as a Shopify theme block, it drops into any page or template through the Theme Editor rather than requiring a dedicated product template. It suits stores that want the bundle experience to feel like a natural extension of the product page rather than a separate builder screen.
 
-- App block placement for product pages.
-- Dynamic add-ons bundle rendering from the current product or selected bundle product.
-- Configurable product cards, variant style, swatches, colors, radius, and button text.
-- Product modal for item details.
-- Works without adding a dedicated product JSON template.
+---
 
-## Installation
+## What's included
 
-1. Copy the files from each directory into the matching Shopify theme directory.
-2. Add the `FoxSell Shade` block to the product page in the Shopify Theme Editor.
-3. Optionally select a bundle product in the block settings. If left blank, the block uses the current product.
-4. Configure product card settings, colors, spacing, and locale text from the block settings.
+Shade ships with a focused set of bundle, discovery, merchandising, and customization features:
 
-## Notes
+**Bundle experience**
+- Integrates directly with the theme's native Add to Cart form — no separate summary panel
+- Category-based product selection with per-category quantities
+- Add-ons row with automatic-add or opt-in checkbox strategies, selectable by default
+- Quantity-aware options (QAO) support for variant-based cart submission
+- Quick-view product modal
 
-- The block renders only when the resolved product has FoxSell dynamic add-ons bundle configuration.
-- Use this template when bundle placement should live inside an existing product page layout.
+**Product discovery**
+- Radio or dropdown variant pickers
+- Color swatches, auto-detected from product options or manually mapped
+- Selected-item highlighting on product cards
+- Optional secondary image on hover
+- Configurable image aspect ratio (original or square)
+
+**Merchandising**
+- Dynamic or fixed pricing strategies with per-item discount display
+- Configurable discount label and free label for add-ons
+
+**Customization**
+- Full theme editor color scheme — background, text, two accent colors, borders
+- Adjustable card/button border radius, swatch size, and base font size
+- Configurable product grid gap and block padding
+- Ships as a Shopify theme block with a bundle product picker — drag onto any page or template in the Theme Editor
+
+---
+
+## Best for
+
+Beauty · Fragrance · Fashion · Hair care · Wellness
+
+---
+
+## Stores using this template
+
+- [Nuuds](https://www.nuuds.com/products/pajama-pant-mauve)
+- [Rugged Dog Company](https://ruggeddogcompany.com/products/jolly-pet-romp-n-roll-soccer-ball-bundle)
+- [MiiR](https://www.miir.com/products/wide-mouth)
+- [Juniper James Golf](https://juniperjamesgolf.com/collections/pants/products/play-on-pants-blue-smoke)
