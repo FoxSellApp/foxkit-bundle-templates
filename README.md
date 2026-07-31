@@ -6,13 +6,12 @@ Ready-to-use Shopify theme templates for FoxSell Bundles. Each template folder c
 
 | Template | Best for | Theme files | README |
 | --- | --- | --- | --- |
-| Base | General dynamic add-ons bundles with a flexible product grid and summary. | assets, sections, snippets, templates | [View README](./templates/base/README.md) |
-| Skeleton | A minimal starter template for building a custom bundle layout. | assets, sections, snippets, templates | [View README](./templates/skeleton/README.md) |
-| Step | Guided bundle building with quantity rules and step-style progress messaging. | assets, sections, snippets, templates | [View README](./templates/step/README.md) |
-| Shade | App block based bundle placement for themes that support product page app blocks. | assets, blocks, sections, snippets | [View README](./templates/shade/README.md) |
-| Glow | A polished dynamic add-ons bundle layout with configurable styling and progress messaging. | assets, sections, snippets, templates | [View README](./templates/glow/README.md) |
-| Mix Match Fixed Template | Fixed-price bundles with one product per category and variant selection. | assets, sections, snippets | [View README](./templates/mix-match-fixed-template/README.md) |
-| Mix Match Combined Listing Template | Fixed-price bundles where multiple products in a category are shown as one combined listing. | assets, sections, snippets | [View README](./templates/mix-match-combined-listing-template/README.md) |
+| Base | A flexible all-at-once bundle grid with product options and a sticky summary. | assets, blocks, sections, snippets, templates | [View README](./templates/base/README.md) |
+| Glow | A two-step bundle builder with category navigation, add-ons, and a sticky summary. | assets, blocks, sections, snippets, templates | [View README](./templates/glow/README.md) |
+| Reserve | A compact block with accordion categories and inline pricing. | assets, blocks, snippets | [View README](./templates/reserve/README.md) |
+| Shade | A product-page block that works with the theme's native add-to-cart form. | assets, blocks, sections, snippets | [View README](./templates/shade/README.md) |
+| Skeleton | A minimal starting point for a custom bundle grid and summary. | assets, blocks, sections, snippets, templates | [View README](./templates/skeleton/README.md) |
+| Step | A guided category-by-category builder with quantity rules and step progress. | assets, blocks, sections, snippets, templates | [View README](./templates/step/README.md) |
 
 ## Repository Structure
 
@@ -20,8 +19,7 @@ Ready-to-use Shopify theme templates for FoxSell Bundles. Each template folder c
 templates/
   base/
   glow/
-  mix-match-combined-listing-template/
-  mix-match-fixed-template/
+  reserve/
   shade/
   skeleton/
   step/
@@ -48,10 +46,10 @@ Each template mirrors Shopify theme directories:
 
 ## Notes
 
-- The newer templates read FoxSell dynamic add-ons bundle data from the bundle product metafield and only render when that configuration exists.
-- Templates with `product.foxsell-*.json` files can be assigned directly to a Shopify product.
-- `shade` is an app block template and is intended for block placement instead of a product JSON template.
-- The legacy fixed and combined listing templates are fixed-pricing examples and have a smaller configuration surface.
+- Templates read FoxSell bundle data from the selected bundle product and only render when that configuration exists.
+- Every template includes a Shopify theme block for placement through the Theme Editor.
+- Base, Glow, Skeleton, and Step also include a product JSON template that can be assigned directly to a Shopify product.
+- Reserve and Shade are intended for block placement and do not include a product JSON template.
 
 ## Contributing
 
