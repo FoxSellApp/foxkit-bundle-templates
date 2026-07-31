@@ -1,168 +1,76 @@
-# FoxKit: Bundle Templates Development Environment
+![Glow banner](https://cdn.shopify.com/s/files/1/0753/6957/8736/files/glow_banner.jpg?v=1785479496)
 
-A Rollup-based build system for building FoxSell bundle templates. FoxKit provides a **Mix & Match** bundle builder for Shopify themes, using Web Components (custom elements) and Liquid templates.
+**[View demo](https://tools.foxsell.app/tools/fox-demo-delight/store?app=foxsell-bundles-plus&path=/products/build-your-own-cookie-box)**
 
-## Project Structure
+---
 
-```
-src/
-├── entries/           # JS & CSS entry points
-│   ├── index.js       # Central entry — registers all custom elements, imports CSS
-│   ├── js/            # Component logic (mix-match, product card, bundle summary, etc.)
-│   └── css/           # Component styles
-├── snippets/          # Liquid templates (Shopify)
-│   ├── mix-match.liquid
-│   ├── product-card.liquid
-│   ├── bundle-summary.liquid
-│   ├── product-options.liquid
-│   ├── product-modal.liquid
-│   └── css-variables.liquid
-├── sections/          # Liquid sections
-│   ├── mix-match.liquid
-│   └── product-modal.liquid
-├── blocks/            # Liquid blocks (use default-block.liquid as placeholder)
-├── templates/         # Liquid templates (use default-template naming convention)
-└── assets/            # Build output (auto-generated — do not edit)
-build-utils.js         # Liquid rename/transform — appends template name at build time
-foxkit.config.js       # Template name and entrypoint
-```
+## Overview
 
-## Installation
+Glow is a two-step Mix & Match bundle builder: shoppers pick their core items first, then continue on to a curated add-ons step before checking out — all without leaving the product page. Category pills let shoppers jump straight to the section they want, a sticky summary tracks progress and pricing as they go, and a quick-view modal keeps browsing fast. It suits merchants who want a guided, build-your-own experience rather than a single flat grid of choices.
 
-Clone the repository and run:
+---
 
-```bash
-npm install
-```
+## What's included
 
-`npm run setup` runs automatically after install (`postinstall`). Run it manually to reinitialize the theme (e.g., after deleting the theme directory). Use `npm run reset` to clean everything and reinitialize from scratch.
+Everything needed to run a two-step Mix & Match bundle builder on any product page.
 
-### Configuration
+**Bundle experience**
+- Two-step build flow — items first, then add-ons, with Continue / Return controls
+- Category navigation pills to filter the grid by category, plus an "All" view
+- Sticky bundle summary with live quantity, progress messaging, and line-item removal
+- Configurable "Free" label for $0 add-ons and dynamic-pricing discounts
+- Product modal for a quick add without leaving the page
 
-1. Update the `shopify.theme.toml` file with your Shopify store information.
-2. Update the `foxkit.config.js` file with your template name (e.g. `"Skeleton"`, `"MyTheme"`).
+**Product discovery**
+- Responsive product grid (1–2 columns on mobile, up to 5 on desktop)
+- Card and modal views with radio or select variant pickers
+- Color swatches, auto-detected from a named option or mapped manually
+- Optional secondary image on hover
+- Square or original image aspect ratio
 
-   | Option       | Description                                      |
-   | ------------ | ------------------------------------------------ |
-   | `name`       | Template name — used for asset filenames and output |
-   | `entrypoint` | JS entry file (default: `./src/entries/index.js`) |
+**Merchandising**
+- Dynamic pricing discounts reflected on cards and summary line items
+- Automatic or manual add-on strategies
+- Compare-at / sale price display wherever a discount applies
 
-   **Asset naming**: The template name is converted to kebab-case for filenames. For example:
-   - `"Skeleton"` → `foxsell-skeleton.js`, `foxsell-skeleton.css`
-   - `"MyTheme"` → `foxsell-my-theme.js`, `foxsell-my-theme.css`
+**Customization**
+- Full color scheme — background, text, two accent pairs, border
+- Card and button border radius
+- Section padding, base font size, and scroll offset controls
+- Editable copy for every button and label (add to cart, add to bundle, continue/return, category "All", add-ons tag, free label, and more)
+- Works as a section or as an app block
 
-> **Note**: Use a unique name for your template to **avoid conflicts with other templates**. The build automatically appends the template name to Liquid snippets/sections and asset references — no manual renaming needed.
+---
 
-### Build pipeline (`build-utils.js`)
+## Best for
 
-The build automatically:
+Build-your-own boxes · Curated kits · Beauty · Fragrance · Hair care · Fashion · Gifting · Wellness · Food & drink · Multi-category bundles
 
-- **Renames output files**: `mix-match.liquid` → `foxsell-skeleton-mix-match.liquid` (and similarly for sections)
-- **Updates `{% render %}` references**: `{% render 'mix-match' %}` → `{% render 'foxsell-skeleton-mix-match' %}`
-- **Updates asset refs**: Source uses placeholders `foxsell.css` and `foxsell.js`; the build outputs `foxsell-skeleton.css` and `foxsell-skeleton.js`
+---
 
-Edit source files with short names (e.g. `mix-match.liquid`, `product-card.liquid`). The build applies the template prefix from `foxkit.config.js`.
+## Stores using this template
 
-#### Blocks (`src/blocks/`)
-
-Blocks use a different convention from snippets and sections. Snippets and sections always have `foxsell-{template-name}-` prepended to their filenames. Blocks use `default-block.liquid` as an exact placeholder filename that gets replaced with `foxsell-{template-name}.liquid`; all other block files fall back to the prefix approach.
-
-| Source | Output |
-| --- | --- |
-| `default-block.liquid` | `foxsell-skeleton.liquid` |
-| `mix-match.liquid` | `foxsell-skeleton-mix-match.liquid` (fallback — prefix added) |
-
-#### Templates (`src/templates/`)
-
-Template source files use `default-template` as a placeholder, which the build replaces with `foxsell-{template-name}`:
-
-| Source | Output |
-| --- | --- |
-| `product.default-template.json` | `product.foxsell-skeleton.json` |
-
-## Development
-
-Start the development server for the Shopify theme and the bundle templates:
-
-```bash
-npm start
-# or
-npm run dev
-```
-
-> **Note**: If you are experiencing issues with the development server, try restarting by running `npm run dev` again.
-
-## Building
-
-When you are ready to build the bundle templates:
-
-```bash
-npm run build
-```
-
-This automatically cleans the `dist` directory before building, then places the bundle templates in `dist/<template-name>/` (e.g. `dist/skeleton/`).
-
-### Other Available Commands
-
-```bash
-# Starts the development server (alias for npm run dev)
-npm start
-
-# Starts the development server for the Shopify theme
-npm run dev:shopify
-
-# Starts the development server for the bundle templates
-npm run dev:bundle
-
-# Preview file deletions without removing (dry-run mode)
-npm run dev:dry-run
-npm run build:dry-run
-
-# Initialize the theme folder (also runs automatically on npm install)
-npm run setup
-
-# Clean everything and reinitialize the theme from scratch
-npm run reset
-
-# Cleans dist, theme, and generated assets
-npm run clean
-
-# Cleans only the dist directory
-npm run clean:dist
-
-# Cleans only the Shopify theme
-npm run clean:theme
-
-# Cleans only generated assets (src/assets/foxsell-*.js, foxsell-*.css)
-npm run clean:assets
-```
-
-### Dry-Run Mode
-
-Dry-run mode allows you to preview which files would be deleted during the build process without actually removing them. This is useful for:
-
-- **Debugging**: Understanding what the build system considers "stale"
-- **Safety**: Verifying deletions before committing changes
-- **Learning**: Seeing how the rename/transform logic works
-
-**Usage:**
-
-```bash
-# Preview deletions during development
-npm run dev:dry-run
-
-# Preview deletions during production build
-npm run build:dry-run
-
-# Or set the environment variable directly
-FOXKIT_DRY_RUN=true npm run build
-```
-
-**Output example:**
-```
-[foxkit] Dry-run mode enabled — will preview deletions without removing files
-[foxkit][dry-run] would remove stale: theme/snippets/foxsell-skeleton-old-snippet.liquid
-[foxkit][dry-run] would remove stale template: theme/templates/product.foxsell-skeleton.liquid
-```
-
-Dry-run mode also adds error handling to file operations, logging failures instead of crashing the build.
+<table>
+  <tr>
+    <td align="center" valign="top" width="25%">
+      <a href="https://cutbyfred.com/products/summer-edition-without-trousse">
+        <strong>Cut by Fred</strong>
+      </a>
+    </td>
+    <td align="center" valign="top" width="25%">
+      <a href="https://orebella.com/products/build-your-scent-wardrobe">
+        <strong>Orebella</strong>
+      </a>
+    </td>
+    <td align="center" valign="top" width="25%">
+      <a href="https://lore.world/products/build-your-bundle">
+        <strong>Lore</strong>
+      </a>
+    </td>
+    <td align="center" valign="top" width="25%">
+      <a href="https://juniperjamesgolf.com/products/ball-knower-bundle">
+        <strong>Juniper James Golf</strong>
+      </a>
+    </td>
+  </tr>
+</table>
