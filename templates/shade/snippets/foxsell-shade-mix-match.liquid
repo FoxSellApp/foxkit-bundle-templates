@@ -46,7 +46,9 @@
 
 <foxsell-mix-match id="foxsell-mix-match--{{ section.id }}" class="foxsell-mix-match" data-bundle-id="{{ bundle_id }}">
   <div class="foxsell-mix-match__container">
-    <div class="foxsell-mix-match__price-container">{{ product.price | money }}</div>
+    {% if section.settings.show_bundle_price %}
+      <div class="foxsell-mix-match__price-container">{{ product.price | money }}</div>
+    {% endif %}
 
     {% comment %} Category list {% endcomment %}
     <div class="foxsell-category__list">
