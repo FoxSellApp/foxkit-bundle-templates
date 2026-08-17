@@ -1566,20 +1566,23 @@ class ReserveFoxSellMixMatch extends FoxSellMixMatch {
             form.appendChild(newInput);
           }
 
-          //! Set the variant id input if QAO is enabled
           const variantIdInput = form.querySelector('input[name="id"]');
-          if (this.bundle.qaoEnabled) {
-            const validOption = this.getCurrentValidOption();
-            if (variantIdInput) {
-              variantIdInput.setAttribute('value', validOption?.variant_id ?? '');
-            }
+          if (variantIdInput) {
+            const variantId = this.bundle.qaoEnabled
+              ? (this.getCurrentValidOption()?.variant_id ?? '')
+              : (this.config.variants?.[0]?.id ?? '');
+            variantIdInput.setAttribute('value', String(variantId));
           }
         }
 
-        //! Set the variant id input if QAO is enabled
-        if (this.bundle.qaoEnabled && idInput) {
-          const validOption = this.getCurrentValidOption();
-          idInput.setAttribute('value', validOption?.variant_id ?? '');
+        debugger;
+
+        const variantIdInput = idInput ?? form.querySelector('input[name="id"]');
+        if (variantIdInput) {
+          const variantId = this.bundle.qaoEnabled
+            ? (this.getCurrentValidOption()?.variant_id ?? '')
+            : (this.config.variants?.[0]?.id ?? '');
+          variantIdInput.setAttribute('value', String(variantId));
         }
       }
     }
