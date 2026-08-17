@@ -2,7 +2,9 @@
   "sections": {
     "main": {
       "type": "foxsell-glow-mix-match",
-      "settings": {}
+      "settings": {
+        "bundle_product": "{{ product }}"
+      }
     }
   },
   "order": [
