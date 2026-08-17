@@ -2029,6 +2029,62 @@ class FoxSellProductForm extends HTMLElement {
   }
 }
 
+class FoxSellProductGallery extends HTMLElement {
+  constructor() {
+    super();
+
+    this.featuredImage = null;
+
+    this.thumbnails = [];
+    this.boundHandleThumbnailClick = this.handleThumbnailClick.bind(this);
+  }
+
+  connectedCallback() {
+    const featuredImage =  (
+      this.querySelector('.foxsell-product-card__media-image')
+    );
+    if (!(featuredImage instanceof HTMLImageElement)) {
+      throw new Error('FoxSellProductGallery: missing .foxsell-product-card__media-image');
+    }
+    this.featuredImage = featuredImage;
+
+    this.thumbnails =  ([
+      ...this.querySelectorAll('.foxsell-product-card__media-thumbnail'),
+    ]);
+    this.init();
+  }
+
+  disconnectedCallback() {
+    for (const thumbnail of this.thumbnails) {
+      thumbnail.removeEventListener('click', this.boundHandleThumbnailClick);
+    }
+  }
+
+  init() {
+    for (const thumbnail of this.thumbnails) {
+      const src = thumbnail.dataset.mediaSrc;
+      if(src) {
+        const preload = new Image();
+        preload.src = src;
+      }
+      thumbnail.addEventListener('click', this.boundHandleThumbnailClick);
+    }
+  }
+
+  handleThumbnailClick(event) {
+    const thumbnail =  (event.currentTarget);
+    const src = thumbnail.dataset.mediaSrc;
+    if (!this.featuredImage || !src) return;
+
+    this.featuredImage.src = src;
+    this.featuredImage.removeAttribute('srcset');
+
+    for (const el of this.thumbnails) {
+      el.classList.toggle('active', el === thumbnail);
+    }
+  }
+}
+
 const elements = [
   ['foxsell-mix-match', ShadeFoxSellMixMatch],
   ['foxsell-category-header', FoxSellCategoryHeader],
@@ -2040,6 +2096,7 @@ const elements = [
   ['foxsell-variant-select', FoxSellVariantSelect],
   ['foxsell-product-modal', BaseFoxSellProductModal],
   ['foxsell-product-form', FoxSellProductForm],
+  ['foxsell-product-gallery', FoxSellProductGallery],
 ];
 
 const overrides = window.foxsell?.overrides ?? {};
