@@ -646,3 +646,24 @@ foxsell-bundle-progress.foxsell-desktop-header {
   justify-content: center;
 }
 
+.foxsell-product-card__media-thumbnails {
+  display: flex;
+  flex-direction: row;
+  gap: var(--foxsell-space-1);
+  margin-top: var(--foxsell-space-1);
+  padding-inline: 1px;
+  flex-wrap: wrap;
+}
+
+.foxsell-product-card__media-thumbnail {
+  outline: 1px solid transparent;
+}
+
+.foxsell-product-card__media-thumbnail.active {
+  outline: 1px solid var(--foxsell-color-foreground);
+}
+
+.foxsell-product-card__media-thumbnails > .foxsell-product-card__media-thumbnail {
+  --images-per-row: 10;
+  width: calc((100% - (calc(var(--images-per-row) - 1) * var(--foxsell-space-1))) / var(--images-per-row));
+}
