@@ -767,7 +767,8 @@ class GlowMixMatch extends FoxSellMixMatch {
 
   validateBundle() {
     super.validateBundle();
-    if (this.currentView === 'add_ons' && !this.bundle.addOns.enabled) {
+
+    if (this.currentView === 'add_ons' && (!this.bundle.addOns.enabled || !this.bundle.isItemsValid)) {
       this.toggleView('items');
     }
     if(this.continueButton && this.returnButton) {
@@ -876,9 +877,10 @@ class GlowMixMatch extends FoxSellMixMatch {
 
     const showContinueButton = this.bundle.addOns.enabled && this.bundle.isItemsValid;
 
-    continueButtonWrapper?.classList.toggle('foxsell--hidden', !showContinueButton);
-    this.addToCartButton?.classList.toggle('foxsell--hidden', showContinueButton && this.currentView === 'items');
+    const onAddOnsView = this.currentView === 'add_ons';
 
+    continueButtonWrapper?.classList.toggle('foxsell--hidden', !showContinueButton && !onAddOnsView);
+    this.addToCartButton?.classList.toggle('foxsell--hidden', showContinueButton && this.currentView === 'items');
   }
 
   toggleToItems() {
