@@ -1575,8 +1575,6 @@ class ReserveFoxSellMixMatch extends FoxSellMixMatch {
           }
         }
 
-        debugger;
-
         const variantIdInput = idInput ?? form.querySelector('input[name="id"]');
         if (variantIdInput) {
           const variantId = this.bundle.qaoEnabled
