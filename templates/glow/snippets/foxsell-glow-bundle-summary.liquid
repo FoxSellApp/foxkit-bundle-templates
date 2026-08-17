@@ -36,7 +36,14 @@
 {% case view %}
   {% when 'header' %}
     {% if options.size > 0 %}
-      <foxsell-bundle-progress class="{{ header_class }}" data-type="summary-header">
+      {% liquid
+        assign manual_tiers = section.settings.enable_manual_tier_selection | default: false
+        assign host_class = header_class
+        if manual_tiers
+          assign host_class = header_class | append: ' foxsell-bundle-progress--manual-tiers'
+        endif
+      %}
+      <foxsell-bundle-progress class="{{ host_class }}" data-type="summary-header"{% if manual_tiers %} data-manual-tiers="true"{% endif %}>
         <div class="foxsell-bundle-progress__header-content">
           <div class="foxsell-bundle-progress__price">
             <div class="foxsell-bundle-progress__price-label">{{ price_label }}</div>
@@ -44,14 +51,23 @@
           </div>
           <div class="foxsell-bundle-progress__list">
             {% for option in options %}
-              <div class="foxsell-bundle-progress__item {% if forloop.first %}active{% endif %}" data-id="{{ option.variant_id }}">
+              {% capture tier_content %}
                 <div class="foxsell-bundle-progress__title">{{ option.title }}</div>
                 {% if option.price.strategy == 'dynamic_pricing' %}
                   <div class="foxsell-bundle-progress__value">{{ option.price.value | remove: '.0' }}%</div>
                 {% else %}
                   <div class="foxsell-bundle-progress__value">{{ option.price.value | times: 100 | money_without_trailing_zeros }}</div>
                 {% endif %}
-              </div>
+              {% endcapture %}
+              {% if manual_tiers %}
+                <button type="button" class="foxsell-bundle-progress__item{% if forloop.first %} active{% endif %}" data-id="{{ option.variant_id }}" aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}">
+                  {{ tier_content }}
+                </button>
+              {% else %}
+                <div class="foxsell-bundle-progress__item{% if forloop.first %} active{% endif %}" data-id="{{ option.variant_id }}">
+                  {{ tier_content }}
+                </div>
+              {% endif %}
             {% endfor %}
           </div>
         </div>

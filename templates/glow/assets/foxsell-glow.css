@@ -699,6 +699,40 @@ fieldset.fieldset--color-swatch > legend {
   color: var(--foxsell-color-accent-text-2);
 }
 
+/* Manual tier selection: chips are buttons, so reset UA styling and add affordances */
+.foxsell-bundle-progress--manual-tiers .foxsell-bundle-progress__item {
+  appearance: none;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease, transform 150ms ease-out;
+}
+
+@media (hover: hover) {
+  .foxsell-bundle-progress--manual-tiers .foxsell-bundle-progress__item:hover {
+    background-color: var(--foxsell-color-accent-2);
+    color: var(--foxsell-color-accent-text-2);
+  }
+}
+
+.foxsell-bundle-progress--manual-tiers .foxsell-bundle-progress__item:focus-visible {
+  outline: 2px solid var(--foxsell-color-accent-2);
+  outline-offset: 2px;
+}
+
+.foxsell-bundle-progress--manual-tiers .foxsell-bundle-progress__item:active {
+  transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .foxsell-bundle-progress--manual-tiers .foxsell-bundle-progress__item {
+    transition: none;
+  }
+
+  .foxsell-bundle-progress--manual-tiers .foxsell-bundle-progress__item:active {
+    transform: none;
+  }
+}
+
 .foxsell-bundle-progress__value {
   position: absolute;
   top: 0;
@@ -920,3 +954,31 @@ foxsell-bundle-progress.foxsell-desktop-header {
   justify-content: center;
 }
 
+foxsell-product-card .foxsell-product-card__media-image {
+  border-radius: var(--foxsell-radius-card);
+  overflow: hidden;
+}
+
+.foxsell-product-card__media-thumbnails {
+  display: flex;
+  flex-direction: row;
+  gap: var(--foxsell-space-1);
+  margin-top: var(--foxsell-space-1);
+  padding-inline: 1px;
+  flex-wrap: wrap;
+}
+
+.foxsell-product-card__media-thumbnail {
+  outline: 1px solid transparent;
+  border-radius: var(--foxsell-radius-card);
+  overflow: hidden;
+}
+
+.foxsell-product-card__media-thumbnail.active {
+  outline: 1px solid var(--foxsell-color-foreground);
+}
+
+.foxsell-product-card__media-thumbnails > .foxsell-product-card__media-thumbnail {
+  --images-per-row: 10;
+  width: calc((100% - (calc(var(--images-per-row) - 1) * var(--foxsell-space-1))) / var(--images-per-row));
+}

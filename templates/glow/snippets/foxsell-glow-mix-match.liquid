@@ -245,7 +245,10 @@
       "continueButtonText": {{ section.settings.button_continue_text | default: 'Continue' | json }},
       "returnButtonText": {{ section.settings.button_return_text | default: 'Return' | json }},
     },
-    "additionalSettings": {{ additional_settings | json }}
+    "additionalSettings": {{ additional_settings | json }},
+    "features": {
+      "manualTierSelection": {{ section.settings.enable_manual_tier_selection | default: false | json }}
+    }
   }
 
   window.foxsell.formatMoney = (cents, format = "{{ shop.money_format }}") => {
