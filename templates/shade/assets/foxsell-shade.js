@@ -776,8 +776,8 @@ class ShadeFoxSellMixMatch extends FoxSellMixMatch {
 
     const section = this.closest('.shopify-section');
     if(section) {
-      const form = section.querySelector('form[action*="cart/Add" i]');
-      if(form) {
+      const forms = section.querySelectorAll('form[action*="cart/Add" i]');
+      forms.forEach(form => {
         const bundleIdInput = form.querySelector('input[name="properties[__foxsell:dynamic_add_on_bundle_id]"]');
         const itemInput = form.querySelector('input[name="properties[__foxsell:dynamic_add_on_bundle_items]"]');
         const savingsInput = form.querySelector('input[name="properties[__foxsell:dynamic_add_on_bundle_savings]"]');
@@ -796,15 +796,6 @@ class ShadeFoxSellMixMatch extends FoxSellMixMatch {
             newInput.setAttribute('data-foxsell-mix-match', 'true');
             form.appendChild(newInput);
           }
-
-          //! Set the variant id input if QAO is enabled
-          const variantIdInput = form.querySelector('input[name="id"]');
-          if (this.bundle.qaoEnabled) {
-            const validOption = this.getCurrentValidOption();
-            if (variantIdInput) {
-              variantIdInput.setAttribute('value', validOption?.variant_id ?? '');
-            }
-          }
         }
 
         //! Set the variant id input if QAO is enabled
@@ -812,7 +803,7 @@ class ShadeFoxSellMixMatch extends FoxSellMixMatch {
           const validOption = this.getCurrentValidOption();
           idInput.setAttribute('value', validOption?.variant_id ?? '');
         }
-      }
+      });
     }
   }
 
