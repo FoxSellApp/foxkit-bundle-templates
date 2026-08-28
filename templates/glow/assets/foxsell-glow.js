@@ -738,7 +738,7 @@ class GlowMixMatch extends FoxSellMixMatch {
     super();
     this.currentView = 'items';
 
-    this.selectedTierVariantId = '';
+    this.selectedTierVariantId = this.resolveDefaultTierVariantId();
 
     this.boundToggleToItems = this.toggleToItems.bind(this);
     this.boundToggleToAddOns = this.toggleToAddOns.bind(this);
@@ -780,6 +780,15 @@ class GlowMixMatch extends FoxSellMixMatch {
     return Boolean(this.config?.features?.manualTierSelection) && (this.config?.options?.length ?? 0) > 0;
   }
 
+  resolveDefaultTierVariantId() {
+    if (!this.isManualTierSelection) return '';
+
+    const options = this.config.options;
+    const defaultId = String(this.config.defaultVariantId ?? '');
+    const match = options.find((opt) => String(opt.variant_id) === defaultId);
+    return String(match?.variant_id ?? options[0]?.variant_id ?? '');
+  }
+
   setSelectedOption(variantId) {
     if (!this.isManualTierSelection || !variantId) return;
 
@@ -805,7 +814,11 @@ class GlowMixMatch extends FoxSellMixMatch {
 
     const options = this.config.options;
     const selected = options.find((opt) => String(opt.variant_id) === this.selectedTierVariantId);
-    return selected ?? options[0] ?? null;
+    if (selected) return selected;
+
+    const defaultId = String(this.config.defaultVariantId ?? '');
+    const defaultOpt = options.find((opt) => String(opt.variant_id) === defaultId);
+    return defaultOpt ?? options[0] ?? null;
   }
 
   trimItemsToSelectedTier() {

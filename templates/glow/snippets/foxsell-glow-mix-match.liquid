@@ -248,6 +248,7 @@
       "returnButtonText": {{ section.settings.button_return_text | default: 'Return' | json }},
     },
     "additionalSettings": {{ additional_settings | json }},
+    "defaultVariantId": {{ product.selected_or_first_available_variant.id | json }},
     "features": {
       "manualTierSelection": {{ section.settings.enable_manual_tier_selection | default: false | json }}
     }
