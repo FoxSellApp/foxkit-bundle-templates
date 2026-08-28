@@ -61,11 +61,13 @@
 
     {% if section.settings.show_category_navigation and categories.size > 1 %}
       <foxsell-category-navigation class="foxsell-mix-match__category-navigation">
-        <button class="foxsell--button foxsell--button-ghost foxsell-mix-match__category-navigation-item active" data-category-id="all">
-          {{ section.settings.category_navigation_all_label | default: 'All' }}
-        </button>
+        {% unless section.settings.hide_category_navigation_all %}
+          <button class="foxsell--button foxsell--button-ghost foxsell-mix-match__category-navigation-item active" data-category-id="all">
+            {{ section.settings.category_navigation_all_label | default: 'All' }}
+          </button>
+        {% endunless %}
         {% for category in categories %}
-          <button class="foxsell--button foxsell--button-ghost foxsell-mix-match__category-navigation-item" data-category-id="{{ category.title | sha1 }}">
+          <button class="foxsell--button foxsell--button-ghost foxsell-mix-match__category-navigation-item{% if section.settings.hide_category_navigation_all and forloop.first %} active{% endif %}" data-category-id="{{ category.title | sha1 }}">
             {{ category.title }}
           </button>
         {% endfor %}
@@ -75,7 +77,7 @@
     {% comment %} Category list {% endcomment %}
     <div class="foxsell-category__list">
       {% for category in categories %}
-        <div class="foxsell-category__item" data-category="{{ category.title | sha1 }}">
+        <div class="foxsell-category__item{% if section.settings.show_category_navigation and categories.size > 1 and section.settings.hide_category_navigation_all and forloop.first == false %} foxsell--hidden{% endif %}" data-category="{{ category.title | sha1 }}">
           {% unless hide_category_header %}
             <foxsell-category-header data-category-id="{{ category.title | sha1 }}" class="foxsell-category__header">
               <div class="foxsell-category__title">{{ category.title }}</div>

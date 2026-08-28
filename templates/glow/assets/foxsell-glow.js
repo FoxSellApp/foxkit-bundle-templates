@@ -984,13 +984,19 @@ class FoxSellCategoryNavigation extends HTMLElement {
 
     this.categoryNavigationItems = this.querySelectorAll('.foxsell-mix-match__category-navigation-item');
 
-    this.currentActiveCategoryId = 'all';
+    this.currentActiveCategoryId = this.getInitialActiveCategoryId();
     this.boundHandleCategoryNavigationItemClick = this.handleCategoryNavigationItemClick.bind(this);
   }
   connectedCallback() {
     this.categoryNavigationItems.forEach(item => {
       item.addEventListener('click', this.boundHandleCategoryNavigationItemClick);
     });
+    this.toggleCategoryItemsVisibility();
+  }
+
+  getInitialActiveCategoryId() {
+    const activeItem = Array.from(this.categoryNavigationItems).find(item => item.classList.contains('active'));
+    return activeItem?.dataset.categoryId ?? this.categoryNavigationItems[0]?.dataset.categoryId ?? 'all';
   }
 
   disconnectedCallback() {
