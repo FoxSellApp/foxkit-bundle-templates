@@ -11,6 +11,7 @@
   @param {string} [type] - The type of options to render, either 'radio' or 'select'
   @param {boolean} [show_secondary_image_on_hover] - Card view defaults to false unless passed. Modal view defaults to true unless passed.
   @param {boolean} [show_color_swatches] - Whether to render color swatches for options that support them.
+  @param {boolean} [enable_drawer] - Whether clicking the product image opens the product details drawer. Defaults to true.
   @param {number} [default_quantity] - The default quantity of the product
   @param {string} [color_option_name] - The option name to treat as the color swatch option. Defaults to "Color".
   @param {string} [manual_color_swatches] - Comma-separated "OptionValue: #hex" map for manual color swatches.
@@ -26,6 +27,9 @@
     assign show_price = true
   endunless
   assign show_secondary_image_on_hover = show_secondary_image_on_hover | default: false
+  unless enable_drawer == false
+    assign enable_drawer = true
+  endunless
   unless add_on_selected_by_default == false
     assign add_on_selected_by_default = true
   endunless
@@ -98,7 +102,7 @@
           <input class="foxsell-add-on-checkbox" type="checkbox" name="addon"{% if add_on_selected_by_default %} checked{% endif %}>
         </label>
       {% endif %}
-      <div class="foxsell-product-card__image-wrapper" data-open-modal>
+      <div class="foxsell-product-card__image-wrapper"{% if enable_drawer %} data-open-modal{% endif %}>
         <div class="foxsell-product-card__media">
           {{ product.featured_image | image_url: width: 500 | image_tag: class: image_class }}
           {% if secondary_image != blank %}
