@@ -58,3 +58,9 @@ Contributions are welcome. See [CONTRIBUTING.md](./CONTRIBUTING.md) for setup, g
 ## License
 
 This project is licensed under the [MIT License](./LICENSE).
+
+## Variant selector verification
+
+Base, Glow, Shade, Skeleton, and Step support **Hide unavailable variants** in their section or block settings. It is disabled by default. Reserve renders variant cards, not dropdown or radio selectors.
+
+Run `npm ci --ignore-scripts` and `npm test` (Node.js 22 or newer) to verify the shipped Liquid and compiled JavaScript against excluded variants, sold-out variants, dependent choices, swatches, and modal fixtures. These fixture tests do not replace a Shopify development-store check.

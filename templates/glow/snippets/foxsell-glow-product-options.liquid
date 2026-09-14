@@ -194,6 +194,9 @@
                 endif
             endcase
           endif
+          if section.settings.hide_unavailable_variants and is_available == false
+            continue
+          endif
         %}
         <label style="--swatch-strikethrough-color-mix: {{ swatch_strikethrough_color_mix }};">
           {% if show_color_swatch %}
@@ -302,6 +305,9 @@
                   endif
               endcase
             endif
+            if section.settings.hide_unavailable_variants and is_available == false
+              continue
+            endif
           %}
           <label style="--swatch-strikethrough-color-mix: {{ swatch_strikethrough_color_mix }};">
             {% if value.swatch.image %}
@@ -358,6 +364,9 @@
                       assign is_available = true
                     endif
                 endcase
+              endif
+              if section.settings.hide_unavailable_variants and is_available == false
+                continue
               endif
             %}
             <option value="{{ value | escape }}" {% if is_checked %}selected{% endif %}>

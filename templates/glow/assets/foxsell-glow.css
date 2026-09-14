@@ -545,6 +545,11 @@ fieldset.fieldset--color-swatch > legend {
   background-repeat: no-repeat;
 }
 
+.foxsell-variant-radio label[hidden],
+.foxsell-variant-select label[hidden] {
+  display: none !important;
+}
+
 /* Bundle summary — nested flex gaps must be < parent gap (see .foxsell-mix-match__summary) */
 .foxsell-bundle-summary {
   display: flex;

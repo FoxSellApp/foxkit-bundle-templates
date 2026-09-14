@@ -49,7 +49,7 @@
 <link rel="stylesheet" href="{{ 'foxsell-base.css' | asset_url }}">
 {% # theme-check-enable %}
 
-<foxsell-mix-match id="foxsell-mix-match--{{ section.id }}" class="foxsell-mix-match" data-bundle-id="{{ bundle_id }}">
+<foxsell-mix-match data-hide-unavailable-variants="{{ section.settings.hide_unavailable_variants | default: false }}" id="foxsell-mix-match--{{ section.id }}" class="foxsell-mix-match" data-bundle-id="{{ bundle_id }}">
   <div class="foxsell-mix-match__container">
     {% comment %} Bundle summary header {% endcomment %}
     {% render 'foxsell-base-bundle-summary', section: section, options: options, view: 'header', header_class: 'foxsell-mobile-header' %}

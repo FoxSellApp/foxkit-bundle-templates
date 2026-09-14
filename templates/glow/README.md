@@ -86,3 +86,11 @@ Defaults (from `DEFAULT_ADDITIONAL_SETTINGS` in `src/entries/js/constants.js`):
 | `add_on_settings.strategy` | `"add_on_step"` shows the add-ons step UI; `"automatic_add"` hides that step and adds add-ons automatically |
 
 Partial or missing metafield values are filled from the defaults above.
+
+## Hide unavailable variants
+
+Enable **Hide unavailable variants** in the bundle section or block's product card settings to hide sold-out and bundle-excluded choices from dropdowns, radios, and color swatches, including the product modal. The setting is off by default, preserving the existing display.
+
+With the setting enabled, changing an earlier option updates the remaining choices and selects the first available replacement if needed. Choices return when their combination becomes available again. Products with no available bundle variants cannot be selected.
+
+Run `npm test` for selector regression tests and `npm run build` to generate the distributable template.

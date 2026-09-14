@@ -54,7 +54,7 @@
 <link rel="stylesheet" href="{{ 'foxsell-glow.css' | asset_url }}">
 {% # theme-check-enable %}
 
-<foxsell-mix-match id="foxsell-mix-match--{{ section.id }}" class="foxsell-mix-match" data-bundle-id="{{ bundle_id }}" data-scroll-offset="{{ section.settings.scroll_offset | default: 0 }}">
+<foxsell-mix-match data-hide-unavailable-variants="{{ section.settings.hide_unavailable_variants | default: false }}" id="foxsell-mix-match--{{ section.id }}" class="foxsell-mix-match" data-bundle-id="{{ bundle_id }}" data-scroll-offset="{{ section.settings.scroll_offset | default: 0 }}">
   <div class="foxsell-mix-match__container">
     {% comment %} Bundle summary header {% endcomment %}
     {% render 'foxsell-glow-bundle-summary', section: section, options: options, view: 'header', header_class: 'foxsell-mobile-header' %}
