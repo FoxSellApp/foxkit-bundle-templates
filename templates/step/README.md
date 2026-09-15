@@ -114,4 +114,4 @@ Enable **Hide unavailable variants** in the bundle section or block's product ca
 
 With the setting enabled, changing an earlier option updates the remaining choices and selects the first available replacement if needed. Choices return when their combination becomes available again. Products with no available bundle variants cannot be selected.
 
-Run `npm test` for selector regression tests and `npm run build` to generate the distributable template.
+Run `npm run build` to generate the distributable template.
