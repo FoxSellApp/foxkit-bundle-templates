@@ -1030,9 +1030,11 @@ class FoxSellVariantRadio extends HTMLElement {
 
   onVariantChange() {
     this.updateOptions();
+    const hideUnavailableVariants = this.closest('foxsell-mix-match')?.dataset.hideUnavailableVariants === 'true';
+    if (hideUnavailableVariants) this.hideUnavailableVariants();
     this.updateMasterId();
     this.updateOptionLabels();
-    this.updateVariantStatuses();
+    if (!hideUnavailableVariants) this.updateVariantStatuses();
 
     this.dispatchEvent(new CustomEvent('variant-change', { bubbles: true }));
   }
@@ -1088,6 +1090,40 @@ class FoxSellVariantRadio extends HTMLElement {
     this.querySelectorAll('fieldset').forEach((fieldset, i) => {
       const span = fieldset.querySelector('.foxsell-variant-radio__option-value, .foxsell-variant-select__option-value');
       if (span) span.textContent = this.options?.[i] ?? '';
+    });
+  }
+
+  hideUnavailableVariants() {
+    let matchingVariants = this.getVariantData().filter(variant => variant.available);
+    this.optionInputs ??= [...this.querySelectorAll('fieldset')].map(fieldset =>
+       ([...fieldset.querySelectorAll('input[type="radio"], option')])
+    );
+
+    this.querySelectorAll('fieldset').forEach((fieldset, optionIndex) => {
+      const availableValues = matchingVariants.map(variant => variant.options[optionIndex]);
+      const optionInputs = this.optionInputs[optionIndex];
+      const availableInputs = optionInputs.filter(input => availableValues.includes(input.value));
+      const selectedValue = availableValues.includes(this.options[optionIndex])
+        ? this.options[optionIndex]
+        : availableInputs[0]?.value ?? '';
+      const select = fieldset.querySelector('select');
+
+      if (select) {
+        select.replaceChildren(...availableInputs);
+        select.value = selectedValue;
+        select.disabled = availableInputs.length === 0;
+      } else {
+        optionInputs.forEach(optionInput => {
+          const input =  (optionInput);
+          const isAvailable = availableValues.includes(input.value);
+          input.disabled = !isAvailable;
+          input.closest('label').hidden = !isAvailable;
+          input.checked = isAvailable && input.value === selectedValue;
+        });
+      }
+
+      this.options[optionIndex] = selectedValue;
+      matchingVariants = matchingVariants.filter(variant => variant.options[optionIndex] === selectedValue);
     });
   }
 

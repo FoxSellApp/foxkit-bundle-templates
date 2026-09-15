@@ -56,7 +56,7 @@
 <link rel="stylesheet" href="{{ 'foxsell-step.css' | asset_url }}">
 {% # theme-check-enable %}
 
-<foxsell-mix-match id="foxsell-mix-match--{{ section.id }}" class="foxsell-mix-match" data-bundle-id="{{ bundle_id }}">
+<foxsell-mix-match data-hide-unavailable-variants="{{ section.settings.hide_unavailable_variants | default: false }}" id="foxsell-mix-match--{{ section.id }}" class="foxsell-mix-match" data-bundle-id="{{ bundle_id }}">
   <div class="foxsell-mix-match__container">
     {% comment %} Category table {% endcomment %}
     <div class="foxsell-category__table">

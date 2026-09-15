@@ -58,3 +58,7 @@ Contributions are welcome. See [CONTRIBUTING.md](./CONTRIBUTING.md) for setup, g
 ## License
 
 This project is licensed under the [MIT License](./LICENSE).
+
+## Hide unavailable variants
+
+Base, Glow, Shade, Skeleton, and Step support **Hide unavailable variants** in their section or block settings. It is disabled by default. Reserve renders variant cards, not dropdown or radio selectors.
