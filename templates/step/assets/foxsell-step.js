@@ -485,7 +485,7 @@ class FoxSellMixMatch extends HTMLElement {
 
     let selectedQuantity = 0;
     for (const allowedId of allowedIds) {
-      const item = this.config.addOnProducts.find(item => item.id === allowedId);
+      const item = this.config.addOnProducts?.find(item => item.id === allowedId);
       if(!item) continue;
 
       const productGid = `gid://shopify/Product/${allowedId}`;
