@@ -68,7 +68,9 @@
         %}
         <div class="foxsell-category__table-row">
           <div class="foxsell-category__table-title">{{ category_metadata.title | default: fallback_title }}</div>
-          <div class="foxsell-category__table-description">{{ category_metadata.description | default: category.title }}</div>
+          {% if category_metadata.description %}
+            <div class="foxsell-category__table-description">{{ category_metadata.description }}</div>
+          {% endif %}
         </div>
       {% endfor %}
 
@@ -80,7 +82,9 @@
         %}
         <div class="foxsell-category__table-row">
           <div class="foxsell-category__table-title">{{ add_ons_category_metadata.title | default: fallback_title }}</div>
-          <div class="foxsell-category__table-description">{{ add_ons_category_metadata.description | default: section.settings.add_ons_category_title | default: 'Add-ons' }}</div>
+          {% if add_ons_category_metadata.description %}
+            <div class="foxsell-category__table-description">{{ add_ons_category_metadata.description }}</div>
+          {% endif %}
         </div>
       {% endif %}
     </div>
