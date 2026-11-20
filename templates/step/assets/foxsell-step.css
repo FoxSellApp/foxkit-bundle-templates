@@ -188,19 +188,20 @@ foxsell-mix-match {
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: var(--foxsell-space-2);
   max-width: 300px;
   padding: var(--foxsell-space-3) var(--foxsell-space-8);
   text-align: center;
   background: var(--foxsell-color-accent-3);
   color: var(--foxsell-color-accent-text-3);
   border-radius: var(--foxsell-radius-card);
+  justify-content: center;
 }
 
 .foxsell-category__table-title {
   font-size: var(--foxsell-text-base);
   font-family: var(--foxsell-font-header-family);
   font-weight: var(--foxsell-font-header-weight);
-  margin-bottom: var(--foxsell-space-2);
 }
 
 .foxsell--hidden {
