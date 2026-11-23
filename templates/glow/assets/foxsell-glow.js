@@ -2,7 +2,7 @@
 
 const DEFAULT_ADDITIONAL_SETTINGS = {
   quantity_rules: {
-    strategy: 'any',
+    strategy: 'fixed',
     max: 'cap_at_highest',
   },
   add_on_settings: {
